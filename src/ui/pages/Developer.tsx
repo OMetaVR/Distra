@@ -2,6 +2,7 @@ import { useEffect, useReducer } from "react";
 import { Alert, ScrollView } from "react-native";
 
 import { callNative } from "@/core/bridge";
+import { getRemoteDebuggerStatus, onRemoteDebuggerStatus } from "@/core/devtools";
 import { loader } from "@/core/loader";
 import { reloadApp } from "@/core/native";
 import { loaderConfig } from "@/core/settings";
@@ -37,8 +38,15 @@ function Logs() {
     );
 }
 
+function useRemoteDebuggerStatus() {
+    const [, rerender] = useReducer((n: number) => n + 1, 0);
+    useEffect(() => onRemoteDebuggerStatus(rerender), []);
+    return getRemoteDebuggerStatus();
+}
+
 export default function Developer() {
     useProxy(loaderConfig);
+    const debuggerStatus = useRemoteDebuggerStatus();
     const navigation = NavigationNative.useNavigation();
 
     return (
@@ -74,6 +82,13 @@ export default function Developer() {
                         value={loaderConfig.remoteDebugger?.enabled ?? false}
                         onValueChange={(enabled: boolean) => void (loaderConfig.remoteDebugger = { url: "", ...loaderConfig.remoteDebugger, enabled })}
                     />
+                    {loaderConfig.remoteDebugger?.enabled && (
+                        <TableRow
+                            label={`Status: ${debuggerStatus.state === "off" ? "not started (reload Discord)" : debuggerStatus.state}`}
+                            subLabel={debuggerStatus.detail}
+                            icon={<Icon name={debuggerStatus.state === "connected" ? "CheckmarkLargeIcon" : "CircleInformationIcon"} />}
+                        />
+                    )}
                     {loaderConfig.remoteDebugger?.enabled && (
                         <TableRow label={
                             <TextInput

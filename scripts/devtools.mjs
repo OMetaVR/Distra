@@ -92,15 +92,21 @@ function flushToPollers() {
     }
 }
 
-const isLocal = request => ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(request.socket.remoteAddress);
+// Requests proxied by `tailscale serve` (or any reverse proxy) come from 127.0.0.1 too; they are remote.
+const isLocal = request => ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(request.socket.remoteAddress)
+    && !request.headers["x-forwarded-for"] && !request.headers["tailscale-user-login"];
 
 createServer(async (request, response) => {
     const url = new URL(request.url ?? "/", "http://localhost");
+    if (!isLocal(request) && process.env.DEVTOOLS_TRACE !== "0") console.log(`${new Date().toLocaleTimeString()} ${request.method} ${url.pathname} from ${request.headers["x-forwarded-for"] ?? request.socket.remoteAddress}`);
     const route = `${request.method} ${url.pathname}`;
     try {
         // Device endpoints
         if (["POST /hello", "GET /poll", "POST /result", "POST /log"].includes(route)) {
-            if (url.searchParams.get("token") !== token) return json(response, 401, { error: "bad token" });
+            if (url.searchParams.get("token") !== token) {
+                console.log(`rejected ${route} from ${request.socket.remoteAddress}: bad token "${url.searchParams.get("token") ?? ""}"`);
+                return json(response, 401, { error: "bad token" });
+            }
             lastSeen = Date.now();
             if (route === "POST /hello") {
                 const body = await readBody(request);

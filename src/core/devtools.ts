@@ -237,6 +237,28 @@ async function run(code: string) {
 let started = false;
 let stopped = false;
 
+export interface RemoteDebuggerStatus {
+    state: "off" | "connecting" | "connected" | "error";
+    detail?: string;
+    since: number;
+}
+let status: RemoteDebuggerStatus = { state: "off", since: Date.now() };
+const statusListeners = new Set<() => void>();
+export const getRemoteDebuggerStatus = () => status;
+export function onRemoteDebuggerStatus(listener: () => void) {
+    statusListeners.add(listener);
+    return () => void statusListeners.delete(listener);
+}
+function setStatus(state: RemoteDebuggerStatus["state"], detail?: string) {
+    if (status.state === state && status.detail === detail) return;
+    status = { state, detail, since: Date.now() };
+    statusListeners.forEach(listener => listener());
+    // Shown in Developer > Logs and the tweak's log, which is how a failing connection is diagnosed.
+    const message = `Remote debugger ${state}${detail ? `: ${detail}` : ""}`;
+    if (state === "error") log.logger.warn(message);
+    else log.logger.info(message);
+}
+
 /** Stops polling (tests; also reachable as `dt.stop()`). */
 export function stopRemoteDebugger() {
     stopped = true;
@@ -249,7 +271,7 @@ export function startRemoteDebugger() {
 
     // React Native's URL polyfill can't read query parameters; parse by hand.
     const match = /^(https?:\/\/[^/?#]+)[^?#]*(?:\?([^#]*))?/.exec(config()!.url.trim());
-    if (!match) return;
+    if (!match) return setStatus("error", `not a valid URL: ${config()!.url}`);
     const base = match[1];
     const token = decodeURIComponent(/(?:^|&)token=([^&]*)/.exec(match[2] ?? "")?.[1] ?? "");
     const session = Math.random().toString(36).slice(2, 10);
@@ -299,10 +321,14 @@ export function startRemoteDebugger() {
         let failures = 0;
         while (!stopped) {
             try {
-                await post("/hello", {
+                setStatus("connecting", base);
+                const hello = await post("/hello", {
                     loader: { version: loader.version, discord: loader.discord, bundle: loader.bundle, jailbroken: loader.jailbroken },
                 });
+                if (hello.status === 401) throw new Error("the server rejected the token");
+                if (!hello.ok) throw new Error(`HTTP ${hello.status}`);
                 failures = 0;
+                setStatus("connected", base);
                 while (!stopped) {
                     const response = await fetch(`${base}/poll?${query}`);
                     if (response.status === 401) throw new Error("Remote debugger rejected the token");
@@ -313,8 +339,9 @@ export function startRemoteDebugger() {
                         await post("/result", { id: command.id, ...result });
                     }
                 }
-            } catch {
+            } catch (e) {
                 // Server not running or unreachable: back off up to 30s and keep trying.
+                setStatus("error", `${base}: ${e instanceof Error ? e.message : String(e)}`);
                 failures++;
                 await sleep(Math.min(30_000, 2_000 * failures));
             }
