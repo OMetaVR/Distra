@@ -364,6 +364,17 @@ function defineDiscordModules(global, events) {
         r(20).fileFinishedImporting("design/components/Sheet/native/ActionSheetRow.native.tsx");
     });
 
+    // TableRow's own module (found first by id) and the design-system index re-exporting it.
+    d(24, (g, r, _i, _a, module) => {
+        const TableRow = function () { return null; };
+        module.exports = { __esModule: true, TableRow };
+        r(20).fileFinishedImporting("design/components/TableRow/native/TableRow.native.tsx");
+    });
+    d(25, (g, r, _i, _a, module) => {
+        module.exports = { __esModule: true, TableRow: r(24).TableRow, TableSwitchRow: () => null, TableRowGroup: () => null, Button: () => null };
+        r(20).fileFinishedImporting("design/native.tsx");
+    });
+
     // The DCDChat native component; chat rows go through Commands.updateRows(view, rowsJson, ...).
     d(23, (g, r, _i, _a, module) => {
         const Commands = {
@@ -396,7 +407,7 @@ function defineDiscordModules(global, events) {
  * Runs Discordia, then a fake Discord bundle, in a fresh VM context.
  * Returns the context plus recorded events.
  */
-export function boot({ native = createNative(), loader = {}, fetchRoutes = {} } = {}) {
+export function boot({ native = createNative(), loader = {}, fetchRoutes = {}, fetch: realFetch } = {}) {
     const events = [];
     // Like Hermes before Discord's bundle runs: no console and no timers yet.
     const context = vm.createContext({
@@ -404,11 +415,11 @@ export function boot({ native = createNative(), loader = {}, fetchRoutes = {} } 
         alert: message => events.push(["alert", message]),
         nativeModuleProxy: native.nativeModuleProxy,
         ErrorUtils: { getGlobalHandler: () => () => { }, setGlobalHandler: () => { } },
-        fetch: async url => {
+        fetch: realFetch ?? (async url => {
             const clean = url.split("?")[0];
             if (!(clean in fetchRoutes)) return { ok: false, status: 404, statusText: "Not Found", text: async () => "" };
             return { ok: true, status: 200, text: async () => fetchRoutes[clean] };
-        },
+        }),
         __DISCORDIA_LOADER__: {
             name: "DiscordiaTweak",
             version: "0.1.0",
@@ -449,7 +460,7 @@ export function boot({ native = createNative(), loader = {}, fetchRoutes = {} } 
 /** Waits until `predicate()` is truthy. */
 export async function until(predicate, timeout = 5000) {
     const started = Date.now();
-    while (!predicate()) {
+    while (!(await predicate())) {
         if (Date.now() - started > timeout) throw new Error("Timed out waiting for condition");
         await new Promise(resolve => setTimeout(resolve, 10));
     }

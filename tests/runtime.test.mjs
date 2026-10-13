@@ -1,6 +1,7 @@
 // Run with `pnpm test` after `pnpm build`.
 
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import { test } from "node:test";
 
 import { boot, createNative, until } from "./harness.mjs";
@@ -397,4 +398,58 @@ test("Discordia rows stay visible when a plugin wraps SETTING_RENDERER_CONFIG it
     const config = constants.SETTING_RENDERER_CONFIG;
     assert.ok(config.PLUGIN_ROW && config.DISCORDIA, "both the plugin's and Discordia's rows are present");
     assert.ok(config.LATE_ROW, "rows registered after the plugin wrapped the config still appear");
+});
+
+test("the remote debugger runs code from the devtools server and streams logs", async () => {
+    const port = 45000 + Math.floor(Math.random() * 1000);
+    const server = spawn(process.execPath, ["scripts/devtools.mjs"], {
+        env: { ...process.env, DEVTOOLS_PORT: String(port), DEVTOOLS_TOKEN: "testtoken" },
+        stdio: ["ignore", "pipe", "inherit"],
+    });
+    try {
+        await new Promise(resolve => server.stdout.on("data", chunk => String(chunk).includes("listening") && resolve()));
+        const native = createNative();
+        const ctx = boot({
+            native,
+            fetch,
+            loader: { config: { ...native.state.loaderConfig, remoteDebugger: { enabled: true, url: `http://127.0.0.1:${port}/?token=testtoken` } } },
+        });
+        await until(() => ready(ctx));
+        const evaluate = async code => (await fetch(`http://127.0.0.1:${port}/eval`, {
+            method: "POST",
+            body: JSON.stringify({ code, timeout: 10_000 }),
+        })).json();
+
+        assert.deepEqual((await evaluate("1 + 2")).result, 3);
+        assert.equal((await evaluate("const a = 2; return a * 3")).result, 6, "statement bodies work");
+        assert.equal((await evaluate("Promise.resolve(typeof discordia.metro.findByProps)")).result, "function", "promises are awaited");
+        const failed = await evaluate("throw new Error('boom')");
+        assert.equal(failed.ok, false);
+        assert.equal(failed.result.error, "boom");
+        assert.equal(typeof (await evaluate("dt.tree()")).result, "string");
+
+        // Logs are sent in batches every 500ms.
+        let logs = [];
+        await until(async () => {
+            ({ logs } = await (await fetch(`http://127.0.0.1:${port}/logs`)).json());
+            return logs.some(line => line.tag === "Discordia");
+        });
+        assert.ok(logs.some(line => line.message.includes("device connected")));
+        assert.ok(logs.some(line => line.message.includes("[entry]")), "Discordia's log reaches the server");
+
+        const rejected = await fetch(`http://127.0.0.1:${port}/poll?token=wrong`);
+        assert.equal(rejected.status, 401);
+        ctx.context.dt.stop();
+    } finally {
+        server.kill();
+    }
+});
+
+test("findByProps prefers Discord's design-system index for design components", async () => {
+    const ctx = boot();
+    await until(() => ready(ctx));
+    ctx.context.__r(25);
+    const found = ctx.context.vendetta.metro.findByProps("TableRow");
+    assert.equal(typeof found.TableSwitchRow, "function", "plugins destructure TableSwitchRow/TableRowGroup from the same lookup");
+    assert.equal(ctx.context.enmity.modules.getByProps("TableRow"), found);
 });

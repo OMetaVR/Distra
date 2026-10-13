@@ -2,6 +2,7 @@
 // component starts (Discord is held until it resolves), `start` runs after.
 
 import { callNative, isBridgeAvailable } from "@/core/bridge";
+import { startRemoteDebugger } from "@/core/devtools";
 import { isForeignLoader, isSafeMode, loader } from "@/core/loader";
 import { initSettings, loaderConfig, settings } from "@/core/settings";
 import { patchCommands, registerCommand } from "@/lib/commands";
@@ -43,6 +44,12 @@ export async function init() {
     const started = Date.now();
     logger.info(`Discordia ${DISCORDIA_VERSION} (${DISCORDIA_COMMIT}) on Discord ${loader.discord.version} (${loader.discord.build}), bundle: ${loader.bundle.source}`);
     logger.info(`Metro registry: ${Object.keys(globalThis.modules ?? {}).length} modules; native modules: turbo=${typeof globalThis.__turboModuleProxy === "function"} legacy=${globalThis.nativeModuleProxy != null}`);
+
+    try {
+        startRemoteDebugger();
+    } catch (e) {
+        logger.error("Remote debugger failed to start", e);
+    }
 
     if (isForeignLoader) logger.warn("Not loaded by the Discordia tweak; native features are unavailable");
     else if (!isBridgeAvailable()) logger.error("Native bridge module missing; settings will not persist");

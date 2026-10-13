@@ -21,6 +21,8 @@ export interface LoaderConfig {
     safeMode: boolean;
     /** Native banner a few seconds after launch saying whether Discordia started. */
     showStartupBanner: boolean;
+    /** Connects to `pnpm devtools` on a development machine (src/core/devtools.ts). */
+    remoteDebugger?: { enabled: boolean; url: string };
 }
 
 declare global {

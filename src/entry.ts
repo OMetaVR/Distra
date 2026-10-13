@@ -20,6 +20,11 @@ import type { ModuleID, ModuleRegistry } from "@/metro/types";
 // Discord's bundle defines `window` later; plugins and our code expect it now.
 (globalThis as any).window = globalThis;
 
+// Remote debugger: observe React commits (needs to precede React). Only when enabled.
+try {
+    if ((globalThis as any).__DISCORDIA_LOADER__?.config?.remoteDebugger?.enabled) require("@/core/devtools").installReactHook();
+} catch { }
+
 // Old native module names (DCDChatManager, MediaManager, ...) for plugins; must precede Discord's bundle.
 try {
     require("@/core/native").installNativeModuleAliases();

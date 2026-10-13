@@ -95,8 +95,46 @@ export function waitFor(filter: Filter, callback: (exports: any) => void, { raw 
 
 // Convenience wrappers, matching the API shape plugins from other mods expect.
 
-export const findByProps = (...props: string[]) => find(filters.byProps(...props));
-export const findByPropsLazy = (...props: string[]) => findLazy(filters.byProps(...props));
+/** Discord's design-system index, which re-exports every design component (TableRow, Stack, Button, ...). */
+const DESIGN_HUB = "design/native.tsx";
+let designHub: any;
+/** The hub once Discord has loaded it (it does at startup); never initializes modules itself. */
+function getDesignHub() {
+    if (designHub) return designHub;
+    for (const [, exports, record] of initializedModules()) {
+        if (record.__filePath === DESIGN_HUB) return designHub = exports;
+    }
+    return undefined;
+}
+
+/** React Native's index module (exports AppRegistry, NativeModules, Button, TextInput, ...). */
+const isReactNativeIndex = (m: any) => m != null && typeof m === "object"
+    && Object.getOwnPropertyDescriptor(m, "AppRegistry") != null && Object.getOwnPropertyDescriptor(m, "NativeModules") != null;
+
+const byPropsNotReactNative = filters.createFilter<string[]>("byPropsNotReactNative", (props, m) =>
+    !isReactNativeIndex(m) && props.length > 0 && props.every(prop => m[prop] != null));
+
+/**
+ * Finds the first module exporting all `props`. Plugins written for older Discord expect design
+ * components from the design-system index (it used to be the first match; now e.g. "TableRow"
+ * first hits TableRow.native.tsx, which lacks TableSwitchRow/TableRowGroup), and Discord's
+ * components over React Native's same-named ones ("Button", "TextInput").
+ */
+export function findByProps(...props: string[]) {
+    const hub = props.length > 0 ? getDesignHub() : null;
+    if (hub && props.every(prop => {
+        try {
+            return hub[prop] != null;
+        } catch {
+            return false;
+        }
+    })) return hub;
+
+    const found = find(filters.byProps(...props));
+    if (!isReactNativeIndex(found)) return found;
+    return find(byPropsNotReactNative(...props)) ?? found;
+}
+export const findByPropsLazy = (...props: string[]) => proxyLazy(() => findByProps(...props), { hint: `findByProps(${props.join(", ")})` });
 export const findByPropsAll = (...props: string[]) => findAll(filters.byProps(...props));
 
 /**

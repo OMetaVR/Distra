@@ -94,6 +94,22 @@ On the device, enable **Settings > Discordia > Developer settings**, then in
 **Developer** turn on *Load from custom URL* with that address and reload. The
 tweak falls back to the embedded bundle if the server can't be reached.
 
+### Remote debugger
+
+```sh
+pnpm devtools                          # prints http://<lan-ip>:4041/?token=…
+node scripts/dt.mjs 'dt.tree({ match: "ChatInput", depth: 6 })'
+node scripts/dt.mjs 'vendetta.metro.findByProps("TableRow")'
+node scripts/dt.mjs logs -f
+```
+
+In **Developer > Remote debugger**, enter the printed URL and reload. The device then
+long-polls the server: code sent with `dt.mjs` runs in Discord's JS runtime (results come back
+as JSON), and Discordia's log, console output and uncaught errors stream to
+`dist/devtools.log`. `dt.tree()` prints the rendered React component tree with each
+component's source file, which is what most plugin fixes need. Anyone with the URL can run code
+in your Discord session, so only use it on a trusted network and turn it off afterwards.
+
 ## Troubleshooting on device
 
 No Mac needed:

@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
     "tweak": "pnpm build:release && make -C tweak package FINALPACKAGE=1",
-    "tweak:rootless": "pnpm build:release && make -C tweak package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless"
+    "tweak:rootless": "pnpm build:release && make -C tweak package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless",
+    "devtools": "node scripts/devtools.mjs"
   },
   "dependencies": {
     "spitroast": "^2.2.0"

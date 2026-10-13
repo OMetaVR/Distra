@@ -101,6 +101,9 @@ export function patchModuleFactories() {
 /** A minifier-generated function name: empty, or at most two characters ("o", "$1"). */
 const isMinifiedName = (name: unknown) => typeof name !== "string" || name.length <= 2;
 
+/** Component (function, memo or forwardRef object) -> "path/to/File.tsx#ExportName", for debugging. */
+export const componentSources = new WeakMap<object, string>();
+
 function nameFunction(fn: any, name: string) {
     if (typeof fn !== "function" || !isMinifiedName(fn.name)) return;
     try {
@@ -117,6 +120,9 @@ function restoreComponentNames(exports: any, filePath: string) {
     const fileName = filePath.slice(filePath.lastIndexOf("/") + 1).replace(/(?:\.(?:native|ios|android))?\.[jt]sx?$/, "");
     const restore = (value: any, name: string) => {
         if (!/^[A-Z]/.test(name) || value == null) return;
+        if ((typeof value === "function" || typeof value === "object") && !componentSources.has(value)) {
+            componentSources.set(value, `${filePath}#${name}`);
+        }
         if (typeof value === "function") {
             nameFunction(value, name);
             // Static sub-components: TableRow.Icon was "TableRowIcon", ActionSheetRow.Group "ActionSheetRowGroup".
@@ -129,9 +135,10 @@ function restoreComponentNames(exports: any, filePath: string) {
         if (typeof value !== "object") return;
         // memo(Component), forwardRef(render), memo(forwardRef(render))
         const inner = value.type ?? value.render;
-        if (typeof inner === "function") nameFunction(inner, name);
-        else if (typeof inner?.render === "function") nameFunction(inner.render, name);
-        else return;
+        const render = typeof inner === "function" ? inner : typeof inner?.render === "function" ? inner.render : undefined;
+        if (!render) return;
+        nameFunction(render, name);
+        if (!componentSources.has(render)) componentSources.set(render, `${filePath}#${name}`);
         if (value.name === undefined) {
             try {
                 Object.defineProperty(value, "name", { value: name, configurable: true });

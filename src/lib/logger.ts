@@ -16,6 +16,9 @@ export interface LogEntry {
 const MAX_ENTRIES = 300;
 const entries: LogEntry[] = [];
 const listeners = new Set<() => void>();
+const entryListeners = new Set<(entry: LogEntry) => void>();
+/** True while a Logger is echoing to `console`, so console captures can skip duplicates. */
+export let writingToConsole = false;
 
 let pending: LogEntry[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | undefined;
@@ -52,9 +55,15 @@ export class Logger {
         forwardToNative(entry);
         if (entries.length > MAX_ENTRIES) entries.splice(0, entries.length - MAX_ENTRIES);
         listeners.forEach(listener => listener());
+        entryListeners.forEach(listener => listener(entry));
         // `console` is installed by Discord's bundle, so it may not exist yet.
         const console = (globalThis as any).console;
-        (console?.[level] ?? console?.log)?.(`[${this.tag}]`, ...args);
+        writingToConsole = true;
+        try {
+            (console?.[level] ?? console?.log)?.(`[${this.tag}]`, ...args);
+        } finally {
+            writingToConsole = false;
+        }
     }
 
     log = (...args: unknown[]) => this.write("log", args);
@@ -71,4 +80,10 @@ export const getLogEntries = () => entries;
 export function subscribeLogs(listener: () => void) {
     listeners.add(listener);
     return () => void listeners.delete(listener);
+}
+
+/** Calls `listener` with every new entry. */
+export function onLogEntry(listener: (entry: LogEntry) => void) {
+    entryListeners.add(listener);
+    return () => void entryListeners.delete(listener);
 }

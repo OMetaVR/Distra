@@ -125,7 +125,12 @@ const modules = {
     getModule,
     getModules: (filter: (m: any) => boolean) => getModule(filter, { all: true }),
     bulk: (...filters: Array<(m: any) => boolean>) => filters.map(filter => getModule(filter)),
-    getByProps: byKey(metro.byProps),
+    getByProps: (...args: any[]) => {
+        const [props, options] = splitOptions(args);
+        // The common case goes through findByProps, which prefers Discord's design components.
+        if (!options.all && options.defaultExport !== false) return metro.findByProps(...props);
+        return byKey(metro.byProps)(...args);
+    },
     // Name lookups go through Discordia's finders, which fall back to source file names
     // for Discord's minified component names.
     getByDisplayName: byName(metro.findByDisplayName, metro.findByDisplayNameAll),

@@ -66,6 +66,27 @@ export default function Developer() {
                     <TableRow label="Reload Discord" icon={<Icon name="RetryIcon" />} onPress={() => setTimeout(reloadApp, 300)} />
                 </TableRowGroup>
 
+                <TableRowGroup title="Remote debugger">
+                    <TableSwitchRow
+                        label="Connect to remote debugger"
+                        subLabel="Lets a computer running `pnpm devtools` run code in Discord and read its logs. Only enable with your own computer's address, on a network you trust. Takes effect after reloading."
+                        icon={<Icon name="BugIcon" />}
+                        value={loaderConfig.remoteDebugger?.enabled ?? false}
+                        onValueChange={(enabled: boolean) => void (loaderConfig.remoteDebugger = { url: "", ...loaderConfig.remoteDebugger, enabled })}
+                    />
+                    {loaderConfig.remoteDebugger?.enabled && (
+                        <TableRow label={
+                            <TextInput
+                                defaultValue={loaderConfig.remoteDebugger?.url}
+                                size="md"
+                                placeholder="http://192.168.1.2:4041/?token=…"
+                                label="Debugger URL"
+                                onChange={(url: string) => void (loaderConfig.remoteDebugger = { enabled: true, ...loaderConfig.remoteDebugger, url: url.trim() })}
+                            />
+                        } />
+                    )}
+                </TableRowGroup>
+
                 <TableRowGroup title="Debugging">
                     <TableRow label="Logs" icon={<Icon name="FileIcon" />} arrow onPress={() => openPage("Logs", Logs, navigation)} />
                     <TableRow
