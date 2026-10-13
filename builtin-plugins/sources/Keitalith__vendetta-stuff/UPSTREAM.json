@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/Keitalith/vendetta-stuff",
+  "commit": "d51819861f9d5d3274a64bdc33226eff380dbca7",
+  "license": "CC0-1.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

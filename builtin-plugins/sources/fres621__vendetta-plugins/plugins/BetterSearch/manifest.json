@@ -1,0 +1,14 @@
+{
+    "name": "BetterSearch",
+    "description": "Improves the Discord message search feature. (Tap the page number to change)",
+    "authors": [
+        {
+            "name": "fres",
+            "id": "843448897737064448"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "search"
+    }
+}

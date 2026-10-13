@@ -1,0 +1,14 @@
+{
+    "name": "HideAppButton",
+    "description": "Hides app button from chatbox.",
+    "authors": [
+        {
+            "name": "Rico040",
+            "id": "619474349845643275"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "AppsIcon"
+    }
+}

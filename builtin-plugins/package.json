@@ -1,0 +1,12 @@
+{
+  "name": "discordia-builtin-plugins",
+  "private": true,
+  "description": "Dependencies needed to build the vendored built-in plugins (scripts/build-plugins.mjs)",
+  "dependencies": {
+    "@song-spotlight/api": "^2.2.0",
+    "@swc/helpers": "^0.5.17",
+    "enmity": "github:enmity-mod/api#main",
+    "fuzzysort": "^3.1.0",
+    "lodash": "^4.18.1"
+  }
+}

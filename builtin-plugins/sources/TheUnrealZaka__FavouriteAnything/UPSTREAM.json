@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/TheUnrealZaka/FavouriteAnything",
+  "commit": "1e7d0f5912d1adbfe7253aca17e81f827c752173",
+  "license": "MIT",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

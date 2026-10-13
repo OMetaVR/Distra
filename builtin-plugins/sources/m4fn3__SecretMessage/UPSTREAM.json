@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/m4fn3/SecretMessage",
+  "commit": "f474bd6d82c25ddb2c85c4876e936813b7d08c1c",
+  "license": "GPL-3.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

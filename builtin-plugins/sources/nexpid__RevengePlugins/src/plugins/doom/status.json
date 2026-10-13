@@ -1,0 +1,7 @@
+{
+	"status": "broken",
+	"reason": {
+		"cause": "Broken due to",
+		"reason": "js-dos misconfiguration"
+	}
+}

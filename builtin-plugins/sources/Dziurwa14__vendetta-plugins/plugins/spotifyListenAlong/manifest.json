@@ -1,0 +1,18 @@
+{
+    "name": "Spotify Listen Along",
+    "description": "Allows listening along on mobile",
+    "authors": [
+        {
+            "name": "nexpid",
+            "id": "853550207039832084"
+        },
+        {
+            "name": "Dziurwa",
+            "id": "1034579679526526976"
+        }
+    ],
+    "main": "src/index.tsx",
+    "vendetta": {
+        "icon": "ic_spotify_white_16px"
+    }
+}

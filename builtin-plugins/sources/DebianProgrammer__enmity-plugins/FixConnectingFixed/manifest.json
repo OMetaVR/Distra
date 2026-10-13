@@ -1,0 +1,16 @@
+{
+  "name": "FixConnectingFixed",
+  "version": "1.0.0",
+  "description": "Fix the annoying Connecting bug. Fixed by octet-stream.",
+  "authors": [
+    {
+      "name": "mafu",
+      "id": "519760564755365888"
+    },
+    {
+      "name": "octet-stream",
+      "id": "263530950070239235"
+    }
+  ],
+  "color": "#0D324D"
+}

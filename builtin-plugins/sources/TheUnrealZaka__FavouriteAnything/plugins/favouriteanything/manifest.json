@@ -1,0 +1,14 @@
+{
+    "name": "FavouriteAnything",
+    "description": "Favourite any image or video, not just GIFs! Adds the favourite button to all media in the image viewer.",
+    "authors": [
+        {
+            "name": "TheUnrealZaka",
+            "id": "299007476055269376"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_star_filled"
+    }
+}

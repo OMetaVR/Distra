@@ -1,0 +1,70 @@
+diff -ruN a/plugins/FakeProfileThemesAndEffects/src/lib/stores/ProfileEffectStore.ts b/plugins/FakeProfileThemesAndEffects/src/lib/stores/ProfileEffectStore.ts
+--- a/plugins/FakeProfileThemesAndEffects/src/lib/stores/ProfileEffectStore.ts	2026-10-13 10:54:28.551316724 -0400
++++ b/plugins/FakeProfileThemesAndEffects/src/lib/stores/ProfileEffectStore.ts	2026-10-13 10:37:31.923322000 -0400
+@@ -3,8 +3,38 @@
+ 
+ import type { CollectiblesItemType } from "@lib/records";
+ 
++// Discord 2xx+ removed ProfileEffectStore; effects are now collectibles shop products. This
++// fallback lists the effects (with their configs) from the shop categories Discord has loaded.
++const CollectiblesCategoryStore: any = findByStoreName("CollectiblesCategoryStore");
++
++function shopProfileEffects(): ProfileEffect[] {
++    const effects = new Map<string, ProfileEffect>();
++    const categories = CollectiblesCategoryStore?.categories;
++    const list: any[] = categories instanceof Map ? [...categories.values()] : Object.values(categories ?? {});
++    for (const category of list) {
++        for (const product of category?.products ?? []) {
++            for (const item of product?.items ?? []) {
++                if (item?.type !== 1 || !item.config || effects.has(item.id)) continue;
++                effects.set(item.id, { id: item.id, skuId: item.skuId ?? product.skuId, config: item.config });
++            }
++        }
++    }
++    return [...effects.values()];
++}
++
++const fallbackStore = {
++    get profileEffects() {
++        return shopProfileEffects();
++    },
++    getProfileEffectById: (id: string) => shopProfileEffects().find(effect => effect.id === id),
++    canFetch: () => false,
++    hasFetched: () => true,
++    isFetching: false,
++    tryItOutId: null,
++};
++
+ export const ProfileEffectStore: $ProfileEffectStore
+-    = findByStoreName("ProfileEffectStore");
++    = findByStoreName("ProfileEffectStore") ?? fallbackStore as any;
+ 
+ export type ProfileEffectStoreAction = ExtractAction<FluxAction, "LOGOUT" | "PROFILE_EFFECTS_SET_TRY_IT_OUT" | "USER_PROFILE_EFFECTS_FETCH" | "USER_PROFILE_EFFECTS_FETCH_FAILURE" | "USER_PROFILE_EFFECTS_FETCH_SUCCESS">;
+ 
+diff -ruN a/plugins/FakeProfileThemesAndEffects/src/ui/components/index.ts b/plugins/FakeProfileThemesAndEffects/src/ui/components/index.ts
+--- a/plugins/FakeProfileThemesAndEffects/src/ui/components/index.ts	2026-10-13 10:54:28.551756016 -0400
++++ b/plugins/FakeProfileThemesAndEffects/src/ui/components/index.ts	2026-10-13 10:37:31.923533800 -0400
+@@ -12,7 +12,7 @@
+ export * from "./StaticEffect";
+ export * from "./Text";
+ 
+-export const FlashList: typeof $FlashList = findByName("FlashList") ?? (() => null);
++export const FlashList: typeof $FlashList = findByName("FlashList") ?? findByProps("FlashList")?.FlashList ?? (() => null);
+ 
+ // Must use `as` or else `undefined` is lost due to a TS bug
+ const svgModule = findByProps("Svg") as Record<string, any> | undefined;
+diff -ruN a/plugins/FakeProfileThemesAndEffects/src/ui/length.ts b/plugins/FakeProfileThemesAndEffects/src/ui/length.ts
+--- a/plugins/FakeProfileThemesAndEffects/src/ui/length.ts	2026-10-13 10:54:28.551756016 -0400
++++ b/plugins/FakeProfileThemesAndEffects/src/ui/length.ts	2026-10-13 10:37:31.923752800 -0400
+@@ -8,8 +8,10 @@
+ 
+ export type SpacingKey = "PX_4" | "PX_8" | "PX_12" | "PX_16" | "PX_24" | "PX_32" | "PX_40" | "PX_48" | "PX_56" | "PX_64" | "PX_72" | "PX_80" | "PX_96";
+ 
++// Discord 2xx+ has no Spacing token export; these are its PX_n values.
++const SPACING_FALLBACK = Object.fromEntries([4, 8, 12, 16, 24, 32, 40, 48, 56, 64, 72, 80, 96].map(n => [`PX_${n}`, n])) as Record<SpacingKey, number>;
+ export const Spacing: Record<SpacingKey, number>
+-    = (findByProps("Spacing") as Record<string, any> | undefined)?.Spacing ?? {};
++    = (findByProps("Spacing") as Record<string, any> | undefined)?.Spacing ?? SPACING_FALLBACK;
+ 
+ export const SafeAreaContext: Context<any>
+     = (findByProps("SafeAreaContext") as Record<string, any> | undefined)?.SafeAreaContext;

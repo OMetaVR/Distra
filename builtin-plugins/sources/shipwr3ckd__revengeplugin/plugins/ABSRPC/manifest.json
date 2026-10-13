@@ -1,0 +1,14 @@
+{
+    "name": "AudioBookShelfRichPresence",
+    "description": "Rich presence for AudioBookShelf media server",
+    "authors": [
+        {
+            "name": "シグマ siguma",
+            "id": "737597276339437578"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "audio"
+    }
+}

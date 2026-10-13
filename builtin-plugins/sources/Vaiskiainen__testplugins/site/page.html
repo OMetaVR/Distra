@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% assign base = site.baseurl %}
+{% if base == nil or base == "" %}
+  {% if site.github.repository_name %}
+    {% assign base = "/" | append: site.github.repository_name %}
+  {% else %}
+    {% assign base = "" %}
+  {% endif %}
+{% endif %}
+<title>{{ page.title | default: site.title }}</title>
+{% if page.og_title %}<meta property="og:title" content="{{ page.og_title }}">{% endif %}
+{% if page.og_description %}<meta property="og:description" content="{{ page.og_description }}">{% endif %}
+{% assign og_raw = page.og_image | default: page.page_image %}
+{% assign og_src = og_raw %}
+{% if og_src %}
+  {% if og_src contains '://' %}
+  {% else %}
+    {% assign og_src = base | append: '/' | append: og_src | replace: '//', '/' %}
+  {% endif %}
+  <meta property="og:image" content="{{ og_src }}">
+{% endif %}
+{% if page.og_url %}<meta property="og:url" content="{{ page.og_url }}">{% endif %}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Testplugins">
+{% if page.twitter_card %}<meta name="twitter:card" content="{{ page.twitter_card }}">{% endif %}
+{% if page.twitter_title %}<meta name="twitter:title" content="{{ page.twitter_title }}">{% endif %}
+{% if page.twitter_description %}<meta name="twitter:description" content="{{ page.twitter_description }}">{% endif %}
+{% assign twitter_raw = page.twitter_image | default: og_raw %}
+{% assign twitter_src = twitter_raw %}
+{% if twitter_src %}
+  {% if twitter_src contains '://' %}
+  {% else %}
+    {% assign twitter_src = base | append: '/' | append: twitter_src | replace: '//', '/' %}
+  {% endif %}
+  <meta name="twitter:image" content="{{ twitter_src }}">
+{% endif %}
+{% if page.theme_color %}<meta name="theme-color" content="{{ page.theme_color }}">{% endif %}
+{% if page.author %}<meta name="author" content="{{ page.author }}">{% endif %}
+<style>
+    body {font-family: Inter, Helvetica, Arial, sans-serif; margin: 0; background: #f8fafc; color: #111827; line-height: 1.65;}
+    .site-header {background: #ffffff; border-bottom: 1px solid #e5e7eb;}
+    .nav-inner {max-width: 900px; margin: 0 auto; padding: 0.9rem 1.5rem; display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; text-align: center;}
+    .nav-links {display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;}
+    .nav-links a {color: #111827; font-weight: 600; text-decoration: none;}
+    .nav-links a:hover {color: #059669; text-decoration: underline;}
+    .page-wrapper {max-width: 900px; margin: 0 auto; padding: 2.25rem 1.5rem 2.5rem;}
+    .card {background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 10px 24px rgba(15,23,42,0.08); padding: 1.4rem;}
+    .plugin-hero {margin-bottom: 1.35rem;}
+    .plugin-hero img {width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; border: 1px solid #e5e7eb; display: block;}
+    .plugin-gallery {display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin: 1.4rem 0 0;}
+    .plugin-gallery a {display: block;}
+    .plugin-gallery img {width: 100%; height: 160px; object-fit: cover; border-radius: 10px; border: 1px solid #e5e7eb; display: block;}
+    .lightbox {position: fixed; inset: 0; background: rgba(15, 23, 42, 0.88); display: flex; align-items: center; justify-content: center; padding: 2rem; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;}
+    .lightbox.is-open {opacity: 1; pointer-events: auto;}
+    .lightbox img {max-width: min(1100px, 92vw); max-height: 88vh; width: auto; height: auto; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.45); background: #0f172a;}
+    .lightbox button {position: absolute; top: 1.25rem; right: 1.25rem; border: none; background: rgba(255,255,255,0.12); color: #f8fafc; font-size: 1.4rem; padding: 0.35rem 0.6rem; border-radius: 999px; cursor: pointer;}
+    .lightbox button:hover {background: rgba(255,255,255,0.22);}
+    .commit-history {margin-top: 2rem; border-top: 1px solid #e5e7eb; padding-top: 1.5rem;}
+    .commit-history h2 {margin-top: 0;}
+    .commit-list {list-style: none; padding: 0; margin: 0.75rem 0 0;}
+    .commit-list li {padding: 0.6rem 0; border-bottom: 1px solid #f1f5f9;}
+    .commit-list li:last-child {border-bottom: none;}
+    .commit-list a {font-weight: 600; color: #0f172a;}
+    .commit-meta {display: block; font-size: 0.9rem; color: #64748b;}
+    .commit-status {color: #64748b; margin: 0.5rem 0 0;}
+    .commit-more {margin-top: 0.75rem;}
+    h1 {margin-top: 0; font-size: 2rem; color: #111827;}
+    h2 {color: #1f2937; margin-top: 1.5rem;}
+    p, li {font-size: 1rem;}
+    a {color: #059669; text-decoration: none;}
+    a:hover {text-decoration: underline;}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="nav-inner">
+    <nav class="nav-links" aria-label="Primary">
+      <a href="{{ base }}/">home</a>
+      <a href="{{ base }}/plugins/">plugins</a>
+      <a href="https://github.com/Vaiskiainen/testplugins/wiki" target="_blank" rel="noopener">wiki</a>
+    </nav>
+  </div>
+</header>
+<div class="page-wrapper"><div class="card">
+{% if page.page_image %}
+  {% assign img_src = page.page_image %}
+  {% if img_src contains '://' %}
+  {% else %}
+    {% assign img_src = base | append: '/' | append: img_src | replace: '//', '/' %}
+  {% endif %}
+  <div class="plugin-hero">
+    <img src="{{ img_src }}" alt="{{ page.page_image_alt | default: page.title | default: 'Plugin image' }}" loading="lazy" data-lightbox>
+  </div>
+{% endif %}
+{{ content }}
+{% if page.page_gallery %}
+  {% assign gallery_items = page.page_gallery | split: "|" %}
+  <div class="plugin-gallery">
+  {% for item in gallery_items %}
+    {% if item != "" %}
+      {% assign gallery_src = item %}
+      {% if gallery_src contains '://' %}
+      {% else %}
+        {% assign gallery_src = base | append: '/' | append: gallery_src | replace: '//', '/' %}
+      {% endif %}
+      <img src="{{ gallery_src }}" alt="{{ page.page_gallery_alt | default: page.title | default: 'Plugin gallery image' }}" loading="lazy" data-lightbox>
+    {% endif %}
+  {% endfor %}
+  </div>
+{% endif %}
+{% if page.commit_path %}
+  <section class="commit-history" data-commit-path="{{ page.commit_path }}" data-commit-repo="{{ page.commit_repo }}">
+    <h2>Commit history</h2>
+    <p class="commit-status">Loading recent commits…</p>
+    <ul class="commit-list"></ul>
+    <p class="commit-more"><a href="#" target="_blank" rel="noopener">View full history on GitHub</a></p>
+  </section>
+{% endif %}
+</div></div>
+<div class="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+  <button type="button" aria-label="Close image viewer">✕</button>
+  <img src="" alt="">
+</div>
+<script>
+(() => {
+  const lightbox = document.querySelector(".lightbox");
+  const lightboxImage = lightbox?.querySelector("img");
+  const lightboxClose = lightbox?.querySelector("button");
+  const openLightbox = (src, alt) => {
+    if (!lightbox || !lightboxImage) return;
+    lightboxImage.src = src;
+    lightboxImage.alt = alt || "";
+    lightbox.classList.add("is-open");
+    document.body.style.overflow = "hidden";
+  };
+  const closeLightbox = () => {
+    if (!lightbox || !lightboxImage) return;
+    lightbox.classList.remove("is-open");
+    lightboxImage.src = "";
+    document.body.style.overflow = "";
+  };
+
+  document.querySelectorAll("[data-lightbox]").forEach((img) => {
+    img.addEventListener("click", () => openLightbox(img.src, img.alt));
+    img.style.cursor = "zoom-in";
+  });
+
+  lightbox?.addEventListener("click", (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+  lightboxClose?.addEventListener("click", closeLightbox);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeLightbox();
+  });
+
+  const sections = document.querySelectorAll("[data-commit-path]");
+  if (!sections.length) return;
+
+  const defaultRepo = "{{ site.github.repository_nwo | default: 'Vaiskiainen/testplugins' }}";
+  sections.forEach(async (section) => {
+    const path = section.dataset.commitPath;
+    const repo = section.dataset.commitRepo || defaultRepo;
+    const list = section.querySelector(".commit-list");
+    const status = section.querySelector(".commit-status");
+    const moreLink = section.querySelector(".commit-more a");
+    if (!path || !list || !status) return;
+
+    const apiUrl = `https://api.github.com/repos/${repo}/commits?path=${encodeURIComponent(path)}&per_page=5`;
+    const htmlUrl = `https://github.com/${repo}/commits?path=${encodeURIComponent(path)}`;
+    if (moreLink) moreLink.href = htmlUrl;
+
+    try {
+      const response = await fetch(apiUrl, {
+        headers: { "Accept": "application/vnd.github+json" },
+      });
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status}`);
+      }
+      const commits = await response.json();
+      if (!Array.isArray(commits) || commits.length === 0) {
+        status.textContent = "No commits found for this plugin.";
+        return;
+      }
+
+      status.remove();
+      commits.slice(0, 5).forEach((commit) => {
+        const message = commit?.commit?.message?.split("\n")[0] || "Commit";
+        const author = commit?.commit?.author?.name || commit?.author?.login || "Unknown";
+        const dateRaw = commit?.commit?.author?.date || null;
+        const date = dateRaw ? new Date(dateRaw).toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }) : "Unknown date";
+        const url = commit?.html_url || "#";
+
+        const li = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = message;
+
+        const meta = document.createElement("span");
+        meta.className = "commit-meta";
+        meta.textContent = `${author} • ${date}`;
+
+        li.appendChild(link);
+        li.appendChild(meta);
+        list.appendChild(li);
+      });
+    } catch (error) {
+      status.textContent = "Could not load commit history right now.";
+    }
+  });
+})();
+</script>
+</body>
+</html>

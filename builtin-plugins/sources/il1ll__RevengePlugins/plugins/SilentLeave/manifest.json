@@ -1,0 +1,14 @@
+{
+    "name": "SilentLeave",
+    "description": "Leave the current Group DM silently with /leave silent command",
+    "authors": [
+        {
+            "name": "coder.gg",
+            "id": "1099039269391171765"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_unmute_channel_24px"
+    }
+}

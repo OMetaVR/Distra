@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/Martinz64/vendetta-plugins",
+  "commit": "72c4e249fb922665642450fe9c0ec9c33c7ecafa",
+  "license": "Unlicense",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

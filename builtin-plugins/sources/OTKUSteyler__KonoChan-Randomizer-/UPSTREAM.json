@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/OTKUSteyler/KonoChan-Randomizer-",
+  "commit": "74d96ed1b78175a41db1560302e64073f215a82e",
+  "license": "Unlicense",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

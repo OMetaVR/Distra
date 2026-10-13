@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/MINEOGO/revenge-stuff",
+  "commit": "2206d5cb8d43902557431ac004891a418dfe4660",
+  "license": "CC0-1.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

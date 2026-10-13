@@ -1,0 +1,14 @@
+{
+    "name": "ThemeRepo",
+    "description": "Browse all vendetta/revenge themes.",
+    "authors": [
+        {
+            "name": "Rico040",
+            "id": "619474349845643275"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_paint_brush"
+    }
+}

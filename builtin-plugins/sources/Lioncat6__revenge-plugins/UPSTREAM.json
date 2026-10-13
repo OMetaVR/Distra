@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/Lioncat6/revenge-plugins",
+  "commit": "2e066e4a3134d4cdf69616c54c1e4306c9970af5",
+  "license": "CC0-1.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/il1ll/RevengePlugins",
+  "commit": "48d497ad86bbfedff656f9414febb572dd2c6eb6",
+  "license": "CC0-1.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

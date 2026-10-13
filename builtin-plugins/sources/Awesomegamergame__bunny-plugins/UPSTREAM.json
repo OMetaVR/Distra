@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/Awesomegamergame/bunny-plugins",
+  "commit": "af6f0f4aa7900ccfa7ac7b592f65b869764e3f52",
+  "license": "MIT",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

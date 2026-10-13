@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/shipwr3ckd/FPTE",
+  "commit": "124d9ac00a78c9c96a88302a830a66f9ae662c94",
+  "license": "CC0-1.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

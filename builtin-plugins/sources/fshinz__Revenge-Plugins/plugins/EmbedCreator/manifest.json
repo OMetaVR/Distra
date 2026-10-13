@@ -1,0 +1,14 @@
+{
+    "name": "EmbedCreator",
+    "description": "create embeds using→ /embed-create .",
+    "authors": [
+        {
+            "name": "fshin",
+            "id": "1381008677301129257"
+        }
+    ],
+    "main": "src/index.tsx",
+    "vendetta": {
+        "icon": "flash"
+    }
+}

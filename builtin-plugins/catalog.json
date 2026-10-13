@@ -1,0 +1,1369 @@
+{
+  "repos": {
+    "WolfPlugs/vendetta-plugins": {
+      "url": "https://github.com/WolfPlugs/vendetta-plugins",
+      "commit": "84fd6712c30daac2998ae206b2b576f9a74156a1",
+      "license": "Unlicense",
+      "dir": "sources/WolfPlugs__vendetta-plugins"
+    },
+    "aeongdesu/vdplugins": {
+      "url": "https://github.com/aeongdesu/vdplugins",
+      "commit": "4d1ed7f7d6c9fca5b7ca417bc4b744fecf44de22",
+      "license": "GPL-3.0",
+      "dir": "sources/aeongdesu__vdplugins"
+    },
+    "bwlok/revenge-plugins": {
+      "url": "https://github.com/bwlok/revenge-plugins",
+      "commit": "16ccb009899f48ababb15e4484492efdc97e4698",
+      "license": "MIT",
+      "dir": "sources/bwlok__revenge-plugins"
+    },
+    "redstonekasi/vendetta-plugins": {
+      "url": "https://github.com/redstonekasi/vendetta-plugins",
+      "commit": "50c6afcca1c2390db494292a2bf238bd0b34b352",
+      "license": "BSD-3-Clause",
+      "dir": "sources/redstonekasi__vendetta-plugins"
+    },
+    "meqativ/dumsane": {
+      "url": "https://github.com/meqativ/dumsane",
+      "commit": "f4ee7faa2ed91dcbb49a014d37d81d748eb8c0a6",
+      "license": "Unlicense",
+      "dir": "sources/meqativ__dumsane"
+    },
+    "Martinz64/vendetta-plugins": {
+      "url": "https://github.com/Martinz64/vendetta-plugins",
+      "commit": "72c4e249fb922665642450fe9c0ec9c33c7ecafa",
+      "license": "Unlicense",
+      "dir": "sources/Martinz64__vendetta-plugins"
+    },
+    "shipwr3ckd/revengeplugin": {
+      "url": "https://github.com/shipwr3ckd/revengeplugin",
+      "commit": "f08835295983d660704bbc294d4d45c16ec6c261",
+      "license": "CC0-1.0",
+      "dir": "sources/shipwr3ckd__revengeplugin"
+    },
+    "janisslsm/vdplugins": {
+      "url": "https://github.com/janisslsm/vdplugins",
+      "commit": "1931ec73d438b8d8732c7a9c005c30efa4525a62",
+      "license": "BSD-3-Clause",
+      "dir": "sources/janisslsm__vdplugins"
+    },
+    "fres621/vendetta-plugins": {
+      "url": "https://github.com/fres621/vendetta-plugins",
+      "commit": "a55fb008acb5dc4b90bc195ad21768a3d2638653",
+      "license": "CC0-1.0",
+      "dir": "sources/fres621__vendetta-plugins"
+    },
+    "aliernfrog/vd-plugins": {
+      "url": "https://github.com/aliernfrog/vd-plugins",
+      "commit": "fe43f5dc2b0880c95edd3787331e252f2ba1e280",
+      "license": "GPL-3.0",
+      "dir": "sources/aliernfrog__vd-plugins"
+    },
+    "nexpid/RevengePlugins": {
+      "url": "https://github.com/nexpid/RevengePlugins",
+      "commit": "e10e86ef79e7e3cb777c38ecaa9b8f63abe50abc",
+      "license": "CC-BY-4.0",
+      "dir": "sources/nexpid__RevengePlugins"
+    },
+    "Dziurwa14/vendetta-plugins": {
+      "url": "https://github.com/Dziurwa14/vendetta-plugins",
+      "commit": "397a7b62f5848073c5c63b5d72135f0c2723c2f7",
+      "license": "CC0-1.0",
+      "dir": "sources/Dziurwa14__vendetta-plugins"
+    },
+    "shipwr3ckd/FPTE": {
+      "url": "https://github.com/shipwr3ckd/FPTE",
+      "commit": "124d9ac00a78c9c96a88302a830a66f9ae662c94",
+      "license": "CC0-1.0",
+      "dir": "sources/shipwr3ckd__FPTE"
+    },
+    "Rico040/bunny-plugins": {
+      "url": "https://github.com/Rico040/bunny-plugins",
+      "commit": "f7c4710ca024bba0e53b8855aee0290b5d863386",
+      "license": "CC0-1.0",
+      "dir": "sources/Rico040__bunny-plugins"
+    },
+    "Awesomegamergame/bunny-plugins": {
+      "url": "https://github.com/Awesomegamergame/bunny-plugins",
+      "commit": "af6f0f4aa7900ccfa7ac7b592f65b869764e3f52",
+      "license": "MIT",
+      "dir": "sources/Awesomegamergame__bunny-plugins"
+    },
+    "Nrwh1/revenge-plugin": {
+      "url": "https://github.com/Nrwh1/revenge-plugin",
+      "commit": "ca93785e3eda7c824099c2fd5f0fc62648185d68",
+      "license": "CC0-1.0",
+      "dir": "sources/Nrwh1__revenge-plugin"
+    },
+    "carince/VendettaPlugins": {
+      "url": "https://github.com/carince/VendettaPlugins",
+      "commit": "9527b4b34d5e3034ec3df07fe8e01f260fbf0730",
+      "license": "Unlicense",
+      "dir": "sources/carince__VendettaPlugins"
+    },
+    "amsryq/letup": {
+      "url": "https://github.com/amsryq/letup",
+      "commit": "2146f638984c917ea1f6cc89fca677ff3683ca80",
+      "license": "GPL-3.0",
+      "dir": "sources/amsryq__letup"
+    },
+    "kmmiio99o/vd-plugins": {
+      "url": "https://github.com/kmmiio99o/vd-plugins",
+      "commit": "20ed8ac703a43c45557115da504844621fe9c8fb",
+      "license": "GPL-3.0",
+      "dir": "sources/kmmiio99o__vd-plugins"
+    },
+    "Keitalith/vendetta-stuff": {
+      "url": "https://github.com/Keitalith/vendetta-stuff",
+      "commit": "d51819861f9d5d3274a64bdc33226eff380dbca7",
+      "license": "CC0-1.0",
+      "dir": "sources/Keitalith__vendetta-stuff"
+    },
+    "Lioncat6/revenge-plugins": {
+      "url": "https://github.com/Lioncat6/revenge-plugins",
+      "commit": "2e066e4a3134d4cdf69616c54c1e4306c9970af5",
+      "license": "CC0-1.0",
+      "dir": "sources/Lioncat6__revenge-plugins"
+    },
+    "OTKUSteyler/KonoChan-Randomizer-": {
+      "url": "https://github.com/OTKUSteyler/KonoChan-Randomizer-",
+      "commit": "74d96ed1b78175a41db1560302e64073f215a82e",
+      "license": "Unlicense",
+      "dir": "sources/OTKUSteyler__KonoChan-Randomizer-"
+    },
+    "fres621/revenge-plugs": {
+      "url": "https://github.com/fres621/revenge-plugs",
+      "commit": "c2243f23451e55146ccb18dbe96636bcbf7a8c1c",
+      "license": "CC0-1.0",
+      "dir": "sources/fres621__revenge-plugs"
+    },
+    "ApexTeamPL/Apex-Plugins": {
+      "url": "https://github.com/ApexTeamPL/Apex-Plugins",
+      "commit": "eccee43ee902ce2b33e1e869502002f5109724d8",
+      "license": "CC0-1.0",
+      "dir": "sources/ApexTeamPL__Apex-Plugins"
+    },
+    "Cristiandis/clipboardgifsend": {
+      "url": "https://github.com/Cristiandis/clipboardgifsend",
+      "commit": "8228a629a30b72f15b65922bb549a1fd5406987a",
+      "license": "Unlicense",
+      "dir": "sources/Cristiandis__clipboardgifsend"
+    },
+    "Vaiskiainen/testplugins": {
+      "url": "https://github.com/Vaiskiainen/testplugins",
+      "commit": "2c0d88af67adc7c4a1a453aa0c6551bebb767a8c",
+      "license": "CC0-1.0",
+      "dir": "sources/Vaiskiainen__testplugins"
+    },
+    "tralwdwd/plugins": {
+      "url": "https://github.com/tralwdwd/plugins",
+      "commit": "b613801cda33c1b4a7b2577ab44cdefe0bfc26ec",
+      "license": "CC0-1.0",
+      "dir": "sources/tralwdwd__plugins"
+    },
+    "il1ll/RevengePlugins": {
+      "url": "https://github.com/il1ll/RevengePlugins",
+      "commit": "48d497ad86bbfedff656f9414febb572dd2c6eb6",
+      "license": "CC0-1.0",
+      "dir": "sources/il1ll__RevengePlugins"
+    },
+    "Furretar/Override-User-Avatars-Revenge-Plugin": {
+      "url": "https://github.com/Furretar/Override-User-Avatars-Revenge-Plugin",
+      "commit": "cf0e1e3793e21792a2a2bef4232e599ae3486d90",
+      "license": "CC0-1.0",
+      "dir": "sources/Furretar__Override-User-Avatars-Revenge-Plugin"
+    },
+    "OTKUSteyler/GifRoulette": {
+      "url": "https://github.com/OTKUSteyler/GifRoulette",
+      "commit": "edfa64aaccd61f9d1150610a417b8e4f54c58137",
+      "license": "Unlicense",
+      "dir": "sources/OTKUSteyler__GifRoulette"
+    },
+    "TheUnrealZaka/FavouriteAnything": {
+      "url": "https://github.com/TheUnrealZaka/FavouriteAnything",
+      "commit": "1e7d0f5912d1adbfe7253aca17e81f827c752173",
+      "license": "MIT",
+      "dir": "sources/TheUnrealZaka__FavouriteAnything"
+    },
+    "OTKUSteyler/BypassPinPrompt": {
+      "url": "https://github.com/OTKUSteyler/BypassPinPrompt",
+      "commit": "782f300ab3f5914296f1b80149c8130b6fe51273",
+      "license": "Unlicense",
+      "dir": "sources/OTKUSteyler__BypassPinPrompt"
+    },
+    "fshinz/Revenge-Plugins": {
+      "url": "https://github.com/fshinz/Revenge-Plugins",
+      "commit": "857e861a79f08db37dcda476d99c58a97c847e0c",
+      "license": "CC0-1.0",
+      "dir": "sources/fshinz__Revenge-Plugins"
+    },
+    "snipermaster226/Silentdeletee": {
+      "url": "https://github.com/snipermaster226/Silentdeletee",
+      "commit": "d8a93e751dcccc593fcfce4e9b9ef94d941fea1a",
+      "license": "Unlicense",
+      "dir": "sources/snipermaster226__Silentdeletee"
+    },
+    "MINEOGO/revenge-stuff": {
+      "url": "https://github.com/MINEOGO/revenge-stuff",
+      "commit": "2206d5cb8d43902557431ac004891a418dfe4660",
+      "license": "CC0-1.0",
+      "dir": "sources/MINEOGO__revenge-stuff"
+    },
+    "OTKUSteyler/RevokeUserBanner": {
+      "url": "https://github.com/OTKUSteyler/RevokeUserBanner",
+      "commit": "f1e2866c155561c95aafee9b94d34cad65201acc",
+      "license": "Unlicense",
+      "dir": "sources/OTKUSteyler__RevokeUserBanner"
+    },
+    "DebianProgrammer/enmity-plugins": {
+      "url": "https://github.com/DebianProgrammer/enmity-plugins",
+      "commit": "7543dbba99dec69bc03d31dccdccad8dd2fd68df",
+      "license": "GPL-3.0",
+      "dir": "sources/DebianProgrammer__enmity-plugins"
+    },
+    "byeoon/CatgirlsPluginV2": {
+      "url": "https://github.com/byeoon/CatgirlsPluginV2",
+      "commit": "79b51de630bbecfb7b0adb29e9f6f8593c6d527d",
+      "license": "GPL-3.0",
+      "dir": "sources/byeoon__CatgirlsPluginV2"
+    },
+    "byeoon/EmotesPlus": {
+      "url": "https://github.com/byeoon/EmotesPlus",
+      "commit": "93625bb4c4bddaeb51131f0ba5aeef71693cfe61",
+      "license": "GPL-3.0",
+      "dir": "sources/byeoon__EmotesPlus"
+    },
+    "colin273/enmity-plugins": {
+      "url": "https://github.com/colin273/enmity-plugins",
+      "commit": "0d9a2182fcb0560fd1320c373e9586f0fb99872f",
+      "license": "GPL-3.0",
+      "dir": "sources/colin273__enmity-plugins"
+    },
+    "doggybootsy/enmity-plugins": {
+      "url": "https://github.com/doggybootsy/enmity-plugins",
+      "commit": "7d73b32693820ff576c189feaea1dfe7edcbb341",
+      "license": "GPL-3.0",
+      "dir": "sources/doggybootsy__enmity-plugins"
+    },
+    "hauntii/EnPlugins": {
+      "url": "https://github.com/hauntii/EnPlugins",
+      "commit": "fb0db67fdb90c6a52579f15e8d015d0de7b743b5",
+      "license": "GPL-3.0",
+      "dir": "sources/hauntii__EnPlugins"
+    },
+    "iCrazeiOS/Enmity-Plugins": {
+      "url": "https://github.com/iCrazeiOS/Enmity-Plugins",
+      "commit": "718b9c3efddd0b947860fc4f976d84512c163057",
+      "license": "GPL-3.0",
+      "dir": "sources/iCrazeiOS__Enmity-Plugins"
+    },
+    "m4fn3/SecretMessage": {
+      "url": "https://github.com/m4fn3/SecretMessage",
+      "commit": "f474bd6d82c25ddb2c85c4876e936813b7d08c1c",
+      "license": "GPL-3.0",
+      "dir": "sources/m4fn3__SecretMessage"
+    },
+    "ssense1337/enmity-plugins": {
+      "url": "https://github.com/ssense1337/enmity-plugins",
+      "commit": "5c4e888cb8007a84a74b74ccf9272d7aca135aa6",
+      "license": "GPL-3.0",
+      "dir": "sources/ssense1337__enmity-plugins"
+    }
+  },
+  "plugins": [
+    {
+      "id": "vendetta:wolfplugs/globalbadges",
+      "flavor": "vendetta",
+      "repo": "WolfPlugs/vendetta-plugins",
+      "path": "plugins/globalBadges",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://plugins.obamabot.me/vendetta-plugins/globalBadges/"
+    },
+    {
+      "id": "vendetta:aeongdesu/slowmodeextended",
+      "flavor": "vendetta",
+      "repo": "aeongdesu/vdplugins",
+      "path": "plugins/SlowmodeExtended",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://aeongdesu.github.io/vdplugins/SlowmodeExtended/"
+    },
+    {
+      "id": "vendetta:bwlok/viewraw",
+      "flavor": "vendetta",
+      "repo": "bwlok/revenge-plugins",
+      "path": "plugins/ViewRaw",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://bwlok.github.io/revenge-plugins/ViewRaw"
+    },
+    {
+      "id": "vendetta:redstonekasi/devkitplus",
+      "flavor": "vendetta",
+      "repo": "redstonekasi/vendetta-plugins",
+      "path": "plugins/devkitplus",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://redstonekasi.github.io/vendetta-plugins/devkitplus/"
+    },
+    {
+      "id": "vendetta:meqativ/gettoken",
+      "flavor": "vendetta",
+      "repo": "meqativ/dumsane",
+      "path": "plugins/GetToken",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://meqativ.github.io/dumsane/GetToken/"
+    },
+    {
+      "id": "vendetta:redstonekasi/no-typing",
+      "flavor": "vendetta",
+      "repo": "redstonekasi/vendetta-plugins",
+      "path": "plugins/no-typing",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://redstonekasi.github.io/vendetta-plugins/no-typing/"
+    },
+    {
+      "id": "vendetta:martinz64/nocompression",
+      "flavor": "vendetta",
+      "repo": "Martinz64/vendetta-plugins",
+      "path": "plugins/NoCompression",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://martinz64.github.io/vendetta-plugins/NoCompression/"
+    },
+    {
+      "id": "vendetta:martinz64/filesizeonpicker",
+      "flavor": "vendetta",
+      "repo": "Martinz64/vendetta-plugins",
+      "path": "plugins/FileSizeOnPicker",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://martinz64.github.io/vendetta-plugins/FileSizeOnPicker/"
+    },
+    {
+      "id": "vendetta:shipwr3ckd/customvoicemessages",
+      "flavor": "vendetta",
+      "repo": "shipwr3ckd/revengeplugin",
+      "path": "plugins/customVoiceMessages",
+      "status": "warning",
+      "warning": "Only works on mobile, it'll be shown as a file on PC.",
+      "upstreamInstallUrl": "https://shipwr3ckd.github.io/revengeplugin/customVoiceMessages/"
+    },
+    {
+      "id": "vendetta:redstonekasi/no-embed-copy",
+      "flavor": "vendetta",
+      "repo": "redstonekasi/vendetta-plugins",
+      "path": "plugins/no-embed-copy",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://redstonekasi.github.io/vendetta-plugins/no-embed-copy/"
+    },
+    {
+      "id": "vendetta:meqativ/nobandwidthkick",
+      "flavor": "vendetta",
+      "repo": "meqativ/dumsane",
+      "path": "plugins/NoBandwidthKick",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://meqativ.github.io/dumsane/NoBandwidthKick/"
+    },
+    {
+      "id": "vendetta:fres621/alwaystrust",
+      "flavor": "vendetta",
+      "repo": "fres621/vendetta-plugins",
+      "path": "plugins/AlwaysTrust",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://fres621.github.io/vendetta-plugins/AlwaysTrust/"
+    },
+    {
+      "id": "vendetta:aeongdesu/clientthemes",
+      "flavor": "vendetta",
+      "repo": "aeongdesu/vdplugins",
+      "path": "plugins/ClientThemes",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://aeongdesu.github.io/vdplugins/ClientThemes/"
+    },
+    {
+      "id": "vendetta:fres621/spotifypreview",
+      "flavor": "vendetta",
+      "repo": "fres621/vendetta-plugins",
+      "path": "plugins/SpotifyPreview",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://fres621.github.io/vendetta-plugins/SpotifyPreview/"
+    },
+    {
+      "id": "vendetta:aliernfrog/freestickers",
+      "flavor": "vendetta",
+      "repo": "aliernfrog/vd-plugins",
+      "path": "plugins/FreeStickers",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://aliernfrog.github.io/vd-plugins/FreeStickers/"
+    },
+    {
+      "id": "vendetta:fres621/altmediapicker",
+      "flavor": "vendetta",
+      "repo": "fres621/vendetta-plugins",
+      "path": "plugins/AltMediaPicker",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://fres621.github.io/vendetta-plugins/AltMediaPicker/"
+    },
+    {
+      "id": "vendetta:nexpid/cloud-sync",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/cloud-sync",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/cloud-sync/"
+    },
+    {
+      "id": "vendetta:nexpid/plugin-browser",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/plugin-browser",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/plugin-browser/"
+    },
+    {
+      "id": "vendetta:nexpid/monet-theme",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/monet-theme",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/monet-theme/"
+    },
+    {
+      "id": "vendetta:nexpid/char-counter",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/char-counter",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/char-counter/"
+    },
+    {
+      "id": "vendetta:dziurwa14/freecons",
+      "flavor": "vendetta",
+      "repo": "Dziurwa14/vendetta-plugins",
+      "path": "plugins/Freecons",
+      "status": "warning",
+      "warning": "If it doesn’t work after restarting the app, force stop & clear cache (might not work on first try)",
+      "upstreamInstallUrl": "https://dziurwa14.github.io/vendetta-plugins/Freecons/"
+    },
+    {
+      "id": "vendetta:nexpid/clean-urls",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/clean-urls",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/clean-urls/"
+    },
+    {
+      "id": "vendetta:nexpid/song-spotlight",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/song-spotlight",
+      "status": "warning",
+      "warning": "can't scroll inside scrollviews",
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/song-spotlight/"
+    },
+    {
+      "id": "vendetta:shipwr3ckd/anonymousfilenames",
+      "flavor": "vendetta",
+      "repo": "shipwr3ckd/revengeplugin",
+      "path": "plugins/AnonymousFileNames",
+      "status": "warning",
+      "warning": "Prevents sending files in slash commands.",
+      "upstreamInstallUrl": "https://shipwr3ckd.github.io/revengeplugin/AnonymousFileNames/"
+    },
+    {
+      "id": "vendetta:nexpid/tenor-gif-fix",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/tenor-gif-fix",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/tenor-gif-fix/"
+    },
+    {
+      "id": "vendetta:nexpid/use-system-emoji",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/use-system-emoji",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/use-system-emoji/"
+    },
+    {
+      "id": "vendetta:nexpid/message-preview",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/message-preview",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/message-preview/"
+    },
+    {
+      "id": "vendetta:shipwr3ckd/fakeprofilethemesandeffects",
+      "flavor": "vendetta",
+      "repo": "shipwr3ckd/FPTE",
+      "path": "plugins/FakeProfileThemesAndEffects",
+      "status": "warning",
+      "warning": "Causes a crash when editing profile.",
+      "upstreamInstallUrl": "https://shipwr3ckd.github.io/FPTE/FakeProfileThemesAndEffects/"
+    },
+    {
+      "id": "vendetta:rico040/bf-eval",
+      "flavor": "vendetta",
+      "repo": "Rico040/bunny-plugins",
+      "path": "plugins/bf-eval",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://rico040.github.io/bunny-plugins/bf-eval/"
+    },
+    {
+      "id": "vendetta:rico040/freemoji",
+      "flavor": "vendetta",
+      "repo": "Rico040/bunny-plugins",
+      "path": "plugins/freemoji",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://rico040.github.io/bunny-plugins/freemoji/"
+    },
+    {
+      "id": "vendetta:awesomegamergame/dashless",
+      "flavor": "vendetta",
+      "repo": "Awesomegamergame/bunny-plugins",
+      "path": "plugins/dashless",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://awesomegamergame.github.io/bunny-plugins/dashless/"
+    },
+    {
+      "id": "vendetta:rico040/dislate",
+      "flavor": "vendetta",
+      "repo": "Rico040/bunny-plugins",
+      "path": "plugins/dislate",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://rico040.github.io/bunny-plugins/dislate/"
+    },
+    {
+      "id": "vendetta:aliernfrog/stealmoji",
+      "flavor": "vendetta",
+      "repo": "aliernfrog/vd-plugins",
+      "path": "plugins/Stealmoji",
+      "status": "warning",
+      "warning": "May cause crashes when viewing reactions.",
+      "upstreamInstallUrl": "https://aliernfrog.github.io/vd-plugins/Stealmoji/"
+    },
+    {
+      "id": "vendetta:rico040/userbg",
+      "flavor": "vendetta",
+      "repo": "Rico040/bunny-plugins",
+      "path": "plugins/userbg",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://rico040.github.io/bunny-plugins/userbg/"
+    },
+    {
+      "id": "vendetta:nexpid/kiryu-facecam",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/kiryu-facecam",
+      "status": "warning",
+      "warning": "May cause crashes when sending a message.",
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/kiryu-facecam/"
+    },
+    {
+      "id": "vendetta:nexpid/nexxutils",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/nexxutils",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/nexxutils/"
+    },
+    {
+      "id": "vendetta:nexpid/themes-plus",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/themes-plus",
+      "status": "warning",
+      "warning": "Iconpacks don't work.",
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/themes-plus/"
+    },
+    {
+      "id": "vendetta:nrwh1/audiofix",
+      "flavor": "vendetta",
+      "repo": "Nrwh1/revenge-plugin",
+      "path": "audiofix",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://raw.githubusercontent.com/NarwhalKid/revenge-plugin/refs/heads/master/audiofix/",
+      "note": "plugins/audiofix source references an undefined RNReactNative; the repo also commits the deployed build at audiofix/, which is used instead."
+    },
+    {
+      "id": "vendetta:nrwh1/spotifyfix",
+      "flavor": "vendetta",
+      "repo": "Nrwh1/revenge-plugin",
+      "path": "spotifyfix",
+      "status": "warning",
+      "warning": "Spotify activity no longer shows up on your profile.",
+      "upstreamInstallUrl": "https://raw.githubusercontent.com/NarwhalKid/revenge-plugin/refs/heads/master/spotifyfix/"
+    },
+    {
+      "id": "vendetta:carince/mutenewguilds",
+      "flavor": "vendetta",
+      "repo": "carince/VendettaPlugins",
+      "path": "plugins/muteNewGuilds",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://vd-plugins.github.io/proxy/carince.github.io/VendettaPlugins/muteNewGuilds/"
+    },
+    {
+      "id": "vendetta:amsryq/moreconfirm",
+      "flavor": "vendetta",
+      "repo": "amsryq/letup",
+      "path": "plugins/MoreConfirm",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://vd-plugins.github.io/proxy/amsyarasyiq.github.io/letup/MoreConfirm/"
+    },
+    {
+      "id": "vendetta:amsryq/noautoreplymention",
+      "flavor": "vendetta",
+      "repo": "amsryq/letup",
+      "path": "plugins/NoAutoReplyMention",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://vd-plugins.github.io/proxy/amsyarasyiq.github.io/letup/NoAutoReplyMention/"
+    },
+    {
+      "id": "vendetta:amsryq/noidle",
+      "flavor": "vendetta",
+      "repo": "amsryq/letup",
+      "path": "plugins/NoIdle",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://vd-plugins.github.io/proxy/amsyarasyiq.github.io/letup/NoIdle/"
+    },
+    {
+      "id": "vendetta:kmmiio99o/moyai",
+      "flavor": "vendetta",
+      "repo": "kmmiio99o/vd-plugins",
+      "path": "plugins/Moyai",
+      "status": "warning",
+      "warning": "- The plugin WON'T work if you use DND mode on your phone.\n- The plugin might stop working if you use any type of message loggers.",
+      "upstreamInstallUrl": "https://rksv.kmmiio99o.dev/Moyai"
+    },
+    {
+      "id": "vendetta:nexpid/plugin-embeds",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/plugin-embeds",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/plugin-embeds/"
+    },
+    {
+      "id": "vendetta:keitalith/addonlist",
+      "flavor": "vendetta",
+      "repo": "Keitalith/vendetta-stuff",
+      "path": "plugins/src/addonList",
+      "status": "warning",
+      "warning": "Basically all plugins that send messages using slash commands are broken in 294+ (ephemeral messages still work)\n\nUse the Commands plugin instead.",
+      "upstreamInstallUrl": "https://vd-plugins.github.io/proxy/kitomanari.github.io/vendetta-stuff/addonList/"
+    },
+    {
+      "id": "vendetta:nexpid/userpfp",
+      "flavor": "vendetta",
+      "repo": "nexpid/RevengePlugins",
+      "path": "src/plugins/userpfp",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.nexpid.xyz/userpfp/"
+    },
+    {
+      "id": "vendetta:rico040/login-sound",
+      "flavor": "vendetta",
+      "repo": "Rico040/bunny-plugins",
+      "path": "plugins/login-sound",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://rico040.github.io/bunny-plugins/login-sound/"
+    },
+    {
+      "id": "vendetta:rico040/action-sheet-finder",
+      "flavor": "vendetta",
+      "repo": "Rico040/bunny-plugins",
+      "path": "plugins/action-sheet-finder",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://rico040.github.io/bunny-plugins/action-sheet-finder/"
+    },
+    {
+      "id": "vendetta:lioncat6/hidden-channels",
+      "flavor": "vendetta",
+      "repo": "Lioncat6/revenge-plugins",
+      "path": "plugins/hidden-channels",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://lioncat6.github.io/revenge-plugins/hidden-channels/"
+    },
+    {
+      "id": "vendetta:shipwr3ckd/hideblockedandignoredmessages",
+      "flavor": "vendetta",
+      "repo": "shipwr3ckd/revengeplugin",
+      "path": "plugins/HideBlockedAndIgnoredMessages",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://shipwr3ckd.github.io/revengeplugin/HideBlockedAndIgnoredMessages/"
+    },
+    {
+      "id": "vendetta:shipwr3ckd/copybios",
+      "flavor": "vendetta",
+      "repo": "shipwr3ckd/revengeplugin",
+      "path": "plugins/CopyBios",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://shipwr3ckd.github.io/revengeplugin/CopyBios/"
+    },
+    {
+      "id": "vendetta:otkusteyler/konochan-randomizer-",
+      "flavor": "vendetta",
+      "repo": "OTKUSteyler/KonoChan-Randomizer-",
+      "path": ".",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://otkusteyler.github.io/KonoChan-Randomizer-/"
+    },
+    {
+      "id": "vendetta:shipwr3ckd/catbox.moe",
+      "flavor": "vendetta",
+      "repo": "shipwr3ckd/revengeplugin",
+      "path": "plugins/catbox.moe",
+      "status": "warning",
+      "warning": "Direct sending doesn’t work, you’ll need to enable either 'Copy link to clipboard' or 'Insert into the message'.",
+      "upstreamInstallUrl": "https://shipwr3ckd.github.io/revengeplugin/catbox.moe/"
+    },
+    {
+      "id": "vendetta:fres621/filecontentpreview",
+      "flavor": "vendetta",
+      "repo": "fres621/revenge-plugs",
+      "path": "plugins/FileContentPreview",
+      "status": "warning",
+      "warning": "Opening a preview in a thread may not work if you previously opened one in a channel. You'll need to restart the app.",
+      "upstreamInstallUrl": "https://fres621.github.io/revenge-plugs/FileContentPreview/"
+    },
+    {
+      "id": "vendetta:shipwr3ckd/richpresence",
+      "flavor": "vendetta",
+      "repo": "shipwr3ckd/revengeplugin",
+      "path": "plugins/RichPresence",
+      "status": "warning",
+      "warning": "- RPC buttons don't show up to client side on discord mobile.\n\n- Activity type=4(custom) doesn't work as discord handles it differently and not like other activity types. So don't use it.",
+      "upstreamInstallUrl": "https://shipwr3ckd.github.io/revengeplugin/RichPresence/"
+    },
+    {
+      "id": "vendetta:shipwr3ckd/silentmessages",
+      "flavor": "vendetta",
+      "repo": "shipwr3ckd/revengeplugin",
+      "path": "plugins/silentmessages",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://shipwr3ckd.github.io/revengeplugin/silentmessages/"
+    },
+    {
+      "id": "vendetta:shipwr3ckd/nsfw-blur",
+      "flavor": "vendetta",
+      "repo": "shipwr3ckd/revengeplugin",
+      "path": "plugins/nsfw-blur",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://shipwr3ckd.github.io/revengeplugin/nsfw-blur"
+    },
+    {
+      "id": "vendetta:apexteampl/readall",
+      "flavor": "vendetta",
+      "repo": "ApexTeamPL/Apex-Plugins",
+      "path": "plugins/ReadAll",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://apexteampl.github.io/Apex-Plugins/ReadAll"
+    },
+    {
+      "id": "vendetta:apexteampl/nsfwbypass",
+      "flavor": "vendetta",
+      "repo": "ApexTeamPL/Apex-Plugins",
+      "path": "plugins/nsfwbypass",
+      "status": "warning",
+      "warning": "The UK bypass (age verification) doesn’t work anymore (NSFW channel content doesn’t load)\n\nUse a vpn to a country with some freedom",
+      "upstreamInstallUrl": "https://apexteampl.github.io/Apex-Plugins/nsfwbypass"
+    },
+    {
+      "id": "vendetta:apexteampl/morealts",
+      "flavor": "vendetta",
+      "repo": "ApexTeamPL/Apex-Plugins",
+      "path": "plugins/MoreAlts",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://apexteampl.github.io/Apex-Plugins/MoreAlts/"
+    },
+    {
+      "id": "vendetta:kmmiio99o/commands",
+      "flavor": "vendetta",
+      "repo": "kmmiio99o/vd-plugins",
+      "path": "plugins/Commands",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://kmmiio99o.github.io/vd-plugins/Commands"
+    },
+    {
+      "id": "vendetta:kmmiio99o/multi-scrobbler",
+      "flavor": "vendetta",
+      "repo": "kmmiio99o/vd-plugins",
+      "path": "plugins/multi-scrobbler",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://kmmiio99o.github.io/vd-plugins/multi-scrobbler/"
+    },
+    {
+      "id": "vendetta:bwlok/gifcategories",
+      "flavor": "vendetta",
+      "repo": "bwlok/revenge-plugins",
+      "path": "plugins/GifCategories",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.bwlok.dev/GifCategories/"
+    },
+    {
+      "id": "vendetta:cristiandis/clipboardgifsend",
+      "flavor": "vendetta",
+      "repo": "Cristiandis/clipboardgifsend",
+      "path": ".",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://cristiandis.github.io/clipboardgifsend"
+    },
+    {
+      "id": "vendetta:vaiskiainen/christmascounter",
+      "flavor": "vendetta",
+      "repo": "Vaiskiainen/testplugins",
+      "path": "plugins/christmasCounter",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://vaiskiainen.github.io/testplugins/christmasCounter/"
+    },
+    {
+      "id": "vendetta:janisslsm/reviewdb",
+      "flavor": "vendetta",
+      "repo": "janisslsm/vdplugins",
+      "path": "plugins/ReviewDB",
+      "status": "warning",
+      "warning": "Server reviews crash.",
+      "upstreamInstallUrl": "https://janisslsm.github.io/vdplugins/ReviewDB"
+    },
+    {
+      "id": "vendetta:tralwdwd/bettereval",
+      "flavor": "vendetta",
+      "repo": "tralwdwd/plugins",
+      "path": "plugins/bettereval",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://tralwdwd.github.io/plugins/bettereval"
+    },
+    {
+      "id": "vendetta:il1ll/silentleave",
+      "flavor": "vendetta",
+      "repo": "il1ll/RevengePlugins",
+      "path": "plugins/SilentLeave",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://il1ll.github.io/RevengePlugins/SilentLeave/"
+    },
+    {
+      "id": "vendetta:il1ll/hypesquadswitcher",
+      "flavor": "vendetta",
+      "repo": "il1ll/RevengePlugins",
+      "path": "plugins/HypeSquadSwitcher",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://il1ll.github.io/RevengePlugins/HypeSquadSwitcher/"
+    },
+    {
+      "id": "vendetta:furretar/override-user-avatars",
+      "flavor": "vendetta",
+      "repo": "Furretar/Override-User-Avatars-Revenge-Plugin",
+      "path": "plugins/Override-User-Avatars",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://furretar.github.io/Override-User-Avatars-Revenge-Plugin/Override-User-Avatars"
+    },
+    {
+      "id": "vendetta:otkusteyler/gifroulette",
+      "flavor": "vendetta",
+      "repo": "OTKUSteyler/GifRoulette",
+      "path": ".",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://otkusteyler.github.io/GifRoulette/"
+    },
+    {
+      "id": "vendetta:vaiskiainen/animalcommands",
+      "flavor": "vendetta",
+      "repo": "Vaiskiainen/testplugins",
+      "path": "plugins/animalCommands",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://vaiskiainen.github.io/testplugins/animalCommands/"
+    },
+    {
+      "id": "vendetta:theunrealzaka/favouriteanything",
+      "flavor": "vendetta",
+      "repo": "TheUnrealZaka/FavouriteAnything",
+      "path": "plugins/favouriteanything",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://theunrealzaka.github.io/FavouriteAnything/favouriteanything"
+    },
+    {
+      "id": "vendetta:tralwdwd/jumptotop",
+      "flavor": "vendetta",
+      "repo": "tralwdwd/plugins",
+      "path": "plugins/JumpToTop",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://tralwdwd.github.io/plugins/JumpToTop"
+    },
+    {
+      "id": "vendetta:otkusteyler/bypasspinprompt",
+      "flavor": "vendetta",
+      "repo": "OTKUSteyler/BypassPinPrompt",
+      "path": ".",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://otkusteyler.github.io/BypassPinPrompt/"
+    },
+    {
+      "id": "vendetta:fshinz/guildlurk",
+      "flavor": "vendetta",
+      "repo": "fshinz/Revenge-Plugins",
+      "path": "plugins/GuildLurk",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://fshinz.github.io/Revenge-Plugins/GuildLurk"
+    },
+    {
+      "id": "vendetta:fshinz/infocommands",
+      "flavor": "vendetta",
+      "repo": "fshinz/Revenge-Plugins",
+      "path": "plugins/InfoCommands",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://fshinz.github.io/Revenge-Plugins/InfoCommands"
+    },
+    {
+      "id": "vendetta:fshinz/validuser",
+      "flavor": "vendetta",
+      "repo": "fshinz/Revenge-Plugins",
+      "path": "plugins/ValidUser",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://fshinz.github.io/Revenge-Plugins/ValidUser"
+    },
+    {
+      "id": "vendetta:snipermaster226/silentdeletee",
+      "flavor": "vendetta",
+      "repo": "snipermaster226/Silentdeletee",
+      "path": ".",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://snipermaster226.github.io/Silentdeletee/"
+    },
+    {
+      "id": "vendetta:meqativ/uwuify",
+      "flavor": "vendetta",
+      "repo": "meqativ/dumsane",
+      "path": "plugins/UwUify",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://meqativ.github.io/dumsane/UwUify"
+    },
+    {
+      "id": "vendetta:kmmiio99o/chatboxavatar",
+      "flavor": "vendetta",
+      "repo": "kmmiio99o/vd-plugins",
+      "path": "plugins/ChatboxAvatar",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://rksv.kmmiio99o.dev/ChatboxAvatar"
+    },
+    {
+      "id": "vendetta:mineogo/piratifier",
+      "flavor": "vendetta",
+      "repo": "MINEOGO/revenge-stuff",
+      "path": "plugins/piratifier",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://mineogo.github.io/revenge-stuff/piratifier/"
+    },
+    {
+      "id": "vendetta:aliernfrog/bettercommandpopout",
+      "flavor": "vendetta",
+      "repo": "aliernfrog/vd-plugins",
+      "path": "plugins/BetterCommandPopout",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://aliernfrog.github.io/vd-plugins/BetterCommandPopout/"
+    },
+    {
+      "id": "vendetta:fshinz/nomentioncount",
+      "flavor": "vendetta",
+      "repo": "fshinz/Revenge-Plugins",
+      "path": "plugins/NoMentionCount",
+      "status": "warning",
+      "warning": "Will not work if the server is in a folder.",
+      "upstreamInstallUrl": "https://fshinz.github.io/Revenge-Plugins/NoMentionCount"
+    },
+    {
+      "id": "vendetta:il1ll/keywordtracker",
+      "flavor": "vendetta",
+      "repo": "il1ll/RevengePlugins",
+      "path": "plugins/KeywordTracker",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://il1ll.github.io/RevengePlugins/KeywordTracker/"
+    },
+    {
+      "id": "vendetta:otkusteyler/revokeuserbanner",
+      "flavor": "vendetta",
+      "repo": "OTKUSteyler/RevokeUserBanner",
+      "path": ".",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://otkusteyler.github.io/RevokeUserBanner/"
+    },
+    {
+      "id": "vendetta:tralwdwd/searchactionsheet",
+      "flavor": "vendetta",
+      "repo": "tralwdwd/plugins",
+      "path": "plugins/SearchActionSheet",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://tralwdwd.github.io/plugins/SearchActionSheet"
+    },
+    {
+      "id": "vendetta:kmmiio99o/geasturesplus",
+      "flavor": "vendetta",
+      "repo": "kmmiio99o/vd-plugins",
+      "path": "plugins/GeasturesPlus",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://rksv.kmmiio99o.dev/GeasturesPlus"
+    },
+    {
+      "id": "enmity:debianprogrammer/chataliases",
+      "flavor": "enmity",
+      "repo": "DebianProgrammer/enmity-plugins",
+      "path": "ChatAliases",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:byeoon/catgirlspluginv2",
+      "flavor": "enmity",
+      "repo": "byeoon/CatgirlsPluginV2",
+      "path": ".",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:byeoon/emotesplus",
+      "flavor": "enmity",
+      "repo": "byeoon/EmotesPlus",
+      "path": ".",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:colin273/createwebhooks",
+      "flavor": "enmity",
+      "repo": "colin273/enmity-plugins",
+      "path": "CreateWebhooks",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:doggybootsy/friends-since",
+      "flavor": "enmity",
+      "repo": "doggybootsy/enmity-plugins",
+      "path": "packages/friends-since",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:doggybootsy/rdt",
+      "flavor": "enmity",
+      "repo": "doggybootsy/enmity-plugins",
+      "path": "packages/rdt",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:hauntii/getthatrory",
+      "flavor": "enmity",
+      "repo": "hauntii/EnPlugins",
+      "path": "GetThatRory/Source",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:hauntii/unfurl",
+      "flavor": "enmity",
+      "repo": "hauntii/EnPlugins",
+      "path": "Unfurl/Source",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:icrazeios/getpfp",
+      "flavor": "enmity",
+      "repo": "iCrazeiOS/Enmity-Plugins",
+      "path": "Plugins/GetPFP",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:icrazeios/notracking",
+      "flavor": "enmity",
+      "repo": "iCrazeiOS/Enmity-Plugins",
+      "path": "Plugins/NoTracking",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    },
+    {
+      "id": "enmity:m4fn3/secretmessage",
+      "flavor": "enmity",
+      "repo": "m4fn3/SecretMessage",
+      "path": ".",
+      "status": "legacy",
+      "warning": null,
+      "upstreamInstallUrl": null
+    }
+  ],
+  "excluded": [
+    {
+      "id": "enmity:m4fn3/k2gelocker",
+      "reason": "Requires the K2genmity native tweak for biometric auth."
+    },
+    {
+      "id": "enmity:m4fn3/addonmanager",
+      "reason": "An Enmity addon manager; overlaps with Discordia's own plugin manager."
+    }
+  ],
+  "removed": [
+    {
+      "id": "enmity:colin273/freemoji",
+      "replacedBy": "vendetta:rico040/freemoji",
+      "reason": "Same feature; the Vendetta version adds hyperlink and size options."
+    },
+    {
+      "id": "enmity:ssense1337/dashless",
+      "replacedBy": "vendetta:awesomegamergame/dashless",
+      "reason": "Identical feature."
+    },
+    {
+      "id": "enmity:aeongdesu/viewraw",
+      "replacedBy": "vendetta:bwlok/viewraw",
+      "reason": "Identical feature."
+    },
+    {
+      "id": "enmity:stupiditydb/enmityplugin",
+      "replacedBy": "vendetta:janisslsm/reviewdb",
+      "reason": "Older ReviewDB client."
+    },
+    {
+      "id": "enmity:byeoon/actionsheetfinder",
+      "replacedBy": "vendetta:rico040/action-sheet-finder",
+      "reason": "Identical feature."
+    },
+    {
+      "id": "enmity:acquitelol/dislate",
+      "replacedBy": "vendetta:rico040/dislate",
+      "reason": "Dislate Lite has the same translators plus immersive (original + translation) mode."
+    },
+    {
+      "id": "enmity:m4fn3/fakesticker",
+      "replacedBy": "vendetta:aliernfrog/freestickers",
+      "reason": "FreeStickers adds APNG conversion, hyperlink and size options."
+    },
+    {
+      "id": "enmity:debianprogrammer/fakestickerfixed",
+      "replacedBy": "vendetta:aliernfrog/freestickers",
+      "reason": "Same as FakeSticker."
+    },
+    {
+      "id": "enmity:m4fn3/fixconnecting",
+      "replacedBy": null,
+      "reason": "Worked around a Discord connection bug that no longer exists."
+    },
+    {
+      "id": "enmity:debianprogrammer/fixconnectingfixed",
+      "replacedBy": null,
+      "reason": "Same as FixConnecting."
+    },
+    {
+      "id": "enmity:doggybootsy/silent-typing",
+      "replacedBy": "vendetta:redstonekasi/no-typing",
+      "reason": "Identical feature."
+    },
+    {
+      "id": "enmity:colin273/noreplymention",
+      "replacedBy": "vendetta:amsryq/noautoreplymention",
+      "reason": "NoAutoReplyMention adds per-user exemptions and a blacklist mode."
+    },
+    {
+      "id": "vendetta:vaiskiainen/removebanner",
+      "replacedBy": "vendetta:otkusteyler/revokeuserbanner",
+      "reason": "RemoveUserBanner adds friend/self exemptions and custom-banner handling."
+    },
+    {
+      "id": "enmity:ssense1337/hidegiftbutton",
+      "replacedBy": "enmity:serstars/hidechatbuttons",
+      "reason": "HideChatButtons has a gift button toggle plus voice, thread and app launcher."
+    },
+    {
+      "id": "enmity:ssense1337/accountswitcher",
+      "replacedBy": "vendetta:apexteampl/morealts",
+      "reason": "More Alts adds account management and unlocks the native switcher."
+    },
+    {
+      "id": "vendetta:kmmiio99o/last.fm",
+      "replacedBy": "vendetta:kmmiio99o/multi-scrobbler",
+      "reason": "Multi Scrobbler (same author) supports Last.fm, ListenBrainz and Libre.fm."
+    },
+    {
+      "id": "vendetta:purple-eyez/plugins-list",
+      "replacedBy": null,
+      "reason": "Shows the same community list as Discordia's Plugin Library."
+    },
+    {
+      "id": "enmity:m4fn3/freenitrotheme",
+      "replacedBy": "vendetta:aeongdesu/clientthemes",
+      "reason": "ClientThemes is a port of this plugin."
+    },
+    {
+      "id": "enmity:debianprogrammer/confirmcalls",
+      "replacedBy": "vendetta:amsryq/moreconfirm",
+      "reason": "MoreConfirm confirms calls (and more)."
+    },
+    {
+      "id": "vendetta:angelix1/antied",
+      "replacedBy": "discordia:message-logger",
+      "reason": "Merged into Discordia's Message Logger (custom colors, ignore lists, edit history)."
+    },
+    {
+      "id": "vendetta:angelix1/antiedzero",
+      "replacedBy": "discordia:message-logger",
+      "reason": "Merged into Discordia's Message Logger."
+    },
+    {
+      "id": "vendetta:redstonekasi/message-logger",
+      "replacedBy": "discordia:message-logger",
+      "reason": "Merged into Discordia's Message Logger (PluralKit filtering, row highlighting)."
+    },
+    {
+      "id": "vendetta:meqativ/nodelete",
+      "replacedBy": "discordia:message-logger",
+      "reason": "Merged into Discordia's Message Logger (deletion timestamps, ignore lists)."
+    },
+    {
+      "id": "enmity:m4fn3/trackedit",
+      "replacedBy": "discordia:message-logger",
+      "reason": "Merged into Discordia's Message Logger (colored edit history)."
+    },
+    {
+      "id": "vendetta:martinz64/platformindicators",
+      "replacedBy": "discordia:platform-indicators",
+      "reason": "Rebuilt as a Discordia plugin: the original identified components by names Discord now minifies. Same surfaces, plus live updates."
+    },
+    {
+      "id": "enmity:m4fn3/betterstatusindicator",
+      "replacedBy": "discordia:platform-indicators",
+      "reason": "Per-status custom colors merged into Discordia's Platform Indicators."
+    },
+    {
+      "id": "vendetta:angelix1/radialstatus",
+      "replacedBy": "discordia:radial-status",
+      "reason": "Rebuilt on Discord's shared Avatar component; the original matched avatars by exact pixel sizes that changed."
+    },
+    {
+      "id": "enmity:serstars/hidemessageshortcuts",
+      "replacedBy": null,
+      "reason": "Discord removed the message shortcut feature this plugin hid (none of its shortcut functions exist in 348)."
+    },
+    {
+      "id": "enmity:acquitelol/enmity-utility-patches",
+      "replacedBy": null,
+      "reason": "Patched Enmity-era UI (BadgableTabBar, media grid sizing) that no longer exists."
+    },
+    {
+      "id": "enmity:acquitelol/enmity-you",
+      "replacedBy": null,
+      "reason": "Added Enmity's own settings to the You tab; Discordia has its own settings section."
+    },
+    {
+      "id": "enmity:ssense1337/filepicker",
+      "replacedBy": null,
+      "reason": "Enabled an experimental file picker; current Discord attaches files natively."
+    },
+    {
+      "id": "enmity:acquitelol/enmity-pronoun-db",
+      "replacedBy": null,
+      "reason": "Discord now shows pronouns natively, and the profile components it patched were replaced."
+    },
+    {
+      "id": "enmity:serstars/hidechatbuttons",
+      "replacedBy": "discordia:hide-chat-buttons",
+      "reason": "Rebuilt as a Discordia plugin for the current chat input (the class it patched was removed)."
+    },
+    {
+      "id": "enmity:hauntii/splasher",
+      "replacedBy": "vendetta:rico040/userbg",
+      "reason": "Relied on a banner prop current Discord no longer uses; UserBG provides custom banners."
+    },
+    {
+      "id": "enmity:ssense1337/showallactivities",
+      "replacedBy": null,
+      "reason": "Current Discord profiles have an Activity tab listing every activity; the component this patched now chooses its activity internally."
+    },
+    {
+      "id": "vendetta:janisslsm/hidecallbuttons",
+      "replacedBy": "discordia:hide-chat-buttons",
+      "reason": "Merged into Hide Chat Buttons: Discord now renders call buttons with icon components, so they are matched by PhoneCallIcon/VideoIcon."
+    }
+  ]
+}

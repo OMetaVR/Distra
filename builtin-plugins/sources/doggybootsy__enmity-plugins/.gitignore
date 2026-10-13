@@ -1,0 +1,9 @@
+# dist / plugins
+dist/*
+!dist/friends-since.js
+!dist/silent-typing.js
+
+logs/*
+
+node_modules/
+.DS_Store

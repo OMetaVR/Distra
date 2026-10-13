@@ -1,0 +1,14 @@
+{
+    "name": "NoMentionCount",
+    "description": "Hide mention counts for specific channels and servers.",
+    "authors": [
+        {
+            "name": "fshin",
+            "id": "1381008677301129257"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_notif_off"
+    }
+}

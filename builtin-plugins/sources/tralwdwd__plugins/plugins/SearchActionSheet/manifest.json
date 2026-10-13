@@ -1,0 +1,14 @@
+{
+    "name": "SearchActionSheet",
+    "description": "Makes search results open the action sheet on long press.",
+    "authors": [
+        {
+            "name": "tralwdwdd",
+            "id": "1278723517436788897"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "icon-search"
+    }
+}

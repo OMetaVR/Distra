@@ -1,0 +1,14 @@
+{
+  "name": "Platform Spoofer",
+  "description": "Spoof your online platform status to appear on Desktop, Web, Meta Quest, or Console.",
+  "authors": [
+    {
+      "name": "fshin",
+      "id": "1381008677301129257"
+    }
+  ],
+  "main": "src/index.tsx",
+  "vendetta": {
+    "icon": "UserPlatformIcon"
+  }
+}

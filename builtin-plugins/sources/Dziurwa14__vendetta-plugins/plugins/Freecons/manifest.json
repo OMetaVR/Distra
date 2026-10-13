@@ -1,0 +1,14 @@
+{
+  "name": "Freecons",
+  "description": "Free app icons",
+  "authors": [
+    {
+      "name": "Dziurwa",
+      "id": "1001086404203389018"
+    }
+  ],
+  "main": "src/index.ts",
+  "vendetta": {
+    "icon": "ic_custom_app_icons_24px"
+  }
+}

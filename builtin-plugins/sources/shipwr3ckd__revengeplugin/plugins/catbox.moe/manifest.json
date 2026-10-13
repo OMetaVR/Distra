@@ -1,0 +1,14 @@
+{
+    "name": "catbox.moe",
+    "description": "Upload your silly ahh files larger than 10MBs to catbox.moe.",
+    "authors": [
+        {
+            "name": "シグマ siguma",
+            "id": "737597276339437578"
+        }
+    ],
+    "main": "src/index.tsx",
+    "vendetta": {
+        "icon": "ic_file_upload_24px"
+    }
+}

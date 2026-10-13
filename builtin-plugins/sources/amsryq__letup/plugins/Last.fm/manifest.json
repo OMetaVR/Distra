@@ -1,0 +1,7 @@
+{
+    "name": "Last.fm",
+    "description": "Show off your last.fm status on your Discord profile.",
+    "vendetta": {
+        "icon": "ic_stage_music"
+    }
+}

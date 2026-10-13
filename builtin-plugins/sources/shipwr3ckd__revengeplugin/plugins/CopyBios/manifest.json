@@ -1,0 +1,14 @@
+{
+  "name": "CopyBios",
+  "description": "Copy bio text",
+  "authors": [
+    {
+      "name": "シグマ siguma",
+      "id": "737597276339437578"
+    }
+  ],
+  "main": "src/index.ts",
+  "vendetta": {
+    "icon": "ic_profile_24px"
+  }
+}

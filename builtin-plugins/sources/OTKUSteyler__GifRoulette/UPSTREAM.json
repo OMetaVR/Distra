@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/OTKUSteyler/GifRoulette",
+  "commit": "edfa64aaccd61f9d1150610a417b8e4f54c58137",
+  "license": "Unlicense",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

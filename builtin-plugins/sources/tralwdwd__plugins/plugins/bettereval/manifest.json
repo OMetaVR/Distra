@@ -1,0 +1,14 @@
+{
+    "name": "Better Eval",
+    "description": "Adds an Evaluate JavaScript page, gives a better experience then /eval.",
+    "authors": [
+        {
+            "name": "tralwdwdd",
+            "id": "1278723517436788897"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "FileIcon"
+    }
+}

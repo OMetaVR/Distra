@@ -1,0 +1,6 @@
+packages:
+  - plugins/*
+
+allowBuilds:
+    "@swc/core": true
+    esbuild: true

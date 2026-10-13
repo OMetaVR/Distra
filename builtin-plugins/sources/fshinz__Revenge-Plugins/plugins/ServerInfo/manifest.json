@@ -1,0 +1,15 @@
+{
+    "name": "Server Info",
+    "description": "Displays detailed server information when long pressing a guild icon on sidebar.",
+    "authors": [
+        {
+            "name": "fshin",
+            "id": "1381008677301129257"
+        }
+    ],
+    "main": "src/index.tsx",
+    "vendetta": {
+        "icon": "ic_information_24px"
+    }
+}
+

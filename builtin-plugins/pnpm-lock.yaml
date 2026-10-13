@@ -1,0 +1,81 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@song-spotlight/api':
+        specifier: ^2.2.0
+        version: 2.2.0(typescript@5.9.3)
+      '@swc/helpers':
+        specifier: ^0.5.17
+        version: 0.5.23
+      enmity:
+        specifier: github:enmity-mod/api#main
+        version: https://codeload.github.com/enmity-mod/api/tar.gz/13726cdf6fea487c668d90501786522db8f4dab1
+      fuzzysort:
+        specifier: ^3.1.0
+        version: 3.1.0
+      lodash:
+        specifier: ^4.18.1
+        version: 4.18.1
+
+packages:
+
+  '@song-spotlight/api@2.2.0':
+    resolution: {integrity: sha512-zKH9X+G1uRYmEHFgluExPEFJWtA87PG8C39Xng0XG7Oh42ycOHjZtqtyEbfGM+hs+QEVos4wOoySeBAggnK7Iw==}
+    peerDependencies:
+      typescript: ^5
+
+  '@swc/helpers@0.5.23':
+    resolution: {integrity: sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw==}
+
+  enmity@https://codeload.github.com/enmity-mod/api/tar.gz/13726cdf6fea487c668d90501786522db8f4dab1:
+    resolution: {tarball: https://codeload.github.com/enmity-mod/api/tar.gz/13726cdf6fea487c668d90501786522db8f4dab1}
+    version: 1.2.4
+
+  fuzzysort@3.1.0:
+    resolution: {integrity: sha512-sR9BNCjBg6LNgwvxlBd0sBABvQitkLzoVY9MYYROQVX/FvfJ4Mai9LsGhDgd8qYdds0bY77VzYd5iuB+v5rwQQ==}
+
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
+
+  tslib@2.8.1:
+    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
+snapshots:
+
+  '@song-spotlight/api@2.2.0(typescript@5.9.3)':
+    dependencies:
+      typescript: 5.9.3
+    optionalDependencies:
+      zod: 4.6.7
+
+  '@swc/helpers@0.5.23':
+    dependencies:
+      tslib: 2.8.1
+
+  enmity@https://codeload.github.com/enmity-mod/api/tar.gz/13726cdf6fea487c668d90501786522db8f4dab1: {}
+
+  fuzzysort@3.1.0: {}
+
+  lodash@4.18.1: {}
+
+  tslib@2.8.1: {}
+
+  typescript@5.9.3: {}
+
+  zod@4.6.7:
+    optional: true

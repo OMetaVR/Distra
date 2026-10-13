@@ -1,0 +1,14 @@
+{
+    "name": "Message Scheduler",
+    "description": "Schedule messages to be sent at specific time or after a delay with /schedule.",
+    "authors": [
+        {
+            "name": "VMuser",
+            "id": "1258451646850007042"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_edit_24px"
+    }
+}

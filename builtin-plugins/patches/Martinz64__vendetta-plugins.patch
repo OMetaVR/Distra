@@ -1,0 +1,37 @@
+diff -ruN a/plugins/FileSizeOnPicker/src/SizeTag.tsx b/plugins/FileSizeOnPicker/src/SizeTag.tsx
+--- a/plugins/FileSizeOnPicker/src/SizeTag.tsx	2026-10-13 10:54:22.291585095 -0400
++++ b/plugins/FileSizeOnPicker/src/SizeTag.tsx	2026-10-13 10:15:53.080353300 -0400
+@@ -16,12 +16,21 @@
+     React.useEffect(() => {
+         async function fetchData() {
+             if(!sizeCache[url]){
+-                const FileManager = NativeModules.NativeFileModule ?? NativeModules.RTNFileManager ?? NativeModules.DCDFileManager
+-                FileManager.getSize(url).then(size => {
++                // Discordia: in bridgeless mode Discord's file module may only be reachable through
++                // the native module proxy, and a missing module or rejected promise inside this
++                // effect used to crash the picker.
++                const proxy = (window as any).nativeModuleProxy ?? {};
++                const FileManager = proxy.NativeFileModule ?? proxy.RTNFileManager ?? proxy.DCDFileManager
++                    ?? NativeModules.NativeFileModule ?? NativeModules.RTNFileManager ?? NativeModules.DCDFileManager
++                if (!url || typeof FileManager?.getSize !== "function") {
++                    setLoading(false);
++                    return;
++                }
++                Promise.resolve(FileManager.getSize(url)).then(size => {
+                     setSize(formatBytes(size));
+                     setLoading(false);
+                     sizeCache[url] = size;
+-                })
++                }).catch(() => setLoading(false))
+             } else {
+                 setSize(formatBytes(sizeCache[url]));
+                 setLoading(false);
+@@ -34,6 +43,7 @@
+     if (loading) {
+         return <Text style={props.style}>...</Text>;
+     }
++    if (!size) return null;
+ 
+     return <Text style={props.style}>{size}</Text>;
+ }
+\ No newline at end of file

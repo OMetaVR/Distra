@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/WolfPlugs/vendetta-plugins",
+  "commit": "84fd6712c30daac2998ae206b2b576f9a74156a1",
+  "license": "Unlicense",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

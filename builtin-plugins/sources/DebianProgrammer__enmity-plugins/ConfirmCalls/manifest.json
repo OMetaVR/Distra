@@ -1,0 +1,12 @@
+{
+    "name": "ConfirmCalls",
+    "version": "1.0.0",
+    "description": "Confirm calls so you don't wake up your friend at 3:00 AM",
+    "authors": [
+       {
+          "name": "octet-steam",
+          "id": "263530950070239235"
+       }
+    ]
+ }
+ 

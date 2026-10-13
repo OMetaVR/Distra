@@ -1,0 +1,21 @@
+{
+    "exclude": ["dist", "src"],
+
+    "compilerOptions": {
+        "noUncheckedIndexedAccess": true,
+        "strict": true,
+
+        "module": "NodeNext",
+        "typeRoots": ["./node_modules/@types"],
+        "types": ["eslint__js", "node"],
+
+        "noEmit": true,
+
+        "allowJs": true,
+        "checkJs": true,
+
+        "target": "ESNext",
+
+        "skipLibCheck": true
+    }
+}

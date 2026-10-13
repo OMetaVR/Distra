@@ -1,0 +1,14 @@
+{
+    "name": "Metro Inspector",
+    "description": "Inspect, search, and copy Metro module exports and property types ,helpful plugin for plugin devs.",
+    "authors": [
+        {
+            "name": "fshin",
+            "id": "1381008677301129257"
+        }
+    ],
+    "main": "src/index.tsx",
+    "vendetta": {
+        "icon": "flash"
+    }
+}

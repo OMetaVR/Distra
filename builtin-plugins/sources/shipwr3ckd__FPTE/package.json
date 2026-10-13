@@ -1,0 +1,50 @@
+{
+    "private": true,
+    "scripts": {
+        "build": "rollup --config rollup.config.ts --configPlugin swc3 --filterLogs !code:MISSING_NAME_OPTION_FOR_IIFE_EXPORT",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "test": "pnpm test-ts && pnpm lint",
+        "test-ts": "tsc --noEmit",
+        "watch": "pnpm build --watch"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.7.0",
+        "@react-native-clipboard/clipboard": "^1.14.1",
+        "@rollup/plugin-terser": "^0.4.4",
+        "@shopify/flash-list": "^1.7.0",
+        "@stylistic/eslint-plugin": "^2.3.0",
+        "@swc/helpers": "^0.5.12",
+        "@types/eslint__js": "^8.42.3",
+        "@types/lodash": "~4.17.7",
+        "@types/node": "^20.14.11",
+        "@types/react": "~18.2.79",
+        "@types/react-native": "~0.72.8",
+        "@types/tinycolor2": "^1.4.6",
+        "@vencord/discord-types": "github:ryan-0324/Vencord#fb40c39c8ffb26210c5e821f107aa3e3232f9466&path:packages/discord-types",
+        "eslint": "^9.7.0",
+        "eslint-plugin-simple-import-sort": "^12.1.1",
+        "react-native-svg": "^15.4.0",
+        "rollup": "^4.18.1",
+        "rollup-plugin-swc3": "^0.11.2",
+        "typescript": "^5.5.3",
+        "typescript-eslint": "^8.0.0-alpha.45",
+        "vendetta-types": "latest"
+    },
+    "engines": {
+        "node": ">=20.9.0",
+        "pmpm": ">=9"
+    },
+    "packageManager": "pnpm@9.5.0",
+    "pnpm": {
+        "overides": {
+            "@react-native-clipboard/clipboard": "$@react-native-clipboard/clipboard",
+            "@types/lodash": "$@types/lodash",
+            "@types/react": "$@types/react",
+            "@types/react-native": "$@types/react-native"
+        },
+        "patchedDependencies": {
+            "@vencord/discord-types@1.0.0": "patches/@vencord__discord-types@1.0.0.patch"
+        }
+    }
+}

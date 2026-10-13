@@ -1,0 +1,64 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
+	"files": {
+		"ignoreUnknown": false,
+		"includes": [
+			"**",
+			"!**/declarations/**/*.d.ts",
+			"!**/dist",
+			"!**/node_modules",
+			"!**/lang/values/**/*.json"
+		]
+	},
+	"formatter": {
+		"enabled": false
+	},
+	"assist": {
+		"enabled": false
+	},
+	"json": {
+		"parser": {
+			"allowComments": true,
+			"allowTrailingCommas": false
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"correctness": {
+				"noGlobalObjectCalls": "off",
+				"noInvalidBuiltinInstantiation": "off",
+				"noInvalidConstructorSuper": "off",
+				"noSetterReturn": "off",
+				"noUndeclaredVariables": "off",
+				"noUnreachable": "off",
+				"noUnreachableSuper": "off",
+				"noUnusedVariables": "warn",
+				"noUnusedImports": {
+					"level": "info",
+					"fix": "safe",
+					"options": {}
+				},
+				"useJsxKeyInIterable": "warn"
+			},
+			"style": {
+				"noNonNullAssertion": "off",
+				"noParameterAssign": "off",
+				"useArrayLiterals": "error",
+				"useSingleVarDeclarator": "off"
+			},
+			"suspicious": {
+				"noAssignInExpressions": "off",
+				"noExplicitAny": "off",
+				"noFunctionAssign": "off",
+				"noImportAssign": "off",
+				"noUnsafeNegation": "off",
+				"useGetterReturn": "off"
+			},
+			"complexity": {
+				"noCommaOperator": "off"
+			}
+		}
+	}
+}

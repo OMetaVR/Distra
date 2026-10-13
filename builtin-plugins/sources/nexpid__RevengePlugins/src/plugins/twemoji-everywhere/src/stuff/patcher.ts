@@ -1,0 +1,62 @@
+import { React, ReactNative as RN } from "@vendetta/metro/common";
+import { before } from "@vendetta/patcher";
+
+import { lang } from "..";
+import CustomTwemoji from "../components/CustomTwemoji";
+import { getSrc, parse } from "./parser";
+
+export default function() {
+	const patches: (() => void)[] = [];
+
+	// FIXME the great component functionification of 2025
+	patches.push(
+		before("Image", RN, args => {
+			const cloned = [...args];
+			const [x] = cloned;
+			if (x.vanilla) return cloned;
+
+			const { source } = x;
+
+			if (source?.uri?.startsWith("asset:/emoji-")) {
+				source.uri = getSrc(source.uri.split("-")[1].split(".")[0]);
+			}
+
+			return cloned;
+		}),
+	);
+
+	patches.push(
+		before("Text", RN, ([x]) => {
+			let children: (any)[] = [];
+
+			const style = RN.StyleSheet.flatten(x.style) ?? {};
+			const twemoji = (src: string) =>
+				React.createElement(CustomTwemoji, {
+					emoji: src,
+					size: style.fontSize,
+				});
+
+			if (Array.isArray(x.children)) {
+				for (const c of x.children) {
+					children.push(
+						...(typeof c === "string" ? parse(c, twemoji) : [c]),
+					);
+				}
+			} else {
+				children = typeof x.children === "string"
+					? parse(x.children, twemoji)
+					: [x.children];
+			}
+
+			x.children = children;
+		}),
+	);
+
+	patches.push(lang.unload);
+
+	return () => {
+		for (const x of patches) {
+			x();
+		}
+	};
+}

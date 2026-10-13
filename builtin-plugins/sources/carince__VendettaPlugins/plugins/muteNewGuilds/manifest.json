@@ -1,0 +1,20 @@
+{
+    "name": "Mute New Guilds",
+    "description": "Automatically mutes newly joined guilds. Ported from Vencord",
+    "authors": [
+        {
+            "name": "carince",
+            "id": "818323528755314698"
+        }, {
+            "name": "Glitch",
+            "id": "269567451199569920"
+        }, {
+            "name": "Nuckyz",
+            "id": "235834946571337729"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_unmute_channel_24px"
+    }
+}

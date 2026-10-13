@@ -1,0 +1,22 @@
+{
+  "name": "NoDelete+",
+  "description": "a modified version of \"NoDelete and antied\"",
+  "authors": [
+    {
+      "name": "fshin",
+      "id": "1381008677301129257"
+    },
+    {
+      "name": "meqativ",
+      "id": "744276454946242723"
+    },
+    {
+      "name": "angelw0lf",
+      "id": "692632336961110087"
+    }
+  ],
+  "main": "src/index.ts",
+  "vendetta": {
+    "icon": "ic_hide_24px"
+  }
+}

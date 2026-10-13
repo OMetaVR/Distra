@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/nexpid/RevengePlugins",
+  "commit": "e10e86ef79e7e3cb777c38ecaa9b8f63abe50abc",
+  "license": "CC-BY-4.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

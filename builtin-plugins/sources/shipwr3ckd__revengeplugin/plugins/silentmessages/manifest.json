@@ -1,0 +1,14 @@
+{
+  "name": "Silent Messages",
+  "description": "Send messages without notifying the receiver.",
+  "authors": [
+    {
+      "name": "シグマ siguma",
+      "id": "737597276339437578"
+    }
+  ],
+  "main": "src/index.ts",
+  "vendetta": {
+    "icon": "ic_chat_bubble_16px"
+  }
+}

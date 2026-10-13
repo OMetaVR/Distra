@@ -1,0 +1,14 @@
+{
+    "name": "Copy Proxy Link",
+    "description": "allowing you to quickly copy the proxy URL",
+    "authors": [
+        {
+            "name": "coder.gg",
+            "id": "1099039269391171765"
+        }
+    ],
+    "main": "src/index.tsx",
+    "vendetta": {
+        "icon": "LinkIcon"
+    }
+}

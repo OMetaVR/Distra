@@ -1,0 +1,14 @@
+{
+    "name": "ClipboardGIFSend",
+    "description": "Send GIF Picker gifs to clipboard instead of chat",
+    "authors": [
+        {
+            "name": "Cristiandis",
+            "id": "559776692240121866"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "gif"
+    }
+}

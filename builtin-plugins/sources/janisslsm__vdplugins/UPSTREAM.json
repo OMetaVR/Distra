@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/janisslsm/vdplugins",
+  "commit": "1931ec73d438b8d8732c7a9c005c30efa4525a62",
+  "license": "BSD-3-Clause",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

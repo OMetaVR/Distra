@@ -1,0 +1,453 @@
+import { findByStoreName } from "@vendetta/metro";
+import { clipboard, React, ReactNative as RN, stylesheet } from "@vendetta/metro/common";
+import { useProxy } from "@vendetta/storage";
+import { semanticColors } from "@vendetta/ui";
+import { showConfirmationAlert } from "@vendetta/ui/alerts";
+import { getAssetIDByName } from "@vendetta/ui/assets";
+import { Forms } from "@vendetta/ui/components";
+import { showToast } from "@vendetta/ui/toasts";
+
+import { BetterTableRowGroup } from "$/components/BetterTableRow";
+import Text from "$/components/Text";
+import { Reanimated } from "$/deps";
+import { Button } from "$/lib/redesign";
+import { managePage } from "$/lib/ui";
+import { deepEquals } from "$/types";
+
+import { clearCache, services, validateSong } from "@song-spotlight/api/handlers";
+import type { Song, UserData } from "@song-spotlight/api/structs";
+import { sid } from "@song-spotlight/api/util";
+import { lang, vstorage } from "..";
+import { useAuthorizationStore } from "../stores/AuthorizationStore";
+import { useCacheStore } from "../stores/CacheStore";
+import { deleteData, getData, saveData, songLimit } from "../stuff/api";
+import { openOauth2Modal } from "../stuff/oauth2";
+import AddSong from "./songs/AddSong";
+import SongInfo from "./songs/SongInfo";
+
+const { FormRow } = Forms;
+
+const UserStore = findByStoreName("UserStore");
+
+export const ModifiedDataContext = React.createContext({
+	data: [],
+	setData: () => null,
+} as {
+	data: UserData;
+	setData: (data: UserData) => void;
+});
+
+function Songs({ isFetching }: { isFetching: boolean }) {
+	const styles = stylesheet.createThemedStyleSheet({
+		songDisabled: {
+			backgroundColor: semanticColors.BACKGROUND_MOD_MUTED,
+			borderRadius: 8,
+			opacity: 0.4,
+		},
+	});
+
+	const { data, setData } = React.useContext(ModifiedDataContext);
+
+	const [manPositions, setManPositions] = React.useState<
+		Record<string, number>
+	>({});
+	const dervPositions = Object.fromEntries(
+		data.map((item, index) => [sid(item), index]),
+	);
+
+	// can't use useEffect/useMemo because it doesn't update instantly and causes a quick flicker
+	const oldData = React.useRef(
+		data.map(item => sid(item)).join(","),
+	);
+	const newData = data
+		.map(item => sid(item))
+		.join(",");
+
+	let positions = { ...dervPositions, ...manPositions };
+	if (newData !== oldData.current) {
+		oldData.current = newData;
+
+		setManPositions({});
+		positions = dervPositions;
+	}
+
+	return (
+		<Reanimated.default.FlatList
+			data={new Array(songLimit)
+				.fill(null)
+				.map((_, i) =>
+					!data[i] && (data[i - 1] || i === 0)
+						? true
+						: (data[i] ?? null)
+				) as (Song | true | null)[]}
+			extraData={positions}
+			keyExtractor={(item, index) =>
+				item === true
+					? "add-song"
+					: item
+					? sid(item)
+					: `empty-${index}`}
+			renderItem={({ item, index }) =>
+				item === true ? <AddSong disabled={isFetching} /> : item
+					? (
+						<SongInfo
+							song={item}
+							disabled={isFetching}
+							index={index}
+							itemCount={data.length}
+							positions={positions}
+							updatePos={setManPositions}
+							commit={() => {
+								const newData = Object.entries(positions)
+									.map(([id, index]) => ({
+										item: data.find(
+											item => sid(item) === id,
+										),
+										index,
+									}))
+									.filter(({ item }) => item)
+									.sort((a, b) => a.index - b.index)
+									.map(({ item }) => item) as Song[];
+								setData(newData);
+							}}
+						/>
+					)
+					: <FormRow label="" sublabel="" style={styles.songDisabled} />}
+			style={isFetching && { opacity: 0.8 }}
+			ItemSeparatorComponent={() => <RN.View style={{ height: 8 }} />}
+		/>
+	);
+}
+
+async function runImport(onImport: (data: UserData) => void) {
+	let json: unknown;
+	try {
+		json = JSON.parse(await clipboard.getString());
+	} catch {
+		return showToast(
+			lang.format("toast.import_no_json", {}),
+			getAssetIDByName("CircleXIcon-primary"),
+		);
+	}
+
+	// cant use UserDataSchema here sadly
+	let data: UserData | undefined;
+	song_check: {
+		if (!Array.isArray(json) || json.length > songLimit) break song_check;
+
+		data = [];
+		for (const item of json) {
+			if (typeof item !== "object" || !item || Array.isArray(item)) break song_check;
+
+			const service = services.find(x => x.name === item.service);
+			if (!service) break song_check;
+
+			if (!service.types.includes(item.type)) break song_check;
+			if (typeof item.id !== "string") break song_check;
+
+			data.push({
+				service: item.service,
+				type: item.type,
+				id: item.id,
+			});
+		}
+	}
+
+	if (!data) {
+		return showToast(
+			lang.format("toast.import_invalid_data", {}),
+			getAssetIDByName("CircleXIcon-primary"),
+		);
+	}
+
+	const validated = await Promise.allSettled(data.map(song => validateSong(song)));
+	if (!validated.every(x => x.status === "fulfilled" && x.value)) {
+		return showToast(
+			lang.format("toast.import_invalid_songs", {}),
+			getAssetIDByName("CircleXIcon-primary"),
+		);
+	}
+
+	onImport(data);
+	showToast(
+		lang.format("toast.imported_songs", {}),
+		getAssetIDByName("CircleCheckIcon-primary"),
+	);
+}
+
+export default function Settings({ newData }: { newData?: UserData }) {
+	useProxy(vstorage);
+
+	const { isAuthorized, deleteTokens } = useAuthorizationStore();
+	const [isFetching, setIsFetching] = React.useState(false);
+
+	const _data = useCacheStore().self?.data;
+
+	const [data, setData] = React.useState(newData ?? _data);
+	const isDataModified = React.useMemo(
+		() => data && _data && !deepEquals(data, _data),
+		[data, _data],
+	);
+
+	const initial = React.useRef(true);
+	React.useEffect(
+		() => void (initial.current ? (initial.current = false) : setData(_data)),
+		[_data],
+	);
+
+	const userId = UserStore.getCurrentUser()?.id ?? null;
+	React.useEffect(() => {
+		if (isAuthorized()) {
+			setIsFetching(true);
+			getData().finally(() => setIsFetching(false));
+		}
+	}, [userId]);
+
+	const [isBusy, setIsBusy] = React.useState<string[]>([]);
+
+	const setBusy = (x: string) => !isBusy.includes(x) && setIsBusy([...isBusy, x]);
+	const unBusy = (x: string) => void setIsBusy(isBusy.filter(y => x !== y));
+
+	managePage(
+		{
+			headerRight: () => (
+				<Button
+					size="sm"
+					variant={isDataModified && !isFetching ? "primary" : "secondary"}
+					disabled={!isDataModified || isFetching}
+					loading={isFetching}
+					text={lang.format("settings.update_songs", {})}
+					onPress={() => {
+						setIsFetching(true);
+						saveData(data!)
+							.then(() =>
+								showToast(
+									lang.format("toast.updated_songs", {}),
+									getAssetIDByName("UploadIcon"),
+								)
+							)
+							.finally(() => setIsFetching(false));
+					}}
+				/>
+			),
+		},
+		null,
+		isDataModified,
+		isFetching,
+		data,
+	);
+
+	return (
+		<ModifiedDataContext.Provider value={{ data: data ?? [], setData }}>
+			<RN.ScrollView>
+				<BetterTableRowGroup
+					title={lang.format("settings.songs.title", {})}
+					icon={getAssetIDByName("MusicIcon")}
+					padding
+				>
+					{isAuthorized() && data
+						? <Songs isFetching={isFetching} />
+						: !isAuthorized()
+						? (
+							<Text
+								variant="text-md/semibold"
+								color="TEXT_DEFAULT"
+								align="center"
+							>
+								{lang.format("settings.songs.auth_needed", {})}
+							</Text>
+						)
+						: (
+							<RN.ActivityIndicator
+								size="small"
+								style={{ flex: 1 }}
+							/>
+						)}
+				</BetterTableRowGroup>
+				{isAuthorized() && data && (
+					<BetterTableRowGroup nearby>
+						<FormRow
+							label={lang.format(
+								"settings.songs.import_songs",
+								{},
+							)}
+							leading={
+								<FormRow.Icon
+									source={getAssetIDByName(
+										"UploadIcon",
+									)}
+								/>
+							}
+							onPress={() => {
+								if (isBusy.length) return;
+
+								function run() {
+									setBusy("import_data");
+									runImport(setData).finally(() => unBusy("import_data"));
+								}
+
+								if (data?.[0]) {
+									showConfirmationAlert({
+										title: lang.format("alert.import_ovewrite.title", {}),
+										content: lang.format("alert.import_ovewrite.description", {}),
+										onConfirm: run,
+									});
+								} else run();
+							}}
+						/>
+						<FormRow
+							label={lang.format(
+								"settings.songs.copy_songs",
+								{},
+							)}
+							leading={
+								<FormRow.Icon
+									source={getAssetIDByName(
+										"CopyIcon",
+									)}
+								/>
+							}
+							onPress={() => {
+								if (isBusy.length) return;
+
+								clipboard.setString(JSON.stringify(data));
+								showToast(lang.format("toast.copied_data", {}), getAssetIDByName("CopyIcon"));
+							}}
+						/>
+					</BetterTableRowGroup>
+				)}
+				<BetterTableRowGroup
+					title="Authentication"
+					icon={getAssetIDByName("LockIcon")}
+				>
+					{isAuthorized()
+						? (
+							<>
+								<FormRow
+									label={lang.format(
+										"settings.auth.log_out.title",
+										{},
+									)}
+									subLabel={lang.format(
+										"settings.auth.log_out.description",
+										{},
+									)}
+									leading={
+										<FormRow.Icon
+											source={getAssetIDByName(
+												"DoorExitIcon",
+											)}
+										/>
+									}
+									destructive
+									onPress={() =>
+										!isBusy.length
+										&& showConfirmationAlert({
+											title: lang.format(
+												"alert.log_out.title",
+												{},
+											),
+											content: lang.format(
+												"alert.log_out.body",
+												{},
+											),
+											onConfirm: () => {
+												deleteTokens();
+
+												showToast(
+													lang.format("toast.logout", {}),
+													getAssetIDByName(
+														"DoorExitIcon",
+													),
+												);
+											},
+										})}
+								/>
+								<FormRow
+									label={lang.format(
+										"settings.auth.delete_songs.title",
+										{},
+									)}
+									subLabel={lang.format(
+										"settings.auth.delete_songs.description",
+										{},
+									)}
+									leading={isBusy.includes("delete_songs")
+										? <RN.ActivityIndicator size="small" />
+										: (
+											<FormRow.Icon
+												source={getAssetIDByName(
+													"TrashIcon",
+												)}
+											/>
+										)}
+									onPress={() =>
+										!isBusy.length
+										&& showConfirmationAlert({
+											title: lang.format(
+												"alert.delete_songs.title",
+												{},
+											),
+											content: lang.format(
+												"alert.delete_songs.body",
+												{},
+											),
+											confirmText: lang.format(
+												"alert.delete_songs.confirm",
+												{},
+											),
+											confirmColor: "red" as ButtonColors,
+											onConfirm: async () => {
+												setBusy("delete_songs");
+												await deleteData();
+												deleteTokens();
+
+												unBusy("delete_songs");
+												showToast(
+													lang.format(
+														"toast.deleted_songs",
+														{},
+													),
+													getAssetIDByName("TrashIcon"),
+												);
+											},
+										})}
+								/>
+							</>
+						)
+						: (
+							<FormRow
+								label={lang.format("settings.auth.authorize", {})}
+								leading={
+									<FormRow.Icon
+										source={getAssetIDByName("LinkIcon")}
+									/>
+								}
+								trailing={FormRow.Arrow}
+								onPress={openOauth2Modal}
+							/>
+						)}
+					<FormRow
+						label={lang.format(
+							"settings.clear_link_cache.title",
+							{},
+						)}
+						leading={
+							<FormRow.Icon
+								source={getAssetIDByName("LinkIcon")}
+							/>
+						}
+						onPress={() => {
+							showToast(
+								lang.format("toast.cleared_link_cache", {}),
+								getAssetIDByName("TrashIcon"),
+							);
+							clearCache();
+						}}
+					/>
+				</BetterTableRowGroup>
+				<RN.View style={{ height: 12 }} />
+			</RN.ScrollView>
+		</ModifiedDataContext.Provider>
+	);
+}

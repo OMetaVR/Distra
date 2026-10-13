@@ -1,0 +1,14 @@
+{
+  "name": "RemoveBanner",
+  "description": "Remove Server Banners completely.",
+  "authors": [
+    {
+      "name": "Vaiskiainen",
+      "id": "1205851726586970125"
+    }
+  ],
+  "main": "src/index.ts",
+  "vendetta": {
+    "icon": "ic_image_slash"
+  }
+}

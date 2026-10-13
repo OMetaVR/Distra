@@ -1,0 +1,14 @@
+{
+    "name": "FileContentPreview",
+    "description": "Allows you to preview the contents of text files in the app.",
+    "authors": [
+        {
+            "name": "fres",
+            "id": "843448897737064448"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_file_text"
+    }
+}

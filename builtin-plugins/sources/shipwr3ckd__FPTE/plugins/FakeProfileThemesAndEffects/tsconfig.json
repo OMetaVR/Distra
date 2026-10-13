@@ -1,0 +1,14 @@
+{
+    "extends": "../tsconfig.json",
+
+    "compilerOptions": {
+        "paths": {
+            "@lib": ["./src/lib"],
+            "@lib/*": ["./src/lib/*"],
+            "@patches": ["./src/patches"],
+            "@patches/*": ["./src/patches/*"],
+            "@ui": ["./src/ui"],
+            "@ui/*": ["./src/ui/*"]
+        }
+    }
+}

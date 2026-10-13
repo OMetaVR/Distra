@@ -1,0 +1,3 @@
+# Serve manifest.json directly to Revenge app user-agent requests, but serve index.html to standard web browsers
+/piratifier
+  X-Robots-Tag: noindex

@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@swc/helpers": "^0.4.14"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@swc/core": "^1.15.8",
+    "esbuild": "^0.27.2",
+    "rollup": "^4.54.0",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "vendetta-types": "latest"
+  }
+}

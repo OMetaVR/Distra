@@ -1,0 +1,14 @@
+{
+    "name": "HypeSquadSwitcher",
+    "description": "Add or change or remove your HypeSquad badge",
+    "authors": [
+        {
+            "name": "coder.gg",
+            "id": "1099039269391171765"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_guild_grid_24px"
+    }
+}

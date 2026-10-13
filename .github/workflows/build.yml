@@ -1,0 +1,162 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      ipa_url:
+        description: "Direct URL to a decrypted Discord IPA. Leave empty to only build the tweak."
+        required: false
+        default: ""
+      icon_packs:
+        description: "Bundle rosiecord's icon packs (Plumpy, Iconsax) into the IPA"
+        type: boolean
+        default: false
+      bundle_id:
+        description: "Bundle id for a side-by-side install (empty keeps Discord's)"
+        required: false
+        default: ""
+
+jobs:
+  tweak:
+    name: JS bundle and tweak
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --dir builtin-plugins install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build built-in plugins and JS bundle
+        run: pnpm build:release
+
+      - name: Test
+        run: pnpm test
+
+      - name: Set up Theos
+        uses: Randomblock1/theos-action@v1
+
+      - name: Build rootful package
+        run: |
+          make -C tweak package FINALPACKAGE=1
+          # The dylib for LiveContainer / IPA injection (needs no Substrate).
+          cp tweak/.theos/obj/Discordia.dylib dist/Discordia.dylib
+
+      - name: Build rootless package
+        run: make -C tweak clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: discordia-tweak
+          path: |
+            tweak/packages/*.deb
+            dist/Discordia.dylib
+            dist/discordia.js
+            dist/builtins.json
+
+  ipa:
+    name: IPA
+    needs: tweak
+    if: github.event_name == 'workflow_dispatch' && inputs.ipa_url != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: discordia-tweak
+          path: artifacts
+
+      - name: Install cyan
+        run: |
+          pipx install --force https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
+
+      - name: Download Discord IPA
+        env:
+          IPA_URL: ${{ inputs.ipa_url }}
+        run: curl -fL --retry 3 -o Discord.ipa "$IPA_URL"
+
+      - name: Fetch icon packs
+        if: inputs.icon_packs
+        run: git clone --depth 1 https://github.com/acquitelol/rosiecord rosiecord
+
+      - name: Build IPA
+        env:
+          BUNDLE_ID: ${{ inputs.bundle_id }}
+        run: |
+          args=(--ipa Discord.ipa --deb artifacts/tweak/packages/*_iphoneos-arm.deb --output out/Discordia.ipa --cyan "$(which cyan)")
+          if [ -d rosiecord/Packs ]; then
+            for pack in rosiecord/Packs/*/; do args+=(--icon-pack "$pack"); done
+          fi
+          if [ -n "$BUNDLE_ID" ]; then args+=(--bundle-id "$BUNDLE_ID" --name Discordia); fi
+          python3 scripts/build-ipa.py "${args[@]}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: discordia-ipa
+          path: out/Discordia.ipa
+
+  release:
+    name: Release
+    needs: tweak
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: discordia-tweak
+          path: artifacts
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/tweak/packages/*.deb
+            artifacts/dist/Discordia.dylib
+            artifacts/dist/discordia.js
+
+  beta:
+    name: Beta release
+    needs: tweak
+    # Every push to main replaces the "beta" prerelease with that commit's build.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: beta-release
+      cancel-in-progress: true
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: discordia-tweak
+          path: artifacts
+
+      - name: Publish beta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          short="${GITHUB_SHA::7}"
+          notes="$(printf 'Automatic build of %s.\n\n%s\n\n**Discordia.dylib**: inject into Discord with LiveContainer or an IPA patcher.\n**.deb**: rootful (iphoneos-arm) and rootless (iphoneos-arm64) jailbreak packages.' "$short" "$COMMIT_MESSAGE")"
+          gh release delete beta --repo "$REPO" --yes --cleanup-tag || true
+          gh release create beta --repo "$REPO" --target "$GITHUB_SHA" --prerelease \
+            --title "Beta ($short)" --notes "$notes" \
+            artifacts/dist/Discordia.dylib artifacts/tweak/packages/*.deb artifacts/dist/discordia.js

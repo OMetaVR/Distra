@@ -1,0 +1,14 @@
+{
+  "name": "🎄 Christmas Counter",
+  "description": "Displays a countdown to Christmas every day.",
+  "authors": [
+    {
+      "name": "Vaiskiainen",
+      "id": "1465743112428064955"
+    }
+  ],
+  "main": "src/index.ts",
+  "vendetta": {
+    "icon": "ic_image_slash"
+  }
+}

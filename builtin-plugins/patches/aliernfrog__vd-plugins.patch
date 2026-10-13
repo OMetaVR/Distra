@@ -1,0 +1,12 @@
+diff -ruN a/plugins/Stealmoji/modules.ts b/plugins/Stealmoji/modules.ts
+--- a/plugins/Stealmoji/modules.ts	2026-10-13 10:54:25.853834255 -0400
++++ b/plugins/Stealmoji/modules.ts	2026-10-13 10:32:59.170247900 -0400
+@@ -1,7 +1,7 @@
+ import { find, findByProps, findByStoreName } from "@vendetta/metro";
+ 
+ export const Surrogates = findByProps("convertSurrogateToName");
+-export const LazyActionSheet = findByProps("hideActionSheet");
++export const LazyActionSheet = findByProps("openLazy", "hideActionSheet") ?? findByProps("hideActionSheet");
+ export const MediaModalUtils = findByProps("openMediaModal");
+ export const Emojis = findByProps("uploadEmoji");
+ 

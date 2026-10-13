@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/ApexTeamPL/Apex-Plugins",
+  "commit": "eccee43ee902ce2b33e1e869502002f5109724d8",
+  "license": "CC0-1.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

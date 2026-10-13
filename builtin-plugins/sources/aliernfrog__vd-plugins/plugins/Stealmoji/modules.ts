@@ -1,0 +1,32 @@
+import { find, findByProps, findByStoreName } from "@vendetta/metro";
+
+export const Surrogates = findByProps("convertSurrogateToName");
+export const LazyActionSheet = findByProps("openLazy", "hideActionSheet") ?? findByProps("hideActionSheet");
+export const MediaModalUtils = findByProps("openMediaModal");
+export const Emojis = findByProps("uploadEmoji");
+
+export const ActionSheet = findByProps("ActionSheet")?.ActionSheet ?? find(m => m.render?.name === "ActionSheet");
+
+export const ActionSheetTitleHeader = findByProps("ActionSheetTitleHeader")?.ActionSheetTitleHeader
+    ?? findByProps("BottomSheetTitleHeader")?.BottomSheetTitleHeader;
+
+export const {
+    ActionSheetCloseButton
+} = findByProps("ActionSheetCloseButton");
+
+export const { 
+    BottomSheetFlatList 
+} = findByProps("BottomSheetScrollView");
+
+export const EmojiStore = findByStoreName("EmojiStore");
+export const GuildStore = findByStoreName("GuildStore");
+export const PermissionsStore = findByStoreName("PermissionStore");
+
+export const {
+    default: GuildIcon,
+    GuildIconSizes
+} = findByProps("GuildIconSizes");
+
+export const { 
+    downloadMediaAsset
+} = findByProps("downloadMediaAsset");

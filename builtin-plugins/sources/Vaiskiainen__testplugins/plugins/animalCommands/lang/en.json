@@ -1,0 +1,100 @@
+{
+    "commands": {
+        "dog": {
+            "name": "dog",
+            "description": "Random dog photo"
+        },
+        "cat": {
+            "name": "cat",
+            "description": "Random cat photo"
+        },
+        "fox": {
+            "name": "fox",
+            "description": "Random fox photo"
+        },
+        "duck": {
+            "name": "duck",
+            "description": "Random duck photo"
+        },
+        "shiba": {
+            "name": "shiba",
+            "description": "Random shiba photo"
+        },
+        "horse": {
+            "name": "horse",
+            "description": "Random horse photo"
+        },
+        "deer": {
+            "name": "deer",
+            "description": "Random deer photo"
+        },
+        "otter": {
+            "name": "otter",
+            "description": "Random otter photo"
+        },
+        "bird": {
+            "name": "bird",
+            "description": "Random bird photo"
+        },
+        "turtle": {
+            "name": "turtle",
+            "description": "Random turtle photo"
+        },
+        "sheep": {
+            "name": "sheep",
+            "description": "Random sheep photo"
+        },
+        "capybara": {
+            "name": "capybara",
+            "description": "Random capybara photo"
+        },
+        "dinosaur": {
+            "name": "dinosaur",
+            "description": "Secret dino — unlocked via hidden settings"
+        }
+    },
+    "api_notes": {
+        "filters_non_images": "(filters non-images)",
+        "includes_fact": "(includes fact)",
+        "ott": "(ott)"
+    },
+    "settings": {
+        "header": {
+            "title": "Commands",
+            "subtitle": "Cool animal images with slash commands"
+        },
+        "groups": {
+            "animals": "Animals",
+            "note": "Note",
+            "choose_api": "Choose API",
+            "navigation": "Navigation",
+            "localization": "Localization"
+        },
+        "items": {
+            "api_label": "API: {{apiName}}",
+            "note_text": "Found a bug or want an animal added? DM \"@vaiskiainen.\"",
+            "selected_api": "Selected · {{apiDescription}}",
+            "back_to_animals": "Back to animals",
+            "localization_title": "Help us translate!",
+            "localization_description": "This plugin supports multiple languages. Help us improve translations and add new ones!"
+        },
+        "errors": {
+            "failed_ui": "Failed to load native settings UI",
+            "update_vendetta": "Update your Revenge/Vendetta build and try again."
+        }
+    },
+    "toasts": {
+        "command_disabled": "That command is disabled in settings.",
+        "api_misconfigured": "This API is not configured correctly.",
+        "no_image": "API returned no image. Try another source.",
+        "fetch_failed": "Failed to fetch animal image.",
+        "hidden_settings_unlocked": "Hidden settings unlocked!",
+        "hidden_settings_status": "Hidden settings {{status}}"
+    },
+    "ui": {
+        "status": {
+            "visible": "visible",
+            "hidden": "hidden"
+        }
+    }
+}

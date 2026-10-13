@@ -1,0 +1,10 @@
+{
+    "commands": {
+        "dog": {
+            "name": "hund"
+        },
+        "cat": {
+            "name": "katt"
+        }
+    }
+}

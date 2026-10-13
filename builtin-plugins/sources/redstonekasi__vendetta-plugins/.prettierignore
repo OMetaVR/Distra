@@ -1,0 +1,6 @@
+.gitignore
+.prettierignore
+node_modules
+LICENSE
+pnpm-lock.yaml
+dist

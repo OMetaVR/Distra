@@ -1,0 +1,26 @@
+{
+  "name": "Stealmoji",
+  "description": "Steal emojis on mobile with ease.",
+  "authors": [
+    {
+      "name": "Fiery",
+      "id": "890228870559698955"
+    },
+    {
+      "name": "pylix",
+      "id": "492949202121261067"
+    },
+    {
+      "name": "aliernfrog",
+      "id": "459370047652102154"
+    }
+  ],
+  "main": "index.ts",
+  "vendetta": {
+    "icon": "ic_emoji_24px"
+  },
+  "aliern": {
+    "forkOf": "Fierdetta/stealmoji",
+    "license": "GPLv3"
+  }
+}

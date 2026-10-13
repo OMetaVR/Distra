@@ -1,0 +1,14 @@
+node_modules/
+dist/
+
+# Theos
+tweak/.theos/
+tweak/packages/
+tweak/obj/
+tweak/Sources/Generated/
+
+# Never commit Discord binaries
+*.ipa
+*.deb
+Payload/
+work/

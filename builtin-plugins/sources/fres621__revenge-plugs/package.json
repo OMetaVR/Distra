@@ -1,0 +1,27 @@
+{
+	"private": true,
+	"scripts": {
+		"build": "node build.mjs",
+		"ghpages": "node pages.mjs"
+	},
+	"dependencies": {
+		"@swc/helpers": "^0.5.17"
+	},
+	"devDependencies": {
+		"@rollup/plugin-commonjs": "^28.0.6",
+		"@rollup/plugin-node-resolve": "^16.0.1",
+		"@swc/core": "^1.12.11",
+		"esbuild": "^0.25.6",
+		"rollup": "^4.45.0",
+		"rollup-plugin-esbuild": "^6.2.1",
+		"vendetta-types": "^2.4.21"
+	},
+	"pnpm": {
+		"peerDependencyRules": {
+			"ignoreMissing": [
+				"react",
+				"react-native"
+			]
+		}
+	}
+}

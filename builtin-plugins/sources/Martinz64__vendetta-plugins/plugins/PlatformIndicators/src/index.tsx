@@ -1,0 +1,441 @@
+import { patcher } from "@vendetta";
+import { findByName, findByProps, findByStoreName, findByTypeNameAll, findByTypeName } from "@vendetta/metro";
+import { General } from "@vendetta/ui/components";
+import { findInReactTree } from "@vendetta/utils";
+import StatusIcons from "./StatusIcons";
+import { getAssetIDByName } from "@vendetta/ui/assets";
+import { storage } from "@vendetta/plugin";
+import Settings from "./settings";
+import React from 'react';
+import PresenceUpdatedContainer from "./PresenceUpdatedContainer";
+const {Text,View } = General;
+
+let unpatches = [];
+
+//export { default as settings } from "./settings";
+
+export default {
+    onLoad: () => {
+
+        storage.dmTopBar ??= true
+        storage.userList ??= true
+        storage.profileUsername ??= true
+        storage.removeDefaultMobile ??= true
+        storage.fallbackColors ??= false
+        storage.oldUserListIcons ??= false
+        const debugLabels = false
+
+        //spagetti code ahead
+        //i'm sorry for whoever has to interpret this
+
+        //Big view patch
+        /*unpatches.push(patcher.after("render",View,(_,res) => {
+            return;
+            if(storage.dmTopBar){
+
+                const textChannel = findInReactTree(res, r => r?.props?.children[1]?.type?.name == "ChannelActivity" && r?.props?.children[1]?.props?.hasOwnProperty?.("userId"))
+                if(!textChannel)return;
+                if(textChannel.props?.children?.length != 2) return;
+                if(textChannel.props?.children[0]?.props?.children?.length != 2) return;
+                
+                const target = textChannel.props?.children[0]?.props?.children
+                if(target.filter(m => m?.props?.userId).length == 2){
+                    const target2 = target[1]
+                    const uid = target2.props?.userId;
+                    if(!uid) return;
+                    patcher.after("type",target2,(args,res) => {
+                        //console.log("SSSSSS",args,res)
+                        if(!findInReactTree(res, m => m.key == "StatusIcons")){
+                            res = <View style={{
+                                    display: 'flex',
+                                    flexDirection: 'row'
+                                }}>
+                                    {res}
+                                    <PresenceUpdatedContainer key="StatusIcons">
+                                        {debugLabels ? <Text>DTB1</Text> : <StatusIcons userId={uid}/>}
+                                    </PresenceUpdatedContainer>
+                                </View>
+                        }
+                        return res
+                    })
+                }
+            }
+        }))*/
+
+
+
+        //Big pressable patch
+        /*const Pressable = findByDisplayName("Pressable",false); //importing from ReactNative doesn't work
+        unpatches.push(patcher.before("render",Pressable.default.type,(args)=>{
+            if(!args) return;
+            if(!args[0]) return;
+            const [ props ] = args;
+            if(!props) return;
+
+
+            // tabs v2 DM list (current)
+            if(storage.userList){
+                if(props?.children?.props?.children?.props?.children){ 
+                    if(props.children.props.children.props.children[1]?.type?.type?.name == "ChannelUnreadBadge"){
+                    //if(findInReactTree(props, m => m?.type?.type?.name == "ChannelUnreadBadge")){
+                        //window.prv1 = args
+                        const targetCard = props.children.props.children
+                        const userDataElement = findInReactTree(targetCard, m => m?.user)
+                        if(userDataElement?.user){
+                            //console.log("UDE",userDataElement)
+                            if(!findInReactTree(props, m => m?.key == "TabsV2-DM-List")){
+                                //const userHeader = findInReactTree(props, m => (m?.props?.children == username && m?.props?.variant == "text-md/semibold"))
+                                const userHeader = findInReactTree(props, m => (m?.props?.variant == "text-md/semibold" || m?.props?.variant == "redesign/channel-title/semibold"))
+                                if(userHeader){
+                                    userHeader.props.children = [
+                                        userHeader.props.children, 
+                                        <View 
+                                            key="TabsV2-DM-List"
+                                            style={{
+                                                flexDirection: 'row',
+                                                justifyContent: 'center',
+                                                alignContent: 'flex-start'
+                                        }}>
+                                            <PresenceUpdatedContainer>
+                                                {debugLabels ? <Text>T2-DL-1</Text> : <StatusIcons userId={userDataElement.user.id}/>}
+                                            </PresenceUpdatedContainer>
+                                        </View>
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            
+
+            //DM list on tabs v2
+            //kinda broken ik
+            if(props.accessibilityRole == "button"){
+                if(!storage.userList) return;
+
+                //diggy diggy hole
+                if(props?.children?.props?.children?.props?.children){
+                    //console.log("diggy", props?.children?.props?.children?.props?.children[0]?.type?.type?.name)
+                    //if(props?.children?.props?.children?.props?.children[0]?.type?.type?.name == "GuildContainerIndicator" || props?.children?.props?.children?.props?.children[0]?.type?.type?.name == "ChannelUnreadBadge"){
+                    if(props?.children?.props?.children?.props?.children[0]?.type?.type?.name == "GuildContainerIndicator"){
+                        
+                        //if(!findInReactTree(props.children, m => m?.source?.uri?.contains?.("/avatars"))) return;
+                        //if(!findInReactTree(props.children, m => m?.props?.source?.uri)) return;
+                        //window.row2 = props.children
+                        //console.log("BTN: ",props)
+                        
+                        
+                        //> > row2.props.children.props.children[1].props.children[0].props.children.props.userrow2.props.children.props.children[1].props.children[0].props.children.props.user
+
+                        const userId = props?.children?.props?.children?.props?.children[1]?.props?.children[0]?.props?.children?.props?.user?.id
+
+                        if(props?.children?.props?.children?.props?.children[1]?.props?.children[0]?.props?.children?.props?.guildId) return;
+                        if(userId){
+                            //props.children.props.children.props.children[2].props.children[0] = <Text>AAABBBB</Text>
+                            const nameArea = props?.children?.props?.children?.props?.children[2]?.props?.children[0]
+                            //console.log(nameArea)
+                            if(nameArea){
+                                //nameArea.props.children[0].props.children.push(<Text>AAABBBB{userId}</Text>)
+                                const userName = nameArea.props.children[0].props.children //.push(<Text>AAABBBB</Text>)
+                                //props?.children?.props?.children?.props?.children[1]?.props?.children[1]?.props?.itemKey
+                                if(!findInReactTree(userName, (c) => c.key == "DMTabsV2DMList-v2")){
+                                    userName.push(
+                                        <PresenceUpdatedContainer key="DMTabsV2DMList-v2">
+                                            {debugLabels ? <Text>DTV2DL-v2</Text> : <StatusIcons userId={userId}/>}
+                                        </PresenceUpdatedContainer>
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                
+            }
+            
+        }));*/
+        
+
+        const PresenceStore = findByStoreName("PresenceStore");
+
+        //tabs v2 dm header
+        unpatches.push(patcher.after("default",findByName("ChannelHeader",false),(args,res) => {
+
+            if(!storage.dmTopBar) return;
+            //window.ch = res
+            if(!(res.type?.type?.name == "PrivateChannelHeader")) return;
+
+            patcher.after("type",res.type,(args,res) => {
+                if(!res.props?.children?.props?.children) return;
+                const userId = findInReactTree(res,m => m.props?.user?.id)?.props?.user?.id
+                if(!userId) return;
+                
+                const dmTopBar = res.props?.children
+                if(!findInReactTree(res,m => m.key == "DMTabsV2Header")){
+                    
+                    //console.log("DTB",dmTopBar)
+                    if(dmTopBar.props?.children?.props?.children[1]){
+                        if(typeof dmTopBar.props?.children?.props?.children[1]?.type == "function"){
+
+                            //alert(typeof dmTopBar.props?.children?.props?.children[1]?.type)
+                            const titleThing = dmTopBar.props?.children?.props?.children[1]    
+
+                            
+                            const unpatchTV2HdrV2 = patcher.after("type",titleThing, (args,res)=>{
+                                //console.log("TITLE",res)
+                                unpatchTV2HdrV2()
+                                if(!findInReactTree(res, (c) => c.key == "DMTabsV2Header-v2")){
+                                    res.props.children[0].props.children.push(
+                                        <PresenceUpdatedContainer key="DMTabsV2Header-v2">
+                                            {debugLabels ? <Text>DTV2H-v2</Text> : <StatusIcons userId={userId}/>}
+                                        </PresenceUpdatedContainer>
+                                    )
+                                }
+                            })
+                            
+
+
+                        } else {
+
+                            //note to self: don't hardcode asset ids
+                            const arrowId = getAssetIDByName("arrow-right");
+                            const container1 = findInReactTree(dmTopBar, m => m.props?.children[1]?.props?.source == arrowId)
+
+                            container1.props?.children?.push(<View 
+                                key="DMTabsV2Header"    
+                                style={{
+                                flexDirection: 'row',
+                                justifyContent: 'center',
+                                alignContent: 'flex-start'
+                            }}>
+                                <View 
+                                    key="DMTabsV2HeaderIcons"
+                                    style={{
+                                        flexDirection: 'row'
+                                    }}></View>
+                            </View>)
+                        }
+                    }
+
+                }
+                const topIcons = findInReactTree(res,m => m.key == "DMTabsV2HeaderIcons")
+                if(topIcons){
+                    topIcons.props.children = <StatusIcons userId={userId}/>
+                }
+                
+
+            })
+        }));
+
+        //icons on profile
+        //might explode in a future update
+        //it in fact exploded lmao, saving for later
+        //const DefaultName = findByName("DefaultName", false);
+        //unpatches.push(patcher.after("default", DefaultName, (args, res) => {
+        //    window.dnn1 = args
+        //    const user = args[0]?.user;
+        //    if (user === undefined) return;
+        //    if(!res) return;
+        //    if(!user.id) return;
+        //    if(!storage.profileUsername)return;
+        //    res.props?.children[0]?.props?.children?.push(<StatusIcons userId={user.id}/>)
+        //}));
+
+
+        const UserProfileContent = findByTypeName("UserProfileContent");
+
+        unpatches.push(patcher.after("type", UserProfileContent, (args, res) => {
+            //window.dnn1 = args
+            //window.dnn2 = res
+            //console.log("PROFILE",args,res)
+            let primaryInfo = findInReactTree(res, (c) => c?.type?.name == "PrimaryInfo")
+            //window.pri = primaryInfo
+            patcher.after("type",primaryInfo, (args,res)=>{
+                if(res?.type?.name == "UserProfilePrimaryInfo"){
+                    patcher.after("type", res, (args,res)=>{
+                        let displayName = findInReactTree(res, (c) => c?.type?.name == "DisplayName")
+                        
+                            patcher.after("type", displayName, (args,res)=>{
+                                //window.priii1 = args
+                                //window.priii2 = res
+                                let userId = args[0]?.user?.id
+                                if(userId){
+                                    res.props.children.push(
+                                        <PresenceUpdatedContainer key="UserProfileIcons">
+                                            <StatusIcons userId={userId}/>
+                                        </PresenceUpdatedContainer>
+                                    )
+                                }
+                            })
+                        //console.log("PRI2", args,res)
+                        //window.prii1 = args
+                        //window.prii2 = res
+                    })
+                }
+                //console.log("PRI1", args,res)
+                //window.pri1 = args
+                //window.pri2 = res
+            })
+        }))
+        
+        //window.dnp1 = "aa"
+
+        //const DisplayName = findByName("DisplayName", false);
+        //unpatches.push(patcher.after("default", DisplayName, (args, res) => {
+        //const UserProfilePrimaryInfo = findByName("UserProfilePrimaryInfo", false);
+        const DisplayName = findByProps("DisplayName");
+        unpatches.push(patcher.after("DisplayName", DisplayName, (args, res) => {
+            //console.log("DISPLAYNAME",args,res)
+            //window.dn1 = args
+            //window.dn2 = res
+            const user = args[0]?.user;
+            if (user === undefined) return;
+            if(!res) return;
+            if(!user.id) return;
+            if(!storage.profileUsername)return;
+            if(findInReactTree(res, m => m?.props?.key == "DisplayNameStatusIcons")) return;
+            //res.props?.children?.props?.children[0]?.props?.children?.push(<StatusIcons userId={user.id}/>)
+            const row = findInReactTree(res, m => m?.props?.style?.flexDirection == "row");
+
+            row.props.children.push(<StatusIcons userId={user.id}/>)
+        }));
+
+        const Status = findByName("Status", false);
+        unpatches.push(patcher.before("default", Status, (args) => {
+            if(!args) return;
+            if(!args[0]) return;
+            if(!storage.removeDefaultMobile)return;
+            args[0].isMobileOnline = false
+        }))
+
+        //might remove in the future, seems outdated
+        //next 2 patches taken from here: https://github.com/Fierdetta/staff-tags/
+        const Rows = findByProps("GuildMemberRow")
+        if(Rows?.GuildMemberRow){
+            unpatches.push(patcher.after("type", Rows.GuildMemberRow, ([{ user }], res) => {
+                if(!storage.userList) return;
+                if(storage.oldUserListIcons) return;
+                const statusIconsView = findInReactTree(res, (c) => c.key == "GuildMemberRowStatusIconsView");
+                if(!statusIconsView){
+                    const row = findInReactTree(res, (c) => c.props.style.flexDirection === "row")
+                    row.props.children.splice(2, 0,
+                        <View 
+                            key="GuildMemberRowStatusIconsView"
+                            style={{
+                                flexDirection: 'row'
+                        }}>
+                            {debugLabels ? <Text>GMRSIV</Text> : <StatusIcons userId={user.id}/>}
+                        </View>
+                    )
+                }
+            }))
+        }
+
+
+        //https://github.com/everestmcarthur/revenge-plugins/blob/main/plugins/staff-tags/src/patches/details.tsx
+        let patchedAvatar = false
+        // user list on tabs v2
+        const rowPatch = ([{ user }], res) => {
+            if(!storage.userList) return;
+
+            const modifiedStatusIcons = findInReactTree(res?.props?.label, (c) => c.key == "TabsV2MemberListStatusIconsView");
+            if(!modifiedStatusIcons){
+                //window.mst = res
+                res.props.label = (
+                    <View style={{
+                        //flex:1,
+                        justifyContent: storage.oldUserListIcons ? "space-between": "flex-start",
+                        flexDirection: "row",
+                        alignItems: "center"
+                    }}
+                    key="TabsV2MemberListStatusIconsView">
+                        {res.props.label}
+                        <View key="TabsV2MemberListStatusIconsView" style={{
+                            flexDirection: 'row'
+                        }}>
+                            {debugLabels ? <Text>TV2MLSIV</Text> : <StatusIcons userId={user.id}/>}
+                        </View>
+                    </View>
+                )
+                //window.iv2 = res.props.label
+                /*if(!patchedAvatar){
+                    if(res?.props?.icon?.type){
+                        unpatches.push(patcher.before("type", res.props.icon.type, (args)=>{
+                            //console.log("AVATAR", args,res)
+                            //window.av = args
+                            if(storage.removeDefaultMobile){
+                                args[0].isMobileOnline = false
+                            }
+                        }))
+                        patchedAvatar = true
+                    }
+                }*/
+            }
+
+            
+        }
+
+        findByTypeNameAll("UserRow").forEach((UserRow) => unpatches.push(patcher.after("type", UserRow, rowPatch)))
+
+
+
+
+
+
+        /*const MessagesItemChannelLegend = findByProps("MessagesItemChannelLegend").MessagesItemChannelLegend;
+        unpatches.push(patcher.after("type", MessagesItemChannelLegend, (args, res) => {
+        }))*/
+
+
+        //Newest dm list patch (it's shit)
+        //Requires forcing a re-render of the whole list manually
+        const MessagesItemChannelContent = findByTypeName("MessagesItemChannelContent")
+        unpatches.push(patcher.after("type", MessagesItemChannelContent, (args, res) => {
+            //console.log("MessagesItemChannelContent-B", args, res)
+            //window.micc = res
+            const channel = args[0]?.channel
+            if(channel?.recipients?.length == 1){
+                const userId = channel.recipients[0]
+                
+                
+                //took some inspiration from here
+                //https://github.com/everestmcarthur/revenge-plugins/blob/main/plugins/staff-tags/src/patches/details.tsx
+                
+            
+                if(findInReactTree(res, m => m?.key == "TabsV2RedesignDMListIcons2")) return;
+
+                const nameContainer = findInReactTree(res, m => m?.props?.children?.some(h => h?.props?.ellipsizeMode))
+                //window.nc = nameContainer
+                
+                if(nameContainer?.props?.children){
+                    const orig = nameContainer.props.children[0]
+                    nameContainer.props.children = <View key="TabsV2RedesignDMListIcons2" style={{
+                        flexDirection: 'row'
+                    }}>
+                        {orig}
+                        <StatusIcons userId={userId}/>
+                    </View>
+                }
+            }
+            //nameContainer.props.children = <Text>hhh</Text>
+            //const userId = messageContainer?.props?.message?.author?.id
+            //const userId = messageContainer?.props?.channel?.ownerId
+            
+        }))
+
+
+
+
+    },
+    onUnload: () => {
+        unpatches.forEach(u => u());
+
+    },
+
+    settings:()=>{
+        return <Settings/>
+    }
+
+}
+

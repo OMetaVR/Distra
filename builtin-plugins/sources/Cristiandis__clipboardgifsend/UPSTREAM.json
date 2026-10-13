@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/Cristiandis/clipboardgifsend",
+  "commit": "8228a629a30b72f15b65922bb549a1fd5406987a",
+  "license": "Unlicense",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

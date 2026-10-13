@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/fres621/vendetta-plugins",
+  "commit": "a55fb008acb5dc4b90bc195ad21768a3d2638653",
+  "license": "CC0-1.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

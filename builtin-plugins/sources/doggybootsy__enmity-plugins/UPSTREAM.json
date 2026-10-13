@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/doggybootsy/enmity-plugins",
+  "commit": "7d73b32693820ff576c189feaea1dfe7edcbb341",
+  "license": "GPL-3.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

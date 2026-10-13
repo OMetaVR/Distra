@@ -1,0 +1,21 @@
+diff -ruN a/plugins/MoreAlts/SidebarPatcher.js b/plugins/MoreAlts/SidebarPatcher.js
+--- a/plugins/MoreAlts/SidebarPatcher.js	2026-10-13 10:54:36.507884997 -0400
++++ b/plugins/MoreAlts/SidebarPatcher.js	2026-10-13 10:31:55.282333700 -0400
+@@ -156,7 +156,7 @@
+                     const sections = config.sections;
+ 
+                     const section = sections?.find((x) =>
+-                        ["Bunny", "Kettu", "Revenge"].includes(x?.label),
++                        ["Discordia", "Bunny", "Kettu", "Revenge"].includes(x?.label),
+                     );
+ 
+                     // If unable to find a section
+@@ -195,7 +195,7 @@
+                     ).props;
+ 
+                     const section = sections?.find((x) =>
+-                        ["Bunny", "Kettu", "Revenge"].includes(x?.label),
++                        ["Discordia", "Bunny", "Kettu", "Revenge"].includes(x?.label),
+                     );
+ 
+                     // If unable to find a section

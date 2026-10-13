@@ -1,0 +1,97 @@
+import { findByName } from "@vendetta/metro";
+import { React } from "@vendetta/metro/common";
+import { after } from "@vendetta/patcher";
+
+import { fluxSubscribe } from "$/types";
+import ProfileSongs from "../components/ProfileSongs";
+import { useCacheStore } from "../stores/CacheStore";
+
+// pre 264.5
+const YouAboutMeCard = findByName("YouAboutMeCard", false);
+const SimplifiedUserProfileAboutMeCard = findByName(
+	"SimplifiedUserProfileAboutMeCard",
+	false,
+);
+const UserProfileBio = findByName("UserProfileBio", false);
+// post 264.5
+const UserProfileAboutMeCard = findByName("UserProfileAboutMeCard", false);
+
+export default function() {
+	const patches: (any)[] = [];
+
+	if (YouAboutMeCard) {
+		patches.push(
+			after(
+				"default",
+				YouAboutMeCard,
+				([{ userId }], ret) =>
+					React.createElement(React.Fragment, {}, [
+						React.createElement(ProfileSongs, {
+							userId,
+							variant: "you",
+						}),
+						ret,
+					]),
+			),
+		);
+	}
+
+	if (UserProfileAboutMeCard) {
+		patches.push(
+			after(
+				"default",
+				UserProfileAboutMeCard,
+				([{ userId, style }], ret) =>
+					React.createElement(React.Fragment, {}, [
+						React.createElement(ProfileSongs, {
+							userId,
+							variant: "simplified",
+							style,
+						}),
+						ret,
+					]),
+			),
+		);
+	}
+	if (SimplifiedUserProfileAboutMeCard) {
+		patches.push(
+			after(
+				"default",
+				SimplifiedUserProfileAboutMeCard,
+				([{ userId, style }], ret) =>
+					React.createElement(React.Fragment, {}, [
+						React.createElement(ProfileSongs, {
+							userId,
+							variant: "simplified",
+							style,
+						}),
+						ret,
+					]),
+			),
+		);
+	}
+
+	if (UserProfileBio) {
+		patches.push(
+			after("default", UserProfileBio, ([{ displayProfile }], ret) =>
+				displayProfile
+					? React.createElement(React.Fragment, {}, [
+						React.createElement(ProfileSongs, {
+							userId: displayProfile.userId,
+							variant: "classic",
+							style: displayProfile.themeColors
+								? {}
+								: undefined,
+						}),
+						ret,
+					])
+					: ret),
+		);
+	}
+
+	patches.push(fluxSubscribe("CONNECTION_OPEN", () => useCacheStore.getState().$refresh()));
+
+	return () => {
+		for (const x of patches) x();
+	};
+}

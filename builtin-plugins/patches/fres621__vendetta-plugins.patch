@@ -1,0 +1,22 @@
+diff -ruN a/plugins/SpotifyPreview/src/patches/handleClick.tsx b/plugins/SpotifyPreview/src/patches/handleClick.tsx
+--- a/plugins/SpotifyPreview/src/patches/handleClick.tsx	2026-10-13 10:54:25.083369399 -0400
++++ b/plugins/SpotifyPreview/src/patches/handleClick.tsx	2026-10-13 10:28:54.366783100 -0400
+@@ -21,7 +21,8 @@
+ 
+ let isList = (type) => type === "playlist" || type === "album";
+ 
+-const WebView = findByName("WebView") || findByProps("WebView").default.render;
++// Discord 2xx+: modules/media_viewer re-exports react-native-webview's WebView next to getWebViewProxy.
++const WebView = findByProps("WebView", "getWebViewProxy")?.WebView ?? findByName("WebView") ?? findByProps("WebView")?.WebView;
+ let wv = (link, type) => {
+     const bgcolor = resolveSemanticColor(ThemeStore.theme, semanticColors.MODAL_BACKGROUND);
+     return (
+@@ -43,7 +44,7 @@
+     );
+ }
+ 
+-const handleClick = findByProps("handleClick");
++const handleClick = findByProps("handleClick", "isLinkTrusted") ?? findByProps("handleClick");
+ 
+ export default function patch() {
+     return before("handleClick", handleClick, function ([args]) {

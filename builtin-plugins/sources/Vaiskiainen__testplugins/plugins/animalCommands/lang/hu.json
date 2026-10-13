@@ -1,0 +1,150 @@
+{
+    "commands": {
+        "capybara": {
+            "name": "",
+            "description": ""
+        },
+        "turtle": {
+            "name": "",
+            "description": ""
+        },
+        "horse": {
+            "description": "",
+            "name": ""
+        },
+        "sheep": {
+            "description": "",
+            "name": ""
+        },
+        "duck": {
+            "name": "",
+            "description": ""
+        },
+        "shiba": {
+            "name": "",
+            "description": ""
+        },
+        "dog": {
+            "description": "",
+            "name": ""
+        },
+        "cat": {
+            "name": "",
+            "description": ""
+        },
+        "deer": {
+            "name": "",
+            "description": ""
+        },
+        "bird": {
+            "name": "",
+            "description": ""
+        },
+        "dinosaur": {
+            "name": "",
+            "description": ""
+        },
+        "fox": {
+            "description": "",
+            "name": ""
+        },
+        "otter": {
+            "description": "",
+            "name": ""
+        }
+    },
+    "apis": {
+        "shibe-online": {
+            "description": "",
+            "name": ""
+        },
+        "random-dog": {
+            "description": "",
+            "name": ""
+        },
+        "dog-ceo-shiba": {
+            "description": "",
+            "name": ""
+        },
+        "some-random-api": {
+            "description": "",
+            "name": ""
+        },
+        "tinyfox": {
+            "description": "",
+            "name": ""
+        },
+        "commons-triceratops": {
+            "name": "",
+            "description": ""
+        },
+        "thecatapi": {
+            "name": "",
+            "description": ""
+        },
+        "randomfox": {
+            "name": "",
+            "description": ""
+        },
+        "animals-maxz": {
+            "description": "",
+            "name": ""
+        },
+        "capy-lol": {
+            "name": "",
+            "description": ""
+        },
+        "random-duck-v2": {
+            "name": "",
+            "description": ""
+        },
+        "dog-ceo": {
+            "name": "",
+            "description": ""
+        },
+        "random-duck-v1": {
+            "description": "",
+            "name": ""
+        },
+        "cataas": {
+            "name": "",
+            "description": ""
+        }
+    },
+    "settings": {
+        "groups": {
+            "animals": "",
+            "navigation": "",
+            "note": "",
+            "choose_api": ""
+        },
+        "items": {
+            "api_label": "",
+            "selected_api": "",
+            "note_text": "",
+            "back_to_animals": ""
+        },
+        "errors": {
+            "failed_ui": "",
+            "update_vendetta": ""
+        },
+        "header": {
+            "title": "",
+            "subtitle": ""
+        }
+    },
+    "toasts": {
+        "hidden_settings_status": "",
+        "no_image": "",
+        "api_misconfigured": "",
+        "hidden_settings_unlocked": "",
+        "command_disabled": "",
+        "fetch_failed": ""
+    },
+    "ui": {
+        "status": {
+            "visible": "",
+            "hidden": ""
+        }
+    }
+}

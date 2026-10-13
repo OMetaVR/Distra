@@ -1,0 +1,100 @@
+{
+    "commands": {
+        "dog": {
+            "name": "собака",
+            "description": "Случайное фото собаки"
+        },
+        "cat": {
+            "name": "кошка",
+            "description": "Случайное фото кота"
+        },
+        "fox": {
+            "name": "лиса",
+            "description": "Случайное фото лисы"
+        },
+        "duck": {
+            "name": "утка",
+            "description": "Случайное фото утки"
+        },
+        "shiba": {
+            "name": "Сиба-ину",
+            "description": "Случайное фото сиба-ину"
+        },
+        "horse": {
+            "name": "лошадь",
+            "description": "Случайное фото лошади"
+        },
+        "deer": {
+            "name": "Олень",
+            "description": "Случайное фото оленя"
+        },
+        "otter": {
+            "name": "Выдра",
+            "description": "Случайное фото выдры"
+        },
+        "bird": {
+            "name": "Птица",
+            "description": "Случайное фото птицы"
+        },
+        "turtle": {
+            "name": "Черепаха",
+            "description": "Случайное фото черепахи"
+        },
+        "sheep": {
+            "name": "овца",
+            "description": "Случайное фото овцы"
+        },
+        "capybara": {
+            "name": "Капибара",
+            "description": "Случайное фото капибары"
+        },
+        "dinosaur": {
+            "name": "Динозавр",
+            "description": "Секретный динозавр—разблокирован с помощью спрятанной настройки"
+        }
+    },
+    "api_notes": {
+        "filters_non_images": "Фильтровать не изображения",
+        "includes_fact": "(с фактом)",
+        "ott": "(сервис медиа over the top)"
+    },
+    "settings": {
+        "header": {
+            "title": "Комманды",
+            "subtitle": "Крутые изображения животных с помощью /комманд"
+        },
+        "groups": {
+            "animals": "Животные",
+            "note": "Заметка",
+            "choose_api": "Выберите API",
+            "navigation": "Навигация",
+            "localization": "Локализация"
+        },
+        "items": {
+            "api_label": "API:{{apiName}}",
+            "note_text": "Нашли баг или хотите, чтобы добавили еще одно животное? Пишите в личные сообщения \"@vaiskiainen.\"",
+            "selected_api": "Выбрано · {{apiDescription}}",
+            "back_to_animals": "Назад к животным",
+            "localization_title": "Помогите нам перевести плагин!",
+            "localization_description": "Этот плагин поддерживает несколько языков. Помогите нам улучшить переводы и сделать новые!"
+        },
+        "errors": {
+            "failed_ui": "Не удалось загрузить интерфейс настроек по умолчанию",
+            "update_vendetta": "Обновите вашу сборку Revenge/Vendetta и попробуйте снова."
+        }
+    },
+    "toasts": {
+        "command_disabled": "Эта комманда отключена в настройках.",
+        "api_misconfigured": "Этот API настроен неправильно.",
+        "no_image": "API не дало изображения. Попробуйте другой источник.",
+        "fetch_failed": "Не удалось загрузить изображение животного.",
+        "hidden_settings_unlocked": "Спрятанные настройки разблокировано!",
+        "hidden_settings_status": "Спрятанные настройки{{status}}"
+    },
+    "ui": {
+        "status": {
+            "visible": "Видимые",
+            "hidden": "Спрятанные"
+        }
+    }
+}

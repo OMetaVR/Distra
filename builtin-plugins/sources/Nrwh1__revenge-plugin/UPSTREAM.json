@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/Nrwh1/revenge-plugin",
+  "commit": "ca93785e3eda7c824099c2fd5f0fc62648185d68",
+  "license": "CC0-1.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

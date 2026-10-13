@@ -1,0 +1,14 @@
+{
+    "name": "Jump To Top",
+    "description": "Adds a button to jump to the first message in a chat. The opposite of jump to present.",
+    "authors": [
+        {
+            "name": "tralwdwdd",
+            "id": "1278723517436788897"
+        }
+    ],
+    "main": "src/index.tsx",
+    "vendetta": {
+        "icon": "ic_chat_bubble_32px"
+    }
+}

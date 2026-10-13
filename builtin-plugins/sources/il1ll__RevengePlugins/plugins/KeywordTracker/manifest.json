@@ -1,0 +1,14 @@
+{
+    "name": "Keyword Tracker",
+    "description": "Track keywords and get notified when mentioned.",
+    "authors": [
+        {
+            "name": "coder.gg",
+            "id": "1099039269391171765"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ChatCheckIcon"
+    }
+}

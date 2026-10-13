@@ -1,0 +1,13 @@
+diff -ruN a/packages/friends-since/src/index.tsx b/packages/friends-since/src/index.tsx
+--- a/packages/friends-since/src/index.tsx	2026-10-13 10:54:47.432731364 -0400
++++ b/packages/friends-since/src/index.tsx	2026-10-13 10:20:33.808116900 -0400
+@@ -37,7 +37,8 @@
+   }
+ });
+ 
+-const SimplifiedUserProfileAboutMeCard = getByName("SimplifiedUserProfileAboutMeCard", { default: false });
++// Discordia: Discord replaced the simplified profile card with UserProfileAboutMeCard (same userId prop).
++const SimplifiedUserProfileAboutMeCard = getByName("UserProfileAboutMeCard", { default: false }) ?? getByName("SimplifiedUserProfileAboutMeCard", { default: false });
+ 
+ const ic_friend_wave_24px = assets.getIDByName("ic_friend_wave_24px");
+ 

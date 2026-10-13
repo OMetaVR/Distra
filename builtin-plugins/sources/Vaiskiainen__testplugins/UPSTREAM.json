@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/Vaiskiainen/testplugins",
+  "commit": "2c0d88af67adc7c4a1a453aa0c6551bebb767a8c",
+  "license": "CC0-1.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

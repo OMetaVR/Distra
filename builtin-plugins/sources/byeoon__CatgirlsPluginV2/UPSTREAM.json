@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/byeoon/CatgirlsPluginV2",
+  "commit": "79b51de630bbecfb7b0adb29e9f6f8593c6d527d",
+  "license": "GPL-3.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

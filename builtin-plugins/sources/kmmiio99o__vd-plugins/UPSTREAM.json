@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/kmmiio99o/vd-plugins",
+  "commit": "20ed8ac703a43c45557115da504844621fe9c8fb",
+  "license": "GPL-3.0",
+  "note": "Vendored by scripts/sync-plugins.py. Modifications, if any, are listed in builtin-plugins/PATCHES.md."
+}

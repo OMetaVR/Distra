@@ -1,0 +1,16 @@
+{
+  "name": "Commands",
+  "description": "A collection of fixed commands including facts, petpet, and more.",
+  "authors": [
+    {
+      "name": "kmmiio99o",
+      "id": "879393496627306587"
+    }
+  ],
+  "main": "index.ts",
+  "vendetta": {
+    "icon": "ic_badge_staff",
+    "original": "plugins/all-in-one"
+  },
+  "version": "1.0.0"
+}
