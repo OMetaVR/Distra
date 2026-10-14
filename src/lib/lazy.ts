@@ -59,7 +59,7 @@ export function proxyLazy<T>(factory: () => T, { cache = true, hint = "unknown" 
     return proxy as T;
 }
 
-export const lazySymbol = Symbol.for("discordia.lazy");
+export const lazySymbol = Symbol.for("distra.lazy");
 
 /** Whether `value` is a proxy created by `proxyLazy`. */
 export function isLazy(value: unknown): boolean {

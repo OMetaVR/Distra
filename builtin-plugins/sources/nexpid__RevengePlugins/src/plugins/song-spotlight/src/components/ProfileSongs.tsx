@@ -1,7 +1,6 @@
 import { logger } from "@vendetta";
 import { findByName, findByProps, findByStoreName } from "@vendetta/metro";
 import { React, ReactNative as RN, stylesheet } from "@vendetta/metro/common";
-import { semanticColors } from "@vendetta/ui";
 import type { ViewProps } from "react-native";
 
 import { FlashList } from "$/deps";
@@ -40,7 +39,9 @@ export default function ProfileSongs({
 
 	const styles = stylesheet.createThemedStyleSheet({
 		card: {
-			backgroundColor: semanticColors.CARD_SECONDARY_BG,
+			// Discord 348's own profile cards (About Me, ...) have no box of their own, so neither does this one.
+			// A translucent grey fill here showed up as a visible rectangle on every profile.
+			backgroundColor: "transparent",
 			minHeight: 200,
 		},
 	});

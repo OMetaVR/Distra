@@ -13,7 +13,7 @@ import { createVendettaObject } from "./vendetta";
 export function createBunnyObject() {
     const vd = globalThis.vendetta ?? createVendettaObject();
     return {
-        version: `discordia-${DISCORDIA_VERSION}`,
+        version: `distra-${DISTRA_VERSION}`,
         api: {
             patcher: vd.patcher,
             storage: vd.storage,
@@ -23,9 +23,9 @@ export function createBunnyObject() {
             settings: { settings: vd.settings, loaderConfig: vd.loader.config },
             react: { jsx: { onJsxCreate, deleteJsxCreate } },
         },
-        // Not supported by Discordia yet; present so theme/font-aware plugins degrade gracefully.
+        // Not supported by Distra yet; present so theme/font-aware plugins degrade gracefully.
         themes: { themes: {}, selectTheme: vd.themes.selectTheme, applyTheme: vd.themes.applyTheme, getCurrentTheme: () => null, getThemeFromLoader: () => null },
-        fonts: { fonts: {}, installFont: () => Promise.reject(new Error("Fonts are not supported by Discordia yet")), saveFont: () => Promise.reject(new Error("Fonts are not supported by Discordia yet")) },
+        fonts: { fonts: {}, installFont: () => Promise.reject(new Error("Fonts are not supported by Distra yet")), saveFont: () => Promise.reject(new Error("Fonts are not supported by Distra yet")) },
         metro: { ...metro, common: vd.metro.common },
         ui: {
             components: { ...vd.ui.components, ...components },

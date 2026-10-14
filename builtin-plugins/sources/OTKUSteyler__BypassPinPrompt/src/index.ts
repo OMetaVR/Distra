@@ -35,6 +35,21 @@ const PIN_TITLES = [
     "Sematkan Pesan",
 ];
 
+// Distra: the unpin prompt wasn't covered, and the list above only knows some languages. Discord's own
+// strings for both titles (in the current language) are added when available.
+const Intl = findByProps("intl", "t");
+const DISCORD_TITLE_KEYS = ["CvQ18w" /* Pin Message */, "Bse+F/" /* Unpin Message */];
+function promptTitles(): string[] {
+    const titles = [...PIN_TITLES, "Unpin Message"];
+    for (const key of DISCORD_TITLE_KEYS) {
+        try {
+            const title = Intl?.t?.[key] && Intl.intl.string(Intl.t[key]);
+            if (typeof title === "string") titles.push(title);
+        } catch {}
+    }
+    return titles;
+}
+
 let patches: (() => void)[] = [];
 
 export default {
@@ -53,7 +68,7 @@ export default {
                 const alert = args[0];
                 const title: string = alert?.title ?? "";
 
-                if (PIN_TITLES.includes(title)) {
+                if (promptTitles().includes(title)) {
                     const confirmAction = alert?.confirmText
                         ? alert?.onConfirm ?? alert?.actions?.find((a: any) => a.preferred)?.onPress
                         : null;

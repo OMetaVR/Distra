@@ -1,7 +1,7 @@
 // Enmity and Aliucord (iOS) plugins: a single JS file that calls
 // `registerPlugin(plugin)` when evaluated. Its id is the file's URL.
 
-import { captureRegistrations, enmityCommands, enmityPatcher, type EnmityPlugin, makeSettingsStore } from "@/compat/enmity";
+import { captureRegistrations, enmityCommands, enmityPatcher, type EnmityPlugin, makeSettingsStore, withLookupOwner } from "@/compat/enmity";
 
 import { evaluate, fetchText } from "../fetch";
 import type { FlavorAdapter, PluginFlavor, PluginManifest } from "../types";
@@ -31,14 +31,14 @@ function createFlavor(flavor: PluginFlavor, label: string): FlavorAdapter {
             let plugin: EnmityPlugin | undefined;
             const release = captureRegistrations(registered => void (plugin ??= registered));
             try {
-                evaluate(code, `${flavor}-plugin/${record.id}`);
+                withLookupOwner(record.manifest.name, () => evaluate(code, `${flavor}-plugin/${record.id}`));
             } finally {
                 release();
             }
             if (!plugin) throw new Error("The plugin did not call registerPlugin()");
 
             const registeredPlugin = plugin;
-            registeredPlugin.onStart();
+            withLookupOwner(registeredPlugin.name, () => registeredPlugin.onStart());
             if (registeredPlugin.commands) enmityCommands.registerCommands(registeredPlugin.name, registeredPlugin.commands);
 
             const store = makeSettingsStore(registeredPlugin.name);

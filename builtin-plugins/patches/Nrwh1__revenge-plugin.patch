@@ -1,0 +1,6 @@
+diff -ruN a/spotifyfix/index.js b/spotifyfix/index.js
+--- a/spotifyfix/index.js	2026-10-14 17:27:27.805551610 -0400
++++ b/spotifyfix/index.js	2026-10-14 12:39:12.301651800 -0400
+@@ -1 +1 @@
+-(function(e,o,i){"use strict";const a=o.findByProps("dispatch");let t;var d={onLoad:function(){t=i.before("dispatch",a,function(u){let[n]=u;n.type==="SPOTIFY_PLAYER_STATE"&&n.payload?.isPremium===void 0&&(n.payload.isPremium=!0)})},onUnload:function(){typeof t=="function"&&t()}};return e.default=d,Object.defineProperty(e,"__esModule",{value:!0}),e})({},vendetta.metro,vendetta.patcher);
++(function(e,o,i){"use strict";const a=o.findByProps("dispatch");let t;var d={onLoad:function(){t=i.before("dispatch",a,function(u){let[n]=u;n.type==="SPOTIFY_PLAYER_STATE"&&n.payload&&n.payload.isPremium===void 0&&(n.payload.isPremium=!0)})},onUnload:function(){typeof t=="function"&&t()}};return e.default=d,Object.defineProperty(e,"__esModule",{value:!0}),e})({},vendetta.metro,vendetta.patcher);

@@ -22,7 +22,14 @@ const TwitterIcon = getIDByName('img_account_sync_twitter_white')
 
 const Invites = getByProps('acceptInviteAndTransitionToInviteChannel')
 
-export default ({settings}: SettingsProps) => {
+export default ({settings: store}: SettingsProps) => {
+    // Distra: Enmity's settings store doesn't re-render the page, so toggles never moved until the page was reopened.
+    const [, rerender] = React.useReducer((x: number) => x + 1, 0)
+    const settings = {
+        get: (key: string) => store.get(key),
+        getBoolean: (key: string, fallback: boolean) => store.getBoolean(key, fallback),
+        set: (key: string, value: any) => { store.set(key, value); rerender() },
+    }
     const styles = StyleSheet.createThemedStyleSheet({
         container: {
             flexDirection: "row",

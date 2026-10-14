@@ -1,5 +1,5 @@
 // Discord's design-system components. Using them (rather than our own) keeps
-// Discordia's pages visually native and theme-aware.
+// Distra's pages visually native and theme-aware.
 
 import { lazyDestructure } from "@/lib/lazy";
 import { findByProps, findByPropsLazy } from "@/metro";

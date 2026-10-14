@@ -1,0 +1,316 @@
+diff -ruN a/plugins/Commands/settings/components/Header.tsx b/plugins/Commands/settings/components/Header.tsx
+--- a/plugins/Commands/settings/components/Header.tsx	2026-10-14 17:27:29.885660634 -0400
++++ b/plugins/Commands/settings/components/Header.tsx	2026-10-14 15:56:24.190619200 -0400
+@@ -280,7 +280,8 @@
+                 </RN.Pressable>
+ 
+                 <RN.View style={styles.textContainer}>
+-                    <RN.Text style={[TextStyleSheet["display-md"], { color: resolveSemanticColor(semanticColors["TEXT_DEFAULT"]) }]}>
++                    {/* Distra: display-md was wide enough to wrap "Commands" onto a second line. */}
++                    <RN.Text numberOfLines={1} adjustsFontSizeToFit style={[TextStyleSheet["heading-xl/bold"] ?? TextStyleSheet["display-md"], { color: resolveSemanticColor(semanticColors["TEXT_DEFAULT"]) }]}>
+             Commands
+                     </RN.Text>
+                     <RN.Text style={[TextStyleSheet["text-md/bold"], { color: resolveSemanticColor(semanticColors["TEXT_MUTED"]) }]}>
+diff -ruN a/plugins/Commands/sidebar.tsx b/plugins/Commands/sidebar.tsx
+--- a/plugins/Commands/sidebar.tsx	2026-10-14 17:27:29.885822188 -0400
++++ b/plugins/Commands/sidebar.tsx	2026-10-14 11:14:50.156461300 -0400
+@@ -154,7 +154,7 @@
+                     const sections = config.sections;
+ 
+                     const section = sections?.find((x: any) =>
+-                        ["Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
++                        ["Distra", "Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
+                             (mod) => x.label === mod && x.title === mod,
+                         ),
+                     );
+@@ -177,7 +177,7 @@
+                         (i) => i.props?.sections,
+                     ).props;
+                     const section = sections?.find((x: any) =>
+-                        ["Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
++                        ["Distra", "Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
+                             (mod) => x.label === mod && x.title === mod,
+                         ),
+                     );
+diff -ruN a/plugins/Moyai/src/index.ts b/plugins/Moyai/src/index.ts
+--- a/plugins/Moyai/src/index.ts	2026-10-14 17:27:29.887637074 -0400
++++ b/plugins/Moyai/src/index.ts	2026-10-14 11:00:26.678652200 -0400
+@@ -6,8 +6,9 @@
+ const { DCDSoundManager } = ReactNative.NativeModules;
+ const SelectedChannelStore = findByStoreName("SelectedChannelStore");
+ 
++// Distra: iOS can't play the original OGG (Metastruct/garrysmod-chatsounds "overused thud"); this is an MP3 of it.
+ const THUD_URL =
+-  "https://raw.githubusercontent.com/Metastruct/garrysmod-chatsounds/master/sound/chatsounds/autoadd/memes/overused%20thud.ogg";
++  ((globalThis as any).__DISTRA_ASSET_BASE__ ?? "https://raw.githubusercontent.com/OMetaVR/Distra/main/builtin-plugins/assets/") + "moyai-thud.mp3";
+ const SOUND_ID = 6969;
+ let SOUND_DURATION = -1;
+ 
+diff -ruN a/plugins/multi-scrobbler/src/sidebar.tsx b/plugins/multi-scrobbler/src/sidebar.tsx
+--- a/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-14 17:27:29.888764463 -0400
++++ b/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-14 11:14:50.164672300 -0400
+@@ -153,7 +153,7 @@
+                     const sections = config.sections;
+ 
+                     const section = sections?.find((x: any) =>
+-                        ["Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
++                        ["Distra", "Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
+                             (mod) => x.label === mod && x.title === mod,
+                         ),
+                     );
+@@ -176,7 +176,7 @@
+                         (i) => i.props?.sections,
+                     ).props;
+                     const section = sections?.find((x: any) =>
+-                        ["Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
++                        ["Distra", "Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
+                             (mod) => x.label === mod && x.title === mod,
+                         ),
+                     );
+diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerDrawer/src/components/FolderItem.tsx
+--- a/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-14 17:27:29.887790968 -0400
++++ b/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-14 16:17:12.556746400 -0400
+@@ -86,7 +86,22 @@
+     return <Animated.View style={{ opacity }}>{children}</Animated.View>;
+ }
+ 
+-export default function FolderItem({ node, onPick, showNames }: { node: GuildNode; onPick: (id: string) => void; showNames?: boolean }) {
++/** A line across the whole row of the wrapping grid, ending a run of servers. */
++export function RowSeparator() {
++    return <View style={{ width: "100%", height: StyleSheet.hairlineWidth * 2, marginVertical: 4, borderRadius: 1, backgroundColor: colors?.BACKGROUND_MODIFIER_ACCENT ?? "rgba(255,255,255,0.18)" }} />;
++}
++
++interface FolderItemProps {
++    node: GuildNode;
++    onPick: (id: string) => void;
++    showNames?: boolean;
++    /** Open folders list their servers in a separate rail, not inline. */
++    sidebar?: boolean;
++    /** A line after an open folder's servers, before the next servers. */
++    separator?: boolean;
++}
++
++export default function FolderItem({ node, onPick, showNames, sidebar, separator }: FolderItemProps) {
+     const open = useFolderExpanded(node.id);
+ 
+     const toggle = () => {
+@@ -191,11 +206,12 @@
+                             </View>,
+                         ),
+                     )}
+-                    {node.children.map((ch) => (
++                    {!sidebar && node.children.map((ch) => (
+                         <FadeIn key={ch.id}>
+                             <GuildItem node={ch} onPick={onPick} showNames={showNames} />
+                         </FadeIn>
+                     ))}
++                    {!sidebar && separator && <RowSeparator />}
+                 </>
+             ) : (
+                 folderButton(folderContent(<FolderCover node={node} />))
+diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx
+--- a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-14 17:27:29.887790968 -0400
++++ b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-14 16:17:12.557492600 -0400
+@@ -7,6 +7,7 @@
+ import { getGestureContext } from "../utils/gestureContext";
+ import GuildItem from "./GuildItem";
+ import FolderItem from "./FolderItem";
++import { useExpandedFolders } from "../utils/theme";
+ import DmTile from "./DmTile";
+ 
+ const Flux = findByProps("useStateFromStores");
+@@ -64,6 +65,7 @@
+ const ICON = 48;
+ const GAP = 6;
+ const PAD = 12;
++const RAIL = ICON + 20;
+ 
+ const FallbackGestureContext = React.createContext(null);
+ 
+@@ -172,24 +174,42 @@
+ 
+     const { width: winW } = Dimensions.get("window");
+ 
+-    const cols = Math.max(3, Math.floor((winW - PAD * 2 + GAP) / (ICON + GAP)));
++    const sidebar = storage.folderLayout === "sidebar";
++    const openFolders = useExpandedFolders(nodes);
++    const showRail = sidebar && openFolders.length > 0;
++    // The rail takes its room only while a folder is open.
++    const gridW = winW - (showRail ? RAIL : 0);
++
++    const cols = Math.max(3, Math.floor((gridW - PAD * 2 + GAP) / (ICON + GAP)));
+     const totalW = cols * ICON + (cols - 1) * GAP;
+-    const padX = Math.max(0, (winW - totalW) / 2);
++    const padX = Math.max(0, (gridW - totalW) / 2);
+ 
++    const separator = storage.folderSeparator !== false;
+     return (
+         <ScrollView style={st.alignTop} showsVerticalScrollIndicator={false}>
+-            <View
+-                style={[st.grid, { paddingHorizontal: padX, gap: GAP }]}
+-                onLayout={onLayout}
+-            >
+-                {!storage.hideDmTile && <DmTile />}
+-                {nodes.map((node) =>
+-                    node.type === "folder"
+-                        ? <FolderItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
+-                        : <GuildItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
++            <View style={st.split} onLayout={onLayout}>
++                <View style={[st.grid, { width: gridW, paddingHorizontal: padX, gap: GAP }]}>
++                    {!storage.hideDmTile && <DmTile />}
++                    {nodes.map((node) =>
++                        node.type === "folder"
++                            ? <FolderItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} sidebar={sidebar} separator={separator} />
++                            : <GuildItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
++                    )}
++                    <CreateJoinButton onPress={openCreateJoin} />
++                    {isDiscoveryEnabled() && <DiscoveryTile onPress={openDiscovery} />}
++                </View>
++                {showRail && (
++                    <View style={st.rail}>
++                        {openFolders.map((folder, i) => (
++                            <View key={folder.id} style={st.railFolder}>
++                                {i > 0 && separator && <View style={st.railLine} />}
++                                {folder.children.map((child) => (
++                                    <GuildItem key={child.id} node={child} onPick={pick} showNames={!!storage.showGuildNames} />
++                                ))}
++                            </View>
++                        ))}
++                    </View>
+                 )}
+-                <CreateJoinButton onPress={openCreateJoin} />
+-                {isDiscoveryEnabled() && <DiscoveryTile onPress={openDiscovery} />}
+             </View>
+         </ScrollView>
+     );
+@@ -201,6 +221,28 @@
+         justifyContent: "flex-start",
+         alignItems: "flex-start",
+     },
++    split: {
++        flexDirection: "row",
++        alignItems: "flex-start",
++    },
++    rail: {
++        width: RAIL,
++        alignItems: "center",
++        paddingTop: 4,
++        paddingBottom: 16,
++        borderLeftWidth: StyleSheet.hairlineWidth * 2,
++        borderLeftColor: "rgba(255,255,255,0.18)",
++    },
++    railFolder: {
++        gap: GAP,
++        alignItems: "center",
++    },
++    railLine: {
++        width: ICON - 12,
++        height: StyleSheet.hairlineWidth * 2,
++        marginVertical: 4,
++        backgroundColor: "rgba(255,255,255,0.18)",
++    },
+     grid: {
+         flexDirection: "row",
+         flexWrap: "wrap",
+diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx
+--- a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-14 17:27:29.888194249 -0400
++++ b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-14 17:27:15.902751300 -0400
+@@ -1,6 +1,7 @@
+ import React from "react";
+ import { View } from "react-native";
+ import { findAll } from "@vendetta/metro";
++import { before } from "@vendetta/patcher";
+ import { useProxy } from "@vendetta/storage";
+ import { storage } from "@vendetta/plugin";
+ import { RailDmTile } from "../components/DmTile";
+@@ -192,6 +193,36 @@
+     hidingComplete = found > 0 && applied === 0;
+ }
+ 
++/**
++ * Discord 348 keeps the messages/channel panel clear of the 72px server rail with a fixed `left`
++ * on its container (nativeID "messages-parent-view", built inside MainChannels). With the servers
++ * moved into the drawer the rail is empty, so the panel is widened over it (unless the DMs tile
++ * stays in the rail).
++ */
++function patchMessagesPanelWidth(cleanups: (() => void)[]) {
++    const ViewType: any = View;
++    if (typeof ViewType?.render !== "function") {
++        console.log(TAG, "WARN: View.render not found; the messages panel keeps its server rail margin");
++        return;
++    }
++    cleanups.push(before("render", ViewType, (args: any[]) => {
++        const props = args[0];
++        if (props?.nativeID !== "messages-parent-view") return;
++        const left = storage.hideDmTile ? DM_WIDTH : 0;
++        const list = Array.isArray(props.style) ? props.style : [props.style];
++        let changed = false;
++        const next = list.map((s: any) => {
++            if (s && typeof s === "object" && s.position === "absolute" && typeof s.left === "number" && s.left !== left) {
++                changed = true;
++                return { ...s, left };
++            }
++            return s;
++        });
++        if (changed) return [{ ...props, style: Array.isArray(props.style) ? next : next[0] }, ...args.slice(1)];
++    }));
++    console.log(TAG, "PATCH: messages panel widened over the empty server rail");
++}
++
+ export function patchHideGuildsBar(cleanups: (() => void)[]): boolean {
+     let applied = false;
+ 
+@@ -203,6 +234,8 @@
+     );
+     applied = true;
+ 
++    patchMessagesPanelWidth(cleanups);
++
+     // 2+3. Persistent module mutation.
+     rescanHiding(cleanups);
+ 
+diff -ruN a/plugins/ServerDrawer/src/ui/Settings.tsx b/plugins/ServerDrawer/src/ui/Settings.tsx
+--- a/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-14 17:27:29.888194249 -0400
++++ b/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-14 16:17:12.557053800 -0400
+@@ -22,6 +22,20 @@
+                         onValueChange={(v: boolean) => { storage.showGuildNames = v; }}
+                     />
+                 </TableRowGroup>
++                <TableRowGroup title="Folders">
++                    <TableSwitchRow
++                        label="Open folders in a side list"
++                        subLabel="An open folder's servers appear in their own list to the right of the grid instead of among the other servers. The list only takes room while a folder is open."
++                        value={storage.folderLayout === "sidebar"}
++                        onValueChange={(v: boolean) => { storage.folderLayout = v ? "sidebar" : "inline"; }}
++                    />
++                    <TableSwitchRow
++                        label="Separator after open folders"
++                        subLabel="Draw a line where an open folder's servers end and the rest of your servers continue."
++                        value={storage.folderSeparator !== false}
++                        onValueChange={(v: boolean) => { storage.folderSeparator = v; }}
++                    />
++                </TableRowGroup>
+                 <TableRowGroup title="About">
+                     <TableRow
+                         label="Server Drawer"
+diff -ruN a/plugins/ServerDrawer/src/utils/theme.ts b/plugins/ServerDrawer/src/utils/theme.ts
+--- a/plugins/ServerDrawer/src/utils/theme.ts	2026-10-14 17:27:29.888489956 -0400
++++ b/plugins/ServerDrawer/src/utils/theme.ts	2026-10-14 16:17:12.557757700 -0400
+@@ -31,3 +31,17 @@
+     expanded?: boolean;
+     children: GuildNode[];
+ }
++
++/** The expanded folders among `nodes`, in list order. */
++export function useExpandedFolders(nodes: GuildNode[]): GuildNode[] {
++    const ids: string[] = Flux?.useStateFromStores?.(
++        [ExpandedGuildFolderStore],
++        () => {
++            const open = ExpandedGuildFolderStore?.getExpandedFolders?.();
++            return open instanceof Set ? [...open].map(String) : [];
++        },
++        [],
++        (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i]),
++    ) ?? [];
++    return nodes.filter((node) => node.type === "folder" && ids.includes(String(node.id)));
++}

@@ -422,17 +422,8 @@
       "repo": "nexpid/RevengePlugins",
       "path": "src/plugins/cloud-sync",
       "status": "working",
-      "warning": null,
+      "warning": "Uses nexpid's hosted service (dc.cloudsync.nexpid.xyz): you sign in with Discord, and your plugin and theme lists are stored there. The server is open source (nexpid/CloudSync); a custom host can be set in the plugin's settings.",
       "upstreamInstallUrl": "https://revenge.nexpid.xyz/cloud-sync/"
-    },
-    {
-      "id": "vendetta:nexpid/plugin-browser",
-      "flavor": "vendetta",
-      "repo": "nexpid/RevengePlugins",
-      "path": "src/plugins/plugin-browser",
-      "status": "working",
-      "warning": null,
-      "upstreamInstallUrl": "https://revenge.nexpid.xyz/plugin-browser/"
     },
     {
       "id": "vendetta:nexpid/monet-theme",
@@ -561,15 +552,6 @@
       "upstreamInstallUrl": "https://rico040.github.io/bunny-plugins/dislate/"
     },
     {
-      "id": "vendetta:aliernfrog/stealmoji",
-      "flavor": "vendetta",
-      "repo": "aliernfrog/vd-plugins",
-      "path": "plugins/Stealmoji",
-      "status": "warning",
-      "warning": "May cause crashes when viewing reactions.",
-      "upstreamInstallUrl": "https://aliernfrog.github.io/vd-plugins/Stealmoji/"
-    },
-    {
       "id": "vendetta:rico040/userbg",
       "flavor": "vendetta",
       "repo": "Rico040/bunny-plugins",
@@ -595,25 +577,6 @@
       "status": "working",
       "warning": null,
       "upstreamInstallUrl": "https://revenge.nexpid.xyz/nexxutils/"
-    },
-    {
-      "id": "vendetta:nexpid/themes-plus",
-      "flavor": "vendetta",
-      "repo": "nexpid/RevengePlugins",
-      "path": "src/plugins/themes-plus",
-      "status": "warning",
-      "warning": "Iconpacks don't work.",
-      "upstreamInstallUrl": "https://revenge.nexpid.xyz/themes-plus/"
-    },
-    {
-      "id": "vendetta:nrwh1/audiofix",
-      "flavor": "vendetta",
-      "repo": "Nrwh1/revenge-plugin",
-      "path": "audiofix",
-      "status": "working",
-      "warning": null,
-      "upstreamInstallUrl": "https://raw.githubusercontent.com/NarwhalKid/revenge-plugin/refs/heads/master/audiofix/",
-      "note": "plugins/audiofix source references an undefined RNReactNative; the repo also commits the deployed build at audiofix/, which is used instead."
     },
     {
       "id": "vendetta:nrwh1/spotifyfix",
@@ -830,6 +793,15 @@
       "status": "working",
       "warning": null,
       "upstreamInstallUrl": "https://kmmiio99o.github.io/vd-plugins/Commands"
+    },
+    {
+      "id": "vendetta:kmmiio99o/serverdrawer",
+      "flavor": "vendetta",
+      "repo": "kmmiio99o/vd-plugins",
+      "path": "plugins/ServerDrawer",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://kmmiio99o.github.io/vd-plugins/ServerDrawer"
     },
     {
       "id": "vendetta:kmmiio99o/multi-scrobbler",
@@ -1102,33 +1074,6 @@
       "upstreamInstallUrl": null
     },
     {
-      "id": "enmity:colin273/createwebhooks",
-      "flavor": "enmity",
-      "repo": "colin273/enmity-plugins",
-      "path": "CreateWebhooks",
-      "status": "legacy",
-      "warning": null,
-      "upstreamInstallUrl": null
-    },
-    {
-      "id": "enmity:doggybootsy/friends-since",
-      "flavor": "enmity",
-      "repo": "doggybootsy/enmity-plugins",
-      "path": "packages/friends-since",
-      "status": "legacy",
-      "warning": null,
-      "upstreamInstallUrl": null
-    },
-    {
-      "id": "enmity:doggybootsy/rdt",
-      "flavor": "enmity",
-      "repo": "doggybootsy/enmity-plugins",
-      "path": "packages/rdt",
-      "status": "legacy",
-      "warning": null,
-      "upstreamInstallUrl": null
-    },
-    {
       "id": "enmity:hauntii/getthatrory",
       "flavor": "enmity",
       "repo": "hauntii/EnPlugins",
@@ -1151,15 +1096,6 @@
       "flavor": "enmity",
       "repo": "iCrazeiOS/Enmity-Plugins",
       "path": "Plugins/GetPFP",
-      "status": "legacy",
-      "warning": null,
-      "upstreamInstallUrl": null
-    },
-    {
-      "id": "enmity:icrazeios/notracking",
-      "flavor": "enmity",
-      "repo": "iCrazeiOS/Enmity-Plugins",
-      "path": "Plugins/NoTracking",
       "status": "legacy",
       "warning": null,
       "upstreamInstallUrl": null
@@ -1364,6 +1300,40 @@
       "id": "vendetta:janisslsm/hidecallbuttons",
       "replacedBy": "discordia:hide-chat-buttons",
       "reason": "Merged into Hide Chat Buttons: Discord now renders call buttons with icon components, so they are matched by PhoneCallIcon/VideoIcon."
+    },
+    {
+      "id": "enmity:doggybootsy/friends-since",
+      "reason": "Built into Discord: Discord shows when you became friends on profiles itself now."
+    },
+    {
+      "id": "enmity:colin273/createwebhooks",
+      "reason": "Built into Discord: webhooks can be created from the channel settings now."
+    },
+    {
+      "id": "enmity:doggybootsy/rdt",
+      "reason": "Connected Enmity to React DevTools through a global that release builds of Discord don't have; Distra has its own remote debugger (Developer > Remote debugger)."
+    },
+    {
+      "id": "vendetta:nrwh1/audiofix",
+      "reason": "Android only: it patches the Android audio manager's handsfree mode (setCommunicationModeOn), which doesn't exist on iOS."
+    },
+    {
+      "id": "vendetta:nexpid/plugin-browser",
+      "reason": "Browsed the community plugin proxy list; everything worth shipping is already built in, and Plugin Library lists the rest."
+    },
+    {
+      "id": "vendetta:nexpid/themes-plus",
+      "reason": "Extended Vendetta themes (its icon pack support never worked); Distra is getting built-in themes and has its own icon packs."
+    },
+    {
+      "id": "enmity:icrazeios/notracking",
+      "replacedBy": "vendetta:nexpid/clean-urls",
+      "reason": "Same feature: Clean URLs strips tracking from links you send and from links you receive."
+    },
+    {
+      "id": "vendetta:aliernfrog/stealmoji",
+      "replacedBy": "enmity:byeoon/emotesplus",
+      "reason": "EmotesPlus covers it (clone an emoji to a server, copy its URL or image) from the same emoji sheet."
     }
   ]
 }

@@ -1,0 +1,24 @@
+diff -ruN a/plugins/favouriteanything/src/index.ts b/plugins/favouriteanything/src/index.ts
+--- a/plugins/favouriteanything/src/index.ts	2026-10-14 17:27:37.594217998 -0400
++++ b/plugins/favouriteanything/src/index.ts	2026-10-14 11:20:37.497697900 -0400
+@@ -5,7 +5,7 @@
+ // and converts video thumbnails to jpeg for the mobile favourites picker.
+ 
+ import { logger } from "@vendetta";
+-import { findByProps } from "@vendetta/metro";
++import { findByName, findByProps } from "@vendetta/metro";
+ import { before } from "@vendetta/patcher";
+ 
+ let origType: Function | null = null;
+@@ -35,6 +35,11 @@
+ }
+ 
+ function findGIFFavButton(): any {
++    // Distra: Discord 348 renamed it to MediaViewerOverlayButtonFavoriteGIF (a memo); names are minified,
++    // so it's found by its source file name.
++    const current = findByName("MediaViewerOverlayButtonFavoriteGIF", false)?.default;
++    if (current?.type) return current;
++
+     const modules = (window as any).vendetta?.metro?.modules ?? (window as any).modules;
+     if (!modules) return null;
+ 

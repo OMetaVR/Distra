@@ -1,5 +1,5 @@
 {
-  "note": "Plugins from the community list (github.com/Purple-EyeZ/Plugins-List) that Discordia offers to install from their authors instead of bundling.",
+  "note": "Plugins from the community list (github.com/Purple-EyeZ/Plugins-List) that Distra offers to install from their authors instead of bundling.",
   "plugins": [
     {
       "name": "Better Calls",
@@ -11,7 +11,7 @@
       "warning": "\u26a0\ufe0f Causes a crash when opening bot DMs",
       "installUrl": "https://raw.githubusercontent.com/PalmDevs/revenge-plugins-builds/main/better-calls/",
       "sourceUrl": "https://github.com/PalmDevs/revenge-plugins/tree/main/plugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "Better Chat Buttons",
@@ -23,7 +23,7 @@
       "warning": null,
       "installUrl": "https://raw.githubusercontent.com/PalmDevs/revenge-plugins-builds/main/better-chat-buttons/",
       "sourceUrl": "https://github.com/PalmDevs/revenge-plugins/tree/main/plugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "BringBackTenor",
@@ -35,7 +35,7 @@
       "warning": null,
       "installUrl": "https://lvwmwm.github.io/vendettian-plugins/BringBackTenor/",
       "sourceUrl": "https://github.com/lvwmwm/vendettian-plugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "Force Timestamp Locale",
@@ -47,7 +47,7 @@
       "warning": null,
       "installUrl": "https://raw.githubusercontent.com/PalmDevs/revenge-plugins-builds/main/force-timestamp-locale/",
       "sourceUrl": "https://github.com/PalmDevs/revenge-plugins/tree/main/plugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "Let it Snow",
@@ -71,7 +71,7 @@
       "warning": null,
       "installUrl": "https://maisymoe.github.io/strife/NoTrack/",
       "sourceUrl": "https://github.com/maisymoe/strife",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "Pastelize",
@@ -83,7 +83,7 @@
       "warning": null,
       "installUrl": "https://vd-plugins.github.io/proxy/cynosphere.github.io/VendettaPlugins/Pastelize/",
       "sourceUrl": "https://github.com/cynosphere/VendettaPlugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "PermissionViewer",
@@ -95,7 +95,7 @@
       "warning": null,
       "installUrl": "https://lvwmwm.github.io/vendettian-plugins/permissionviewer/",
       "sourceUrl": "https://github.com/lvwmwm/vendettian-plugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "Quick Delete",
@@ -108,7 +108,7 @@
       "warning": null,
       "installUrl": "https://purple-eyez.github.io/RevengePlugins/QuickDelete/",
       "sourceUrl": "https://github.com/purple-eyez/RevengePlugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "Realmoji",
@@ -121,7 +121,7 @@
       "warning": null,
       "installUrl": "https://purple-eyez.github.io/RevengePlugins/Realmoji",
       "sourceUrl": "https://github.com/purple-eyez/RevengePlugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "Server Drawer",
@@ -145,7 +145,7 @@
       "warning": null,
       "installUrl": "https://vd-plugins.github.io/proxy/cynosphere.github.io/VendettaPlugins/ShowImageLinks/",
       "sourceUrl": "https://github.com/cynosphere/VendettaPlugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "Show Tag",
@@ -157,7 +157,7 @@
       "warning": null,
       "installUrl": "https://vd-plugins.github.io/proxy/cynosphere.github.io/VendettaPlugins/ShowTag/",
       "sourceUrl": "https://github.com/cynosphere/VendettaPlugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "shutupClyde",
@@ -169,7 +169,7 @@
       "warning": null,
       "installUrl": "https://vd-plugins.github.io/proxy/kbd0t.github.io/vendetta-plugins/shutupClyde/",
       "sourceUrl": "https://github.com/kbd0t/vendetta-plugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "StreamQuality",
@@ -181,7 +181,7 @@
       "warning": null,
       "installUrl": "https://lvwmwm.github.io/vendettian-plugins/streamquality/",
       "sourceUrl": "https://github.com/lvwmwm/vendettian-plugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "Text Replace",
@@ -194,7 +194,7 @@
       "warning": null,
       "installUrl": "https://purple-eyez.github.io/RevengePlugins/TextReplace",
       "sourceUrl": "https://github.com/purple-eyez/RevengePlugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     },
     {
       "name": "\ud83c\uddfa\ud83c\uddf8 GTA VI Countdown",
@@ -206,7 +206,7 @@
       "warning": null,
       "installUrl": "https://purple-eyez.github.io/RevengePlugins/GTAVICountdown",
       "sourceUrl": "https://github.com/purple-eyez/RevengePlugins",
-      "reason": "No license, so its code is not redistributed with Discordia"
+      "reason": "No license, so its code is not redistributed with Distra"
     }
   ]
 }

@@ -55,18 +55,18 @@ jobs:
         run: |
           make -C tweak package FINALPACKAGE=1
           # The dylib for LiveContainer / IPA injection (needs no Substrate).
-          cp tweak/.theos/obj/Discordia.dylib dist/Discordia.dylib
+          cp tweak/.theos/obj/Distra.dylib dist/Distra.dylib
 
       - name: Build rootless package
         run: make -C tweak clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
 
       - uses: actions/upload-artifact@v4
         with:
-          name: discordia-tweak
+          name: distra-tweak
           path: |
             tweak/packages/*.deb
-            dist/Discordia.dylib
-            dist/discordia.js
+            dist/Distra.dylib
+            dist/distra.js
             dist/builtins.json
 
   ipa:
@@ -79,7 +79,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: discordia-tweak
+          name: distra-tweak
           path: artifacts
 
       - name: Install cyan
@@ -99,17 +99,17 @@ jobs:
         env:
           BUNDLE_ID: ${{ inputs.bundle_id }}
         run: |
-          args=(--ipa Discord.ipa --deb artifacts/tweak/packages/*_iphoneos-arm.deb --output out/Discordia.ipa --cyan "$(which cyan)")
+          args=(--ipa Discord.ipa --deb artifacts/tweak/packages/*_iphoneos-arm.deb --output out/Distra.ipa --cyan "$(which cyan)")
           if [ -d rosiecord/Packs ]; then
             for pack in rosiecord/Packs/*/; do args+=(--icon-pack "$pack"); done
           fi
-          if [ -n "$BUNDLE_ID" ]; then args+=(--bundle-id "$BUNDLE_ID" --name Discordia); fi
+          if [ -n "$BUNDLE_ID" ]; then args+=(--bundle-id "$BUNDLE_ID" --name Distra); fi
           python3 scripts/build-ipa.py "${args[@]}"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: discordia-ipa
-          path: out/Discordia.ipa
+          name: distra-ipa
+          path: out/Distra.ipa
 
   release:
     name: Release
@@ -121,15 +121,15 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: discordia-tweak
+          name: distra-tweak
           path: artifacts
 
       - uses: softprops/action-gh-release@v2
         with:
           files: |
             artifacts/tweak/packages/*.deb
-            artifacts/dist/Discordia.dylib
-            artifacts/dist/discordia.js
+            artifacts/dist/Distra.dylib
+            artifacts/dist/distra.js
 
   beta:
     name: Beta release
@@ -145,7 +145,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: discordia-tweak
+          name: distra-tweak
           path: artifacts
 
       - name: Publish beta
@@ -155,8 +155,8 @@ jobs:
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           short="${GITHUB_SHA::7}"
-          notes="$(printf 'Automatic build of %s.\n\n%s\n\n**Discordia.dylib**: inject into Discord with LiveContainer or an IPA patcher.\n**.deb**: rootful (iphoneos-arm) and rootless (iphoneos-arm64) jailbreak packages.' "$short" "$COMMIT_MESSAGE")"
+          notes="$(printf 'Automatic build of %s.\n\n%s\n\n**Distra.dylib**: inject into Discord with LiveContainer or an IPA patcher.\n**.deb**: rootful (iphoneos-arm) and rootless (iphoneos-arm64) jailbreak packages.' "$short" "$COMMIT_MESSAGE")"
           gh release delete beta --repo "$REPO" --yes --cleanup-tag || true
           gh release create beta --repo "$REPO" --target "$GITHUB_SHA" --prerelease \
             --title "Beta ($short)" --notes "$notes" \
-            artifacts/dist/Discordia.dylib artifacts/tweak/packages/*.deb artifacts/dist/discordia.js
+            artifacts/dist/Distra.dylib artifacts/tweak/packages/*.deb artifacts/dist/distra.js

@@ -65,7 +65,7 @@ export default function Developer() {
                             <TextInput
                                 defaultValue={loaderConfig.customLoadUrl.url}
                                 size="md"
-                                placeholder="http://192.168.1.2:4040/discordia.js"
+                                placeholder="http://192.168.1.2:4040/distra.js"
                                 label="Bundle URL"
                                 onChange={(url: string) => void (loaderConfig.customLoadUrl = { ...loaderConfig.customLoadUrl, url })}
                             />
@@ -112,7 +112,7 @@ export default function Developer() {
                     />
                     <TableSwitchRow
                         label="Startup banner"
-                        subLabel="Briefly shows whether Discordia started, after each launch."
+                        subLabel="Briefly shows whether Distra started, after each launch."
                         icon={<Icon name="CircleInformationIcon" />}
                         value={loaderConfig.showStartupBanner ?? true}
                         onValueChange={(value: boolean) => void (loaderConfig.showStartupBanner = value)}

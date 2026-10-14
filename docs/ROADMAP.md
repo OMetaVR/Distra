@@ -15,18 +15,18 @@ Done and verified on a host machine:
   icons, and Files app access.
 
 Verified on a device (Discord 348): the tweak loads, the
-Discordia settings section works, and the on-device log viewer works.
+Distra settings section works, and the on-device log viewer works.
 
 ## 1. Device bring-up
 
 Checklist against Discord 348:
 
-- [x] Tweak loads; the `dev.discordia` log shows "Discord bundle ... is loading on RCTInstance"
-- [x] Discord starts normally with Discordia injected, including after a JS reload
+- [x] Tweak loads; the `dev.distra` log shows "Discord bundle ... is loading on RCTInstance"
+- [x] Discord starts normally with Distra injected, including after a JS reload
 - [ ] `RCTInstanceDidLoadBundle` firing twice (once for our script) has no side effects
 - [ ] Bridge round trip works (Developer > Copy loader info shows the payload; settings persist across launches)
-- [x] Discordia section appears in Settings below Account; pages open and render
-- [ ] Built-in plugin pass on device (100 community + 4 Discordia plugins; fixed against the 348 bundle, not yet re-tested)
+- [x] Distra section appears in Settings below Account; pages open and render
+- [ ] Built-in plugin pass on device (100 community + 4 Distra plugins; fixed against the 348 bundle, not yet re-tested)
 - [ ] Discord component lookups resolve (TableRow, TableSwitchRow, TextInput, Stack, Text, …)
 - [ ] Crash loop: 3 forced failures -> safe mode alert; 5 -> stock Discord
 - [ ] Install a known Vendetta plugin from the vd-proxy and an Enmity plugin
@@ -48,7 +48,7 @@ Checklist against Discord 348:
 
 ## 3. IPA releases
 
-- Discordia app icon artwork (wire into CI with `--alt-icon`)
+- Distra app icon artwork (wire into CI with `--alt-icon`)
 - CI matrix of IPA variants (icon packs, side-by-side bundle id)
 - [x] Rolling `beta` prerelease (dylib + debs) on every push to `main`
 - Release publishing on tags with IPA artifacts (needs a hosted decrypted IPA URL as a secret)

@@ -1,5 +1,5 @@
 // The native tweak evaluates a payload before this bundle that describes the
-// loader and the current launch. See tweak/Sources/DCDLoader.m.
+// loader and the current launch. See tweak/Sources/DSTLoader.m.
 
 export interface LoaderPayload {
     name: string;
@@ -15,11 +15,11 @@ export interface LoaderPayload {
     bundle: { source: "embedded" | "custom-url"; version: string };
 }
 
-/** Documents/Discordia/loader.json, read natively at launch (tweak/Sources/DCDLoader.m). */
+/** Documents/Distra/loader.json, read natively at launch (tweak/Sources/DSTLoader.m). */
 export interface LoaderConfig {
     customLoadUrl: { enabled: boolean; url: string };
     safeMode: boolean;
-    /** Native banner a few seconds after launch saying whether Discordia started. */
+    /** Native banner a few seconds after launch saying whether Distra started. */
     showStartupBanner: boolean;
     /** Connects to `pnpm devtools` on a development machine (src/core/devtools.ts). */
     remoteDebugger?: { enabled: boolean; url: string };
@@ -27,7 +27,7 @@ export interface LoaderConfig {
 
 declare global {
     // eslint-disable-next-line no-var
-    var __DISCORDIA_LOADER__: LoaderPayload | undefined;
+    var __DISTRA_LOADER__: LoaderPayload | undefined;
 }
 
 const fallback: LoaderPayload = {
@@ -35,16 +35,16 @@ const fallback: LoaderPayload = {
     version: "0.0.0",
     platform: "ios",
     jailbroken: false,
-    bridge: { module: "FileReaderModule", method: "readAsDataURL", key: "discordia" },
+    bridge: { module: "FileReaderModule", method: "readAsDataURL", key: "distra" },
     discord: { version: "unknown", build: "unknown", bundleId: "unknown" },
     safeMode: { enabled: false, reason: null, failedBoots: 0 },
     config: { customLoadUrl: { enabled: false, url: "" }, safeMode: false, showStartupBanner: false },
     bundle: { source: "embedded", version: "unknown" },
 };
 
-/** True when Discordia's JS was loaded by something other than the Discordia tweak. */
-export const isForeignLoader = globalThis.__DISCORDIA_LOADER__ == null;
+/** True when Distra's JS was loaded by something other than the Distra tweak. */
+export const isForeignLoader = globalThis.__DISTRA_LOADER__ == null;
 
-export const loader: LoaderPayload = globalThis.__DISCORDIA_LOADER__ ?? fallback;
+export const loader: LoaderPayload = globalThis.__DISTRA_LOADER__ ?? fallback;
 
 export const isSafeMode = () => loader.safeMode.enabled;

@@ -57,7 +57,7 @@ def check(kind, args):
         hits = set.intersection(*(key_index.get(a, set()) for a in args))
         return bool(hits)
     if kind in ("findByName", "getByName", "byName", "findByTypeName", "getByTypeName", "byTypeName"):
-        # Discord minifies component names; Discordia falls back to the module's source file name.
+        # Discord minifies component names; Distra falls back to the module's source file name.
         return bool(name_index.get(args[0])) or bool(basenames.get(args[0]))
     if kind in ("findByDisplayName", "getByDisplayName", "byDisplayName", "findByTypeDisplayName", "findByStoreName", "byStoreName"):
         return bool(display_index.get(args[0])) or bool(name_index.get(args[0])) or bool(basenames.get(args[0]))

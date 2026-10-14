@@ -2,12 +2,14 @@
 // online on, colored by their status. Rebuilt for Discord's current (minified) UI from
 // martinz64's PlatformIndicators, with BetterStatusIndicator's per-status colors.
 
+import { createContext, useContext } from "react";
 import { View } from "react-native";
 
 import { afterComponentRender, findElement, textOf } from "@/lib/components";
 import { Logger } from "@/lib/logger";
 import { createPatcher } from "@/lib/patcher";
-import { findByStoreNameLazy } from "@/metro";
+import { find, findByStoreNameLazy } from "@/metro";
+import { fromPredicate } from "@/metro/filters";
 
 import { definePlugin } from "../types";
 import SettingsPage from "./SettingsPage";
@@ -27,6 +29,18 @@ const FILES = {
     profile: "modules/user_profile/native/UserProfilePrimaryInfo.tsx",
 };
 
+/**
+ * Names are usually rendered by UsernameWithEffects (memo), often inside components the
+ * location hooks below can't see into. The hooks provide this context around their output;
+ * UsernameWithEffects adds the icons when its user is the one the context is for.
+ */
+type IndicatorTarget = { userId: string; size?: number };
+// Created on first use: Discord's React isn't loaded yet when this module is evaluated.
+let indicatorContext: React.Context<IndicatorTarget | null> | undefined;
+const IndicatorContext = () => indicatorContext ??= createContext<IndicatorTarget | null>(null);
+
+const isUsernameWithEffects = fromPredicate(m => m?.$$typeof != null && m.type?.name === "UsernameWithEffects", "usernameWithEffects");
+
 /** Every name a user might be displayed under. */
 function namesOf(userId: string, guildId?: string): string[] {
     const user = UserStore.getUser?.(userId);
@@ -44,13 +58,16 @@ function namesOf(userId: string, guildId?: string): string[] {
  * replaced in place by a row of [name, icons].
  */
 function inject(element: any, userId: string | undefined, key: string, guildId?: string, size?: number) {
-    if (!userId || findElement(element, node => node?.key === key)) return;
+    if (!userId) return;
+    const { Provider } = IndicatorContext();
+    const provided = <Provider value={{ userId, size }}>{element}</Provider>;
+    if (findElement(element, node => node?.key === key)) return provided;
     const names = namesOf(userId, guildId);
     const nameElement = findElement(element, node => {
         const text = textOf(node);
         return text != null && names.includes(text);
     });
-    if (!nameElement) return;
+    if (!nameElement) return provided;
 
     const original = { ...nameElement };
     nameElement.type = View;
@@ -59,6 +76,7 @@ function inject(element: any, userId: string | undefined, key: string, guildId?:
         style: { flexDirection: "row", alignItems: "center", flexShrink: 1 },
         children: [original, <StatusIcons key="icons" userId={userId} size={size} />],
     };
+    return element;
 }
 
 /** Finds a user id in props, or anywhere in the rendered tree. */
@@ -70,11 +88,11 @@ const recipientOf = (channel: any): string | undefined => channel?.getRecipientI
 let patcher = createPatcher("PlatformIndicators");
 
 export default definePlugin({
-    id: "discordia:platform-indicators",
+    id: "distra:platform-indicators",
     manifest: {
         name: "Platform Indicators",
         description: "Shows which devices people are online on (desktop, mobile, web, console) in member lists, DMs and profiles, colored by status.",
-        authors: [{ name: "Discordia" }, { name: "martinz64 (PlatformIndicators)" }, { name: "mafu (BetterStatusIndicator)" }],
+        authors: [{ name: "Distra" }, { name: "martinz64 (PlatformIndicators)" }, { name: "mafu (BetterStatusIndicator)" }],
         version: "1.0.0",
     },
 
@@ -84,21 +102,35 @@ export default definePlugin({
 
         const results = {
             userRow: afterComponentRender(patcher, FILES.userRow, (props, element) => {
-                if (settings.memberList) inject(element, userIdIn(props, element), "discordia-pi-row", props?.guildId);
+                if (settings.memberList) return inject(element, userIdIn(props, element), "distra-pi-row", props?.guildId);
             }),
             dmItem: afterComponentRender(patcher, FILES.dmItem, (props, element) => {
                 const channel = props?.channel;
-                if (settings.dmList && channel && !channel.isMultiUserDM?.()) inject(element, recipientOf(channel), "discordia-pi-dm");
+                if (settings.dmList && channel && !channel.isMultiUserDM?.()) return inject(element, recipientOf(channel), "distra-pi-dm");
             }),
             dmHeader: afterComponentRender(patcher, FILES.dmHeader, (props, element) => {
                 const channel = props?.channel ?? ChannelStore.getChannel?.(props?.channelId);
-                if (settings.dmHeader && channel && !channel.isMultiUserDM?.()) inject(element, recipientOf(channel), "discordia-pi-header");
+                if (settings.dmHeader && channel && !channel.isMultiUserDM?.()) return inject(element, recipientOf(channel), "distra-pi-header");
             }),
             profile: afterComponentRender(patcher, FILES.profile, (props, element) => {
-                if (settings.profile) inject(element, userIdIn(props, element), "discordia-pi-profile", props?.guildId, 18);
+                if (settings.profile) return inject(element, userIdIn(props, element), "distra-pi-profile", props?.guildId, 18);
             }),
         };
-        const missing = Object.entries(results).filter(([, ok]) => !ok).map(([name]) => name);
+        const username = find(isUsernameWithEffects);
+        if (username) {
+            patcher.after("type", username, ([props]: any[], element: any) => {
+                // A hook: called on every render of the patched component, so the call order is stable.
+                const context = useContext(IndicatorContext());
+                if (!element || !context || props?.userId !== context.userId) return;
+                return (
+                    <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
+                        <View style={{ flexShrink: 1 }}>{element}</View>
+                        <StatusIcons userId={context.userId} size={context.size} />
+                    </View>
+                );
+            });
+        }
+        const missing = [...Object.entries(results).filter(([, ok]) => !ok).map(([name]) => name), ...(username ? [] : ["UsernameWithEffects"])];
         if (missing.length) logger.warn(`Could not hook: ${missing.join(", ")}`);
     },
 

@@ -19,6 +19,9 @@
 
 import { logger, patcher } from "@vendetta";
 import { findByProps, findByStoreName } from "@vendetta/metro";
+import { storage } from "@vendetta/plugin";
+
+import Settings from "./Settings";
 
 const dialog = findByProps("show", "confirm", "close");
 const relationshipManager = findByProps("addRelationship");
@@ -26,18 +29,29 @@ const callManager = findByProps("handleStartCall");
 const actionSheetManager = findByProps("hideActionSheet");
 const UserStore = findByStoreName("UserStore");
 
+// Distra: every confirmation can be switched off in the settings page (on by default, as before).
+const enabled = (key: string) => (storage as Record<string, any>)[key] !== false;
+
+// Accounts without a discriminator ("0") are shown by username only.
+const tag = ({ username, discriminator }: { username: string; discriminator?: string }) =>
+    discriminator && discriminator !== "0" ? `${username}#${discriminator}` : username;
+
 export default new class MoreConfirm {
     patches = [] as (() => void)[];
+    settings = Settings;
 
     onLoad() {
         this.patches.push(patcher.instead("handleStartCall", callManager, (args, orig) => {
-            const [{ rawRecipients: [{ username, discriminator }, multiple] }, isVideo] = args;
+            const [{ rawRecipients: [recipient, multiple] }, isVideo] = args;
+            if (!enabled(isVideo ? "videoCalls" : "voiceCalls")) return orig(...args);
+
+            const name = tag(recipient);
             const action = isVideo ? "video call" : "call";
 
             // if `multiple` is defined, it's probably a group call
             dialog.show({
-                title: multiple ? `Start a group ${action}?` : `Start a ${action} with ${username}#${discriminator}?`,
-                body: multiple ? "Are you sure you want to start the group call?" : `Are you sure you want to ${action} ${username}#${discriminator}?`,
+                title: multiple ? `Start a group ${action}?` : `Start a ${action} with ${name}?`,
+                body: multiple ? "Are you sure you want to start the group call?" : `Are you sure you want to ${action} ${name}?`,
                 confirmText: "Yes",
                 cancelText: "Cancel",
                 confirmColor: "brand",
@@ -53,17 +67,21 @@ export default new class MoreConfirm {
 
         this.patches.push(patcher.instead("addRelationship", relationshipManager, (args, orig) => {
             if (typeof args[0] !== "object" || !args[0].userId) return orig.apply(this, args);
-            const { username, discriminator } = UserStore.getUser(args[0].userId);
+            const block = args[0].type === 2;
+            if (!enabled(block ? "block" : "addFriend")) return orig.apply(this, args);
+
+            const user = UserStore.getUser(args[0].userId);
+            if (!user) return orig.apply(this, args);
+            const name = tag(user);
 
             // This is hacky, but it *works*
             const hideASInterval = setInterval(() => actionSheetManager.hideActionSheet(), 100);
             setTimeout(() => clearInterval(hideASInterval), 3000);
 
-            const block = args[0].type === 2;
             return new Promise(r => {
                 dialog.show({
-                    title: `${block ? "Block" : "Friend"} ${username}#${discriminator}?`,
-                    body: `Are you sure you want to ${block ? "block" : "friend"} ${username}#${discriminator}?`,
+                    title: `${block ? "Block" : "Friend"} ${name}?`,
+                    body: `Are you sure you want to ${block ? "block" : "friend"} ${name}?`,
                     confirmText: "Yes",
                     cancelText: "Cancel",
                     confirmColor: "brand",

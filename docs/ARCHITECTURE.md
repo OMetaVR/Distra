@@ -9,11 +9,11 @@ dylib loads (%ctor)                               tweak/Sources/Tweak.x
 React Native loads Discord's bundle
   -[RCTInstance _loadScriptFromSource:]           (bridgeless; Discord 348 uses this)
   -[RCTCxxBridge executeApplicationScript:...]    (legacy bridge)
-    DCDBootGuard beginLaunch                      decides normal / safe / disabled
-    DCDLoader scriptForLaunch                     payload + bundle (embedded or dev URL)
-    evaluate Discordia's script, then Discord's bundle
+    DSTBootGuard beginLaunch                      decides normal / safe / disabled
+    DSTLoader scriptForLaunch                     payload + bundle (embedded or dev URL)
+    evaluate Distra's script, then Discord's bundle
 
-Discordia's script (src/entry.ts)
+Distra's script (src/entry.ts)
   defines accessors for Metro's __r / __d globals
 Discord's bundle
   __d(...) x N            first read of __d: we call __c() to get the live module registry
@@ -43,16 +43,16 @@ explains what failed.
 
 ## Native bridge
 
-JS calls native through `FileReaderModule.readAsDataURL({ discordia: { method, args } })`.
+JS calls native through `FileReaderModule.readAsDataURL({ distra: { method, args } })`.
 The tweak hooks `-[RCTFileReaderModule readAsDataURL:resolve:reject:]`, handles
-payloads with the `discordia` key, and passes everything else through. The module
+payloads with the `distra` key, and passes everything else through. The module
 is part of React Native itself, takes an arbitrary object, and returns a promise,
 so this works in both architectures. (rain uses the same trick.)
 
 | Method | Purpose |
 | --- | --- |
-| `fs.read/write/exists/remove/list` | Files under `Documents/Discordia`, sandboxed natively |
-| `loader.getConfig/setConfig` | `Documents/Discordia/loader.json` (custom bundle URL, safe mode) |
+| `fs.read/write/exists/remove/list` | Files under `Documents/Distra`, sandboxed natively |
+| `loader.getConfig/setConfig` | `Documents/Distra/loader.json` (custom bundle URL, safe mode) |
 | `boot.markStable` | Reset the crash counter |
 | `iconpacks.list/index` | Find packs and list their files |
 | `builtins.index/code` | Built-in plugin list and code |
@@ -61,20 +61,20 @@ so this works in both architectures. (rain uses the same trick.)
 
 ## Crash-loop protection
 
-`DCDBootGuard` counts launches that didn't stay up for 15 seconds:
+`DSTBootGuard` counts launches that didn't stay up for 15 seconds:
 
-- 3 in a row: **safe mode**. Discordia loads with no plugins and no icon pack, and
+- 3 in a row: **safe mode**. Distra loads with no plugins and no icon pack, and
   a native alert explains why.
-- 5 in a row: **Discordia is not injected**, so Discord runs stock for that launch.
+- 5 in a row: **Distra is not injected**, so Discord runs stock for that launch.
   The counter resets once that launch is stable.
 
 Users can also turn safe mode on from settings.
 
-## Storage (`Documents/Discordia`)
+## Storage (`Documents/Distra`)
 
 ```text
 loader.json              native loader config
-settings.json            Discordia settings
+settings.json            Distra settings
 state/boot.json          crash counter
 cache/metro.json         module find cache, invalidated per Discord build
 plugins/index.json       installed plugin records
@@ -94,7 +94,7 @@ IconPacks/<name>/        user-installed icon packs (visible in the Files app on 
 | Vendetta | folder with `manifest.json` (polymanifest) | `vendetta => <code>` returns `{ onLoad, onUnload, settings }` | `window.vendetta` |
 | Bunny | folder or `manifest.json` with `spec: 3` | `(bunny, definePlugin) => { <code>; return plugin }` | `bunny` object |
 | Enmity / Aliucord | single `.js` file | calls `registerPlugin(plugin)` | `window.enmity` / `window.aliucord` |
-| Discordia | folder with `manifest.json` containing `discordia` | `definePlugin => (<code>)` | scoped API, patches auto-reverted |
+| Distra | folder with `manifest.json` containing `distra` | `definePlugin => (<code>)` | scoped API, patches auto-reverted |
 
 The flavor is detected from the URL and manifest, and the user can override it
 when installing.
@@ -134,11 +134,11 @@ most older plugins:
   `ActionSheetContentContainer` -> a View; `meta` -> `internal` on the color module.
 
 Plugins that depend on Discord internals which have changed in other ways still break; those
-are fixed per plugin in `builtin-plugins/patches/` or replaced by a Discordia plugin.
+are fixed per plugin in `builtin-plugins/patches/` or replaced by a Distra plugin.
 
-### Discordia plugins
+### Distra plugins
 
-`src/plugins/core/` holds plugins written for Discordia itself (`definePlugin`), loaded
+`src/plugins/core/` holds plugins written for Distra itself (`definePlugin`), loaded
 like built-ins. The message logger keeps only deleted and edited messages, in SQLite (WAL,
 snowflakes as INTEGER keys, edits in a `WITHOUT ROWID` table) through the native `db.*`
 bridge methods, and prunes by age and count. Rows are decorated in
@@ -149,8 +149,8 @@ bridge methods, and prunes by age and count. Rows are decorated in
 Packs mirror the layout of `Discord.app/assets` and are applied on JS reload:
 `AssetSourceResolver.prototype.defaultAsset` is patched so any asset present in
 the active pack resolves to the pack's file. Packs come from
-`Documents/Discordia/IconPacks`, `Discord.app/DiscordiaIconPacks` (IPA builds), or
-`/Library/Application Support/Discordia/IconPacks` (jailbreak).
+`Documents/Distra/IconPacks`, `Discord.app/DistraIconPacks` (IPA builds), or
+`/Library/Application Support/Distra/IconPacks` (jailbreak).
 
 Native images in `Assets.car` are not covered.
 
@@ -164,16 +164,16 @@ Iconsax 282 of 725 asset paths in 348; none cover the redesign icons.
 `src/ui/settings/index.tsx` patches two things in Discord's data-driven settings:
 
 - `SETTING_RENDERER_CONFIG` (via a getter): adds row definitions and the custom page routes
-  (`DISCORDIA_CUSTOM_PAGE` plus `VendettaCustomPage` / `BUNNY_CUSTOM_PAGE` for plugins that navigate to those).
-- `createList`: inserts the Discordia section after the Account section.
+  (`DISTRA_CUSTOM_PAGE` plus `VendettaCustomPage` / `BUNNY_CUSTOM_PAGE` for plugins that navigate to those).
+- `createList`: inserts the Distra section after the Account section.
 
 Pages live in `src/ui/pages/` and use Discord's own design-system components
 (`TableRowGroup`, `TableRow`, `TableSwitchRow`, …).
 
-## Discordia plugin format
+## Distra plugin format
 
 ```json
-{ "name": "Example", "version": "1.0.0", "main": "index.js", "discordia": { "spec": 1 } }
+{ "name": "Example", "version": "1.0.0", "main": "index.js", "distra": { "spec": 1 } }
 ```
 
 ```js

@@ -84,7 +84,7 @@ export default function PluginLibrary() {
                     </TableRowGroup>
                 </Stack>
 
-                <TableRowGroup title="Included with Discordia">
+                <TableRowGroup title="Included with Distra">
                     {list.length === 0 ? (
                         <TableRow label="No matching plugins" icon={<Icon name="PuzzlePieceIcon" />} />
                     ) : list.map(record => (

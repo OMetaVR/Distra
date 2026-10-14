@@ -1,7 +1,7 @@
-// Discordia's own plugin format. Same directory layout as Vendetta's
-// polymanifest, with a `discordia` object in the manifest:
+// Distra's own plugin format. Same directory layout as Vendetta's
+// polymanifest, with a `distra` object in the manifest:
 //
-//   manifest.json  { "name": "...", "main": "index.js", "version": "1.0.0", "discordia": { "spec": 1 } }
+//   manifest.json  { "name": "...", "main": "index.js", "version": "1.0.0", "distra": { "spec": 1 } }
 //   index.js       an expression (usually an IIFE) evaluating to
 //                  definePlugin({ start(api) {}, stop() {}, SettingsComponent })
 //
@@ -21,13 +21,13 @@ import { evaluate, fetchJSON, fetchText, resolveUrl } from "../fetch";
 import { pluginDataPath } from "../paths";
 import type { FlavorAdapter, PluginManifest, PluginRecord } from "../types";
 
-export interface DiscordiaPluginDefinition {
-    start?(api: DiscordiaPluginApi): void | Promise<void>;
+export interface DistraPluginDefinition {
+    start?(api: DistraPluginApi): void | Promise<void>;
     stop?(): void | Promise<void>;
     SettingsComponent?: React.ComponentType<any>;
 }
 
-export type DiscordiaPluginApi = Awaited<ReturnType<typeof createPluginApi>>;
+export type DistraPluginApi = Awaited<ReturnType<typeof createPluginApi>>;
 
 async function createPluginApi(record: PluginRecord) {
     const patcher = createPatcher(record.manifest.name);
@@ -50,9 +50,9 @@ async function createPluginApi(record: PluginRecord) {
     };
 }
 
-export const discordiaFlavor: FlavorAdapter = {
-    flavor: "discordia",
-    label: "Discordia",
+export const distraFlavor: FlavorAdapter = {
+    flavor: "distra",
+    label: "Distra",
 
     async fetch(url, previous) {
         const manifest = await fetchJSON<PluginManifest>(resolveUrl(url, "manifest.json"));
@@ -62,10 +62,10 @@ export const discordiaFlavor: FlavorAdapter = {
     },
 
     async start(record, code) {
-        const definePlugin = (definition: DiscordiaPluginDefinition) => definition;
-        const factory = evaluate<(definePlugin: unknown) => DiscordiaPluginDefinition>(
+        const definePlugin = (definition: DistraPluginDefinition) => definition;
+        const factory = evaluate<(definePlugin: unknown) => DistraPluginDefinition>(
             `definePlugin=>(${code})`,
-            `discordia-plugin/${record.id}`,
+            `distra-plugin/${record.id}`,
         );
         const definition = factory(definePlugin) ?? {};
         const api = await createPluginApi(record);

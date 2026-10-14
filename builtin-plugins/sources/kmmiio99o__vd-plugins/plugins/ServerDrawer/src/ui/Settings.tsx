@@ -22,6 +22,20 @@ export default function Settings() {
                         onValueChange={(v: boolean) => { storage.showGuildNames = v; }}
                     />
                 </TableRowGroup>
+                <TableRowGroup title="Folders">
+                    <TableSwitchRow
+                        label="Open folders in a side list"
+                        subLabel="An open folder's servers appear in their own list to the right of the grid instead of among the other servers. The list only takes room while a folder is open."
+                        value={storage.folderLayout === "sidebar"}
+                        onValueChange={(v: boolean) => { storage.folderLayout = v ? "sidebar" : "inline"; }}
+                    />
+                    <TableSwitchRow
+                        label="Separator after open folders"
+                        subLabel="Draw a line where an open folder's servers end and the rest of your servers continue."
+                        value={storage.folderSeparator !== false}
+                        onValueChange={(v: boolean) => { storage.folderSeparator = v; }}
+                    />
+                </TableRowGroup>
                 <TableRowGroup title="About">
                     <TableRow
                         label="Server Drawer"

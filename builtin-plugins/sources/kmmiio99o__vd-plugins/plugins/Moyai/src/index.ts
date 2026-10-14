@@ -6,8 +6,9 @@ import MoyaiSettings from "./settings";
 const { DCDSoundManager } = ReactNative.NativeModules;
 const SelectedChannelStore = findByStoreName("SelectedChannelStore");
 
+// Distra: iOS can't play the original OGG (Metastruct/garrysmod-chatsounds "overused thud"); this is an MP3 of it.
 const THUD_URL =
-  "https://raw.githubusercontent.com/Metastruct/garrysmod-chatsounds/master/sound/chatsounds/autoadd/memes/overused%20thud.ogg";
+  ((globalThis as any).__DISTRA_ASSET_BASE__ ?? "https://raw.githubusercontent.com/OMetaVR/Distra/main/builtin-plugins/assets/") + "moyai-thud.mp3";
 const SOUND_ID = 6969;
 let SOUND_DURATION = -1;
 

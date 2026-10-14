@@ -1,0 +1,21 @@
+diff -ruN a/plugins/bettereval/src/settings/tabs.tsx b/plugins/bettereval/src/settings/tabs.tsx
+--- a/plugins/bettereval/src/settings/tabs.tsx	2026-10-14 17:27:35.373452751 -0400
++++ b/plugins/bettereval/src/settings/tabs.tsx	2026-10-14 11:14:50.141837600 -0400
+@@ -63,7 +63,7 @@
+                         const sections = config.sections;
+ 
+                         const section = sections?.find((x: any) =>
+-                            ["Bunny", "Kettu", "Revenge"].some(
++                            ["Distra", "Bunny", "Kettu", "Revenge"].some(
+                                 (mod) => x.label === mod && x.title === mod,
+                             ),
+                         );
+@@ -106,7 +106,7 @@
+                         (i) => i.props?.sections,
+                     ).props;
+                     const section = sections?.find((x: any) =>
+-                        ["Bunny", "Kettu", "Revenge"].some(
++                        ["Distra", "Bunny", "Kettu", "Revenge"].some(
+                             (mod) => x.label === mod && x.title === mod,
+                         ),
+                     );

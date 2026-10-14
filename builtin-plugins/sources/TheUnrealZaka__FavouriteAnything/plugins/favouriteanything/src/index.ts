@@ -5,7 +5,7 @@
 // and converts video thumbnails to jpeg for the mobile favourites picker.
 
 import { logger } from "@vendetta";
-import { findByProps } from "@vendetta/metro";
+import { findByName, findByProps } from "@vendetta/metro";
 import { before } from "@vendetta/patcher";
 
 let origType: Function | null = null;
@@ -35,6 +35,11 @@ function makeVideoThumbnail(url: string): string {
 }
 
 function findGIFFavButton(): any {
+    // Distra: Discord 348 renamed it to MediaViewerOverlayButtonFavoriteGIF (a memo); names are minified,
+    // so it's found by its source file name.
+    const current = findByName("MediaViewerOverlayButtonFavoriteGIF", false)?.default;
+    if (current?.type) return current;
+
     const modules = (window as any).vendetta?.metro?.modules ?? (window as any).modules;
     if (!modules) return null;
 

@@ -9,7 +9,7 @@ import { Module, ModuleCategory } from "../../stuff/Module";
 import ClassicListenButton from "./components/ClassicListenButton";
 import SimplifiedListenButton from "./components/SimplifiedListenButton";
 
-const { SpotifyPlayButton } = findByProps("SpotifyPlayButton");
+const { SpotifyPlayButton } = findByProps("SpotifyPlayButton") ?? {};
 const PlayOnSpotifyButton = findByProps("PlayOnSpotifyButton");
 
 export default new Module({
@@ -29,36 +29,56 @@ export default new Module({
 	},
 	handlers: {
 		onStart() {
-			this.patches.add(
-				after(
-					"render",
-					SpotifyPlayButton.prototype,
-					(
-						_,
-						{
-							props: button,
-							_owner: {
-								stateNode: {
-									props: { activity },
+			// Discord 348 renders its "Play on Spotify" button for activities from PlayOnSpotifyButton (profile
+			// activity card), a function component. SpotifyPlayButton still exists in the module but nothing renders
+			// it anymore (and it was a class with a render method on older versions, which this used to patch).
+			if (typeof SpotifyPlayButton?.prototype?.render === "function") {
+				this.patches.add(
+					after(
+						"render",
+						SpotifyPlayButton.prototype,
+						(
+							_,
+							{
+								props: button,
+								_owner: {
+									stateNode: {
+										props: { activity },
+									},
 								},
 							},
-						},
-					) =>
-						React.createElement(ClassicListenButton, {
-							button,
-							activity,
-						}),
-				),
-			);
+						) =>
+							React.createElement(ClassicListenButton, {
+								button,
+								activity,
+							}),
+					),
+				);
+			} else {
+				console.warn(
+					"[NexxUtils] Add Listen Along: SpotifyPlayButton is not a class component on this Discord version; skipping that patch",
+				);
+			}
+
+			if (typeof PlayOnSpotifyButton?.PlayOnSpotifyButton !== "function") {
+				console.warn(
+					"[NexxUtils] Add Listen Along: PlayOnSpotifyButton not found on this Discord version; nothing to patch",
+				);
+				return;
+			}
 			this.patches.add(
 				after(
 					"PlayOnSpotifyButton",
 					PlayOnSpotifyButton,
-					([{ activity }], button) =>
-						React.createElement(SimplifiedListenButton, {
+					([props], button) => {
+						const activity = props?.activity;
+						// Only Spotify activities that are a listen along party can be joined
+						if (typeof activity?.party?.id !== "string" || !activity.party.id.includes(":")) return;
+						return React.createElement(SimplifiedListenButton, {
 							button,
 							activity,
-						}),
+						});
+					},
 				),
 			);
 		},

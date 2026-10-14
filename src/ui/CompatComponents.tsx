@@ -7,7 +7,7 @@ import { Image, Text, TextInput as NativeTextInput, View, type TextStyle, type V
 import { findAssetId } from "@/lib/assets";
 import { constants } from "@/metro/common";
 import { semanticColors } from "@/ui/color";
-import { TextInput } from "@/ui/components";
+import { Button, TextInput } from "@/ui/components";
 import { createThemedStyleSheet } from "@/ui/styles";
 
 let styles: ReturnType<typeof createStyles> | undefined;
@@ -53,3 +53,21 @@ export function Search({ onChangeText, placeholder, style }: { onChangeText?: (v
         </View>
     );
 }
+
+const LEGACY_VARIANTS: Record<string, string> = {
+    BRAND: "primary", RED: "destructive", GREEN: "active", PRIMARY: "secondary",
+    GREY: "secondary", LIGHTGREY: "secondary", TRANSPARENT: "tertiary", WHITE: "tertiary", LINK: "tertiary",
+};
+const LEGACY_SIZES: Record<string, string> = { XSMALL: "sm", SMALL: "sm", MEDIUM: "md", LARGE: "lg" };
+const keysOf = (map: Record<string, string>) => Object.fromEntries(Object.keys(map).map(key => [key, key]));
+
+/**
+ * Discord's old default-exported Button (`color`, `size`, `text`, with `Button.Colors` and
+ * `Button.Sizes`), drawn with the current design Button (`variant`, `size`).
+ */
+export function LegacyButton({ color = "BRAND", size = "MEDIUM", text, style, ...props }: { color?: string; size?: string; text?: string; style?: ViewStyle; [key: string]: any }) {
+    const button = <Button {...props} text={text} variant={LEGACY_VARIANTS[color] ?? "primary"} size={LEGACY_SIZES[size] ?? "md"} />;
+    return style ? <View style={style}>{button}</View> : button;
+}
+LegacyButton.Colors = keysOf(LEGACY_VARIANTS);
+LegacyButton.Sizes = keysOf(LEGACY_SIZES);

@@ -1,4 +1,4 @@
-// File access, sandboxed natively to Documents/Discordia. Paths are relative.
+// File access, sandboxed natively to Documents/Distra. Paths are relative.
 
 import { callNative } from "./bridge";
 

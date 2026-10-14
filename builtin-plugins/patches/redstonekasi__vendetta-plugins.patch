@@ -1,0 +1,116 @@
+diff -ruN a/plugins/devkitplus/src/patches/globals.ts b/plugins/devkitplus/src/patches/globals.ts
+--- a/plugins/devkitplus/src/patches/globals.ts	2026-10-14 17:27:18.501304986 -0400
++++ b/plugins/devkitplus/src/patches/globals.ts	2026-10-14 11:54:22.071619200 -0400
+@@ -14,6 +14,8 @@
+   };
+ 
+   delete apply["React"];
++  // Distra: leave globals that already exist (ReactNative, ...) alone, so unloading doesn't delete them.
++  for (const key of Object.keys(apply)) if (key in window) delete apply[key];
+ 
+   Object.assign(window, apply);
+ 
+diff -ruN a/plugins/no-typing/src/chatbutton.ts b/plugins/no-typing/src/chatbutton.ts
+--- a/plugins/no-typing/src/chatbutton.ts	1969-12-31 19:00:00.000000000 -0500
++++ b/plugins/no-typing/src/chatbutton.ts	2026-10-14 16:09:06.106298100 -0400
+@@ -0,0 +1,28 @@
++import { storage } from "@vendetta/plugin";
++
++let removeButton: (() => void) | undefined;
++
++/** Adds (or removes) the keyboard button in the chat bar, following the setting. */
++export function syncChatButton() {
++  removeButton?.();
++  removeButton = undefined;
++  const chatBar = (window as any).distra?.chatBar;
++  if (!chatBar || storage.chatButton === false) return;
++  removeButton = chatBar.register({
++    id: "no-typing",
++    icon: "KeyboardIcon",
++    label: "Hide typing indicator",
++    // Slashed while your typing is hidden, like Equicord's SilentTyping.
++    slashed: () => storage.hidden !== false,
++    onPress: () => {
++      storage.hidden = storage.hidden === false;
++      chatBar.update();
++    },
++  });
++}
++
++
++export const removeChatButton = () => {
++  removeButton?.();
++  removeButton = undefined;
++};
+diff -ruN a/plugins/no-typing/src/index.ts b/plugins/no-typing/src/index.ts
+--- a/plugins/no-typing/src/index.ts	2026-10-14 17:27:18.501669065 -0400
++++ b/plugins/no-typing/src/index.ts	2026-10-14 16:09:06.106065900 -0400
+@@ -1,7 +1,24 @@
+ import { instead } from "@vendetta/patcher";
+ import { findByProps } from "@vendetta/metro";
++import { storage } from "@vendetta/plugin";
++import Settings from "./settings";
++import { removeChatButton, syncChatButton } from "./chatbutton";
+ 
+ const Typing = findByProps("startTyping");
+-const patches = ["startTyping", "stopTyping"].map((k) => instead(k, Typing, () => {}));
++const patches = ["startTyping", "stopTyping"].map((k) =>
++  // Distra: the chat bar button switches hiding off and on.
++  instead(k, Typing, (args, original) => (storage.hidden === false ? original(...args) : undefined)),
++);
+ 
+-export const onUnload = () => patches.forEach((unpatch) => unpatch());
++export const onLoad = () => {
++  storage.hidden ??= true;
++  storage.chatButton ??= true;
++  syncChatButton();
++};
++
++export const onUnload = () => {
++  removeChatButton();
++  patches.forEach((unpatch) => unpatch());
++};
++
++export const settings = Settings;
+diff -ruN a/plugins/no-typing/src/settings.tsx b/plugins/no-typing/src/settings.tsx
+--- a/plugins/no-typing/src/settings.tsx	1969-12-31 19:00:00.000000000 -0500
++++ b/plugins/no-typing/src/settings.tsx	2026-10-14 16:10:00.822036200 -0400
+@@ -0,0 +1,38 @@
++import { findByProps } from "@vendetta/metro";
++import { getAssetIDByName } from "@vendetta/ui/assets";
++import { storage } from "@vendetta/plugin";
++import { useProxy } from "@vendetta/storage";
++import { React } from "@vendetta/metro/common";
++import { syncChatButton } from "./chatbutton";
++
++const { ScrollView } = findByProps("ScrollView");
++const { TableRowGroup, TableSwitchRow, Stack, TableRow } = findByProps("TableSwitchRow", "TableRowGroup", "Stack", "TableRow");
++
++export default function Settings() {
++  useProxy(storage);
++  return (
++    <ScrollView contentContainerStyle={{ paddingBottom: 38 }}>
++      <Stack style={{ paddingVertical: 24, paddingHorizontal: 12 }} spacing={24}>
++        <TableRowGroup title="Typing indicator">
++          <TableSwitchRow
++            label="Hide when I type"
++            subLabel={'Other people won\'t see "is typing..." while you write.'}
++            icon={<TableRow.Icon source={getAssetIDByName("KeyboardIcon")} />}
++            value={storage.hidden !== false}
++            onValueChange={(value: boolean) => (storage.hidden = value)}
++          />
++          <TableSwitchRow
++            label="Chat bar button"
++            subLabel="A keyboard button next to the chat bar's other buttons that switches this on and off. Crossed out while your typing is hidden."
++            icon={<TableRow.Icon source={getAssetIDByName("KeyboardIcon")} />}
++            value={storage.chatButton !== false}
++            onValueChange={(value: boolean) => {
++              storage.chatButton = value;
++              syncChatButton();
++            }}
++          />
++        </TableRowGroup>
++      </Stack>
++    </ScrollView>
++  );
++}

@@ -80,7 +80,8 @@ export default function() {
 
 	const doBumpiness = () => {
 		if (
-			!settings.developerSettings
+			true // Distra: the title wobble is a dev-mode easter egg that never stops; keep it off
+			|| !settings.developerSettings
 			|| vstorage.realTrackingAnalyticsSentToChina.pressedSettings
 		) {
 			return;
@@ -96,7 +97,8 @@ export default function() {
 
 	React.useEffect(() => {
 		if (
-			!settings.developerSettings
+			true // Distra: see above
+			|| !settings.developerSettings
 			|| vstorage.realTrackingAnalyticsSentToChina.pressedSettings
 		) {
 			bumpyScaleX.value = Reanimated.withTiming(1, { duration: 150 });

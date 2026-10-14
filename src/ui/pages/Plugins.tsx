@@ -202,7 +202,7 @@ export default function Plugins() {
                 <TableRowGroup title="Built-in">
                     <TableRow
                         label="Plugin Library"
-                        subLabel={`${Object.keys(builtins).length} plugins included with Discordia, ${Object.values(builtins).filter(p => p.enabled).length} enabled`}
+                        subLabel={`${Object.keys(builtins).length} plugins included with Distra, ${Object.values(builtins).filter(p => p.enabled).length} enabled`}
                         icon={<Icon name="AppsIcon" />}
                         arrow
                         onPress={() => import("./PluginLibrary").then(({ default: Library }) => openPage("Plugin Library", Library, navigation))}

@@ -1,7 +1,7 @@
 // JS -> native calls. The tweak hooks React Native's FileReaderModule
 // (`readAsDataURL`), which exists in every RN build and accepts an arbitrary
 // object, so it works with both the legacy bridge and bridgeless mode.
-// Payloads carrying our key are handled natively in tweak/Sources/DCDBridge.m;
+// Payloads carrying our key are handled natively in tweak/Sources/DSTBridge.m;
 // anything else falls through to the original implementation.
 
 import { getNativeModule } from "./native";

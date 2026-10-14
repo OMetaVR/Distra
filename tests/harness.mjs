@@ -1,6 +1,6 @@
-// Emulates just enough of Discord's runtime to run dist/discordia.js in Node:
+// Emulates just enough of Discord's runtime to run dist/distra.js in Node:
 // a Metro module system (`__d`/`__r`/`__c`), a handful of fake Discord modules,
-// the bridgeless AppRegistry, and the native side of the Discordia bridge.
+// the bridgeless AppRegistry, and the native side of the Distra bridge.
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -10,7 +10,7 @@ import vm from "node:vm";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-/** Metro's require polyfill, reduced to the parts Discordia touches. */
+/** Metro's require polyfill, reduced to the parts Distra touches. */
 function installMetro(global) {
     let modules = Object.create(null);
 
@@ -76,7 +76,7 @@ function loadBuiltins() {
     }];
 }
 
-/** The `db.*` bridge methods from DCDDatabase.m, on real SQLite. Pass `databases` to share them across boots. */
+/** The `db.*` bridge methods from DSTDatabase.m, on real SQLite. Pass `databases` to share them across boots. */
 function createDatabases(databases = new Map()) {
     const open = name => {
         if (!databases.has(name)) {
@@ -120,7 +120,7 @@ function createDatabases(databases = new Map()) {
     };
 }
 
-/** In-memory Documents/Discordia plus the bridge methods from DCDBridge.m. */
+/** In-memory Documents/Distra plus the bridge methods from DSTBridge.m. */
 export function createNative({ files = {}, loaderConfig, databases } = {}) {
     const builtins = loadBuiltins();
     const sqlite = createDatabases(databases);
@@ -147,13 +147,13 @@ export function createNative({ files = {}, loaderConfig, databases } = {}) {
         "loader.getConfig": () => state.loaderConfig,
         "loader.setConfig": config => void (state.loaderConfig = config),
         "boot.markStable": () => void (state.stableMarked = true),
-        "iconpacks.list": () => [{ id: "Plumpy", name: "Plumpy", source: "documents", path: "/docs/Discordia/IconPacks/Plumpy" }],
-        "iconpacks.index": id => ({ path: `/docs/Discordia/IconPacks/${id}`, files: ["modules/main_tabs_v2/native/images/ic_home@3x.png"] }),
-        "appicon.list": () => ({ current: state.appIcon, supported: true, icons: [{ name: "DiscordiaIcon", files: [] }] }),
+        "iconpacks.list": () => [{ id: "Plumpy", name: "Plumpy", source: "documents", path: "/docs/Distra/IconPacks/Plumpy" }],
+        "iconpacks.index": id => ({ path: `/docs/Distra/IconPacks/${id}`, files: ["modules/main_tabs_v2/native/images/ic_home@3x.png"] }),
+        "appicon.list": () => ({ current: state.appIcon, supported: true, icons: [{ name: "DistraIcon", files: [] }] }),
         "appicon.set": name => void (state.appIcon = name),
         "log.write": entries => void state.jsLogs.push(...entries),
         ...sqlite.methods,
-        "image.cache": (url, relativePath) => ({ uri: `file:///docs/Discordia/${relativePath}`, width: 100, height: 100, bytes: 1000 }),
+        "image.cache": (url, relativePath) => ({ uri: `file:///docs/Distra/${relativePath}`, width: 100, height: 100, bytes: 1000 }),
         "builtins.index": () => builtins.map(({ code, ...entry }) => entry),
         "builtins.code": id => {
             const plugin = builtins.find(p => p.id === id);
@@ -166,8 +166,8 @@ export function createNative({ files = {}, loaderConfig, databases } = {}) {
 
     const FileReaderModule = {
         async readAsDataURL(payload) {
-            const call = payload?.discordia;
-            if (!call) throw new Error("not a discordia call");
+            const call = payload?.distra;
+            if (!call) throw new Error("not a distra call");
             calls.push(call.method);
             const handler = methods[call.method];
             if (!handler) return { error: `Unknown method ${call.method}` };
@@ -202,7 +202,7 @@ function defineDiscordModules(global, events) {
     const d = (id, factory) => global.__d(factory, id, []);
 
     // A catch-all proxy returning null for any ordinary property name, like one found in
-    // Discord 348. It must never be mistaken for the modules Discordia patches.
+    // Discord 348. It must never be mistaken for the modules Distra patches.
     d(13, (g, r, _i, _a, module) => {
         module.exports = new Proxy({}, {
             get: (_, key) => typeof key === "string" && !key.startsWith("\u0000") ? null : undefined,
@@ -214,7 +214,7 @@ function defineDiscordModules(global, events) {
         module.exports = { initializeCore: true };
     });
 
-    // React (only what Discordia touches outside of rendering)
+    // React (only what Distra touches outside of rendering)
     d(2, (g, r, _i, _a, module) => {
         class Component { constructor(props) { this.props = props; } setState() { } }
         module.exports = {
@@ -404,7 +404,7 @@ function defineDiscordModules(global, events) {
 }
 
 /**
- * Runs Discordia, then a fake Discord bundle, in a fresh VM context.
+ * Runs Distra, then a fake Discord bundle, in a fresh VM context.
  * Returns the context plus recorded events.
  */
 export function boot({ native = createNative(), loader = {}, fetchRoutes = {}, fetch: realFetch } = {}) {
@@ -420,12 +420,12 @@ export function boot({ native = createNative(), loader = {}, fetchRoutes = {}, f
             if (!(clean in fetchRoutes)) return { ok: false, status: 404, statusText: "Not Found", text: async () => "" };
             return { ok: true, status: 200, text: async () => fetchRoutes[clean] };
         }),
-        __DISCORDIA_LOADER__: {
-            name: "DiscordiaTweak",
+        __DISTRA_LOADER__: {
+            name: "DistraTweak",
             version: "0.1.0",
             platform: "ios",
             jailbroken: false,
-            bridge: { module: "FileReaderModule", method: "readAsDataURL", key: "discordia" },
+            bridge: { module: "FileReaderModule", method: "readAsDataURL", key: "distra" },
             discord: { version: "348.0", build: "113691", bundleId: "com.hammerandchisel.discord" },
             safeMode: { enabled: false, reason: null, failedBoots: 0 },
             config: native.state.loaderConfig,
@@ -435,8 +435,8 @@ export function boot({ native = createNative(), loader = {}, fetchRoutes = {}, f
     });
     context.globalThis = context;
 
-    // 1. Discordia's bundle, evaluated first like the tweak does.
-    vm.runInContext(readFileSync(path.join(root, "dist/discordia.js"), "utf8"), context, { filename: "discordia.js" });
+    // 1. Distra's bundle, evaluated first like the tweak does.
+    vm.runInContext(readFileSync(path.join(root, "dist/distra.js"), "utf8"), context, { filename: "distra.js" });
 
     // 2. Discord's bundle: polyfills, require polyfill, module definitions, then InitializeCore and the entry.
     Object.assign(context, {

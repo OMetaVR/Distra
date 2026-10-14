@@ -1,7 +1,7 @@
 // Remote debugger: lets a development machine run JS in the live app and read its logs, so
 // plugins can be checked against the real Discord instead of only its disassembly.
 //
-// Enabled from Settings > Discordia > Developer > Remote debugger with the URL printed by
+// Enabled from Settings > Distra > Developer > Remote debugger with the URL printed by
 // `pnpm devtools` (scripts/devtools.mjs). The device long-polls that server for code to run and
 // posts back results and log lines; nothing listens on the device. React's commits are observed
 // through a minimal devtools hook (installed before Discord's bundle) so the rendered component
@@ -223,11 +223,19 @@ function compile(code: string): () => unknown {
     }
 }
 
+const RUN_TIMEOUT_MS = 25_000;
+
 async function run(code: string) {
     const started = Date.now();
     try {
         let result = compile(code).call(globalThis);
-        if (result && typeof (result as any).then === "function") result = await result;
+        // A promise that never settles must not stall every command queued behind it.
+        if (result && typeof (result as any).then === "function") {
+            result = await Promise.race([
+                result,
+                new Promise((_resolve, reject) => setTimeout(() => reject(new Error(`still pending after ${RUN_TIMEOUT_MS / 1000}s`)), RUN_TIMEOUT_MS)),
+            ]);
+        }
         return { ok: true, result: inspect(result, 4), ms: Date.now() - started };
     } catch (e) {
         return { ok: false, result: inspect(e), ms: Date.now() - started };

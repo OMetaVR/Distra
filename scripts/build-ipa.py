@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Builds a Discordia IPA from a decrypted Discord IPA.
+"""Builds a Distra IPA from a decrypted Discord IPA.
 
-Discordia-specific changes (bundled icon packs, extra alternate app icons) are
+Distra-specific changes (bundled icon packs, extra alternate app icons) are
 applied here; tweak injection, renaming and signing prep are delegated to cyan
 (https://github.com/asdfzxcvbn/pyzule-rw).
 
     python3 scripts/build-ipa.py \\
         --ipa Discord.ipa \\
-        --deb tweak/packages/dev.discordia.tweak_0.1.0_iphoneos-arm.deb \\
-        --output dist/Discordia.ipa \\
+        --deb tweak/packages/dev.distra.tweak_0.1.0_iphoneos-arm.deb \\
+        --output dist/Distra.ipa \\
         [--icon-pack path/to/Plumpy ...] \\
-        [--alt-icon DiscordiaIcon=icon-1024.png ...] \\
-        [--name Discordia] [--bundle-id com.example.discordia] [--remove-extensions]
+        [--alt-icon DistraIcon=icon-1024.png ...] \\
+        [--name Distra] [--bundle-id com.example.distra] [--remove-extensions]
 
 Use the rootful (iphoneos-arm) .deb; cyan rewrites its paths for injection.
 --alt-icon needs Pillow.
@@ -48,7 +48,7 @@ def add_icon_packs(app: Path, packs: list[Path]) -> None:
     for pack in packs:
         if not pack.is_dir():
             raise SystemExit(f"icon pack {pack} is not a directory")
-        destination = app / "DiscordiaIconPacks" / pack.name
+        destination = app / "DistraIconPacks" / pack.name
         shutil.rmtree(destination, ignore_errors=True)
         # Assets.car only matches the Discord version a pack was made for; JS-side packs use the PNGs.
         shutil.copytree(pack, destination, ignore=shutil.ignore_patterns("Assets.car", ".*"))
@@ -83,7 +83,7 @@ def add_alt_icons(app: Path, info: dict, icons: list[str]) -> None:
 def patch_info_plist(app: Path, alt_icons: list[str]) -> None:
     info_path = app / "Info.plist"
     info = plistlib.loads(info_path.read_bytes())
-    # Show Documents (and Discordia/IconPacks) in the Files app. cyan's -d only sets UIFileSharingEnabled.
+    # Show Documents (and Distra/IconPacks) in the Files app. cyan's -d only sets UIFileSharingEnabled.
     info["UIFileSharingEnabled"] = True
     info["LSSupportsOpeningDocumentsInPlace"] = True
     add_alt_icons(app, info, alt_icons)
@@ -105,7 +105,7 @@ def zip_payload(root: Path, output: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--ipa", type=Path, required=True, help="decrypted Discord IPA")
-    parser.add_argument("--deb", type=Path, required=True, help="Discordia .deb (rootful, iphoneos-arm)")
+    parser.add_argument("--deb", type=Path, required=True, help="Distra .deb (rootful, iphoneos-arm)")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--icon-pack", type=Path, action="append", default=[], help="icon pack folder to bundle (repeatable)")
     parser.add_argument("--alt-icon", action="append", default=[], help="NAME=PNG alternate app icon to add (repeatable)")
@@ -122,7 +122,7 @@ def main() -> int:
         raise SystemExit("cyan not found; install it with: pipx install https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="discordia-ipa-") as temp:
+    with tempfile.TemporaryDirectory(prefix="distra-ipa-") as temp:
         work = Path(temp)
         with zipfile.ZipFile(args.ipa) as archive:
             archive.extractall(work)

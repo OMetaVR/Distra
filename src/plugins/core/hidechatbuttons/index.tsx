@@ -15,8 +15,11 @@ import { findByFilePath, findByProps } from "@/metro";
 import { Stack, TableRow, TableRowGroup, TableSwitchRow } from "@/ui/components";
 
 import { definePlugin } from "../types";
+import { SwipeCluster } from "./swipe";
 
 const CHAT_INPUT = "modules/chat_input/native/ChatInput.tsx";
+const CHAT_ACTIONS_LEFT = "modules/chat_input/native/action_buttons/ChatInputActions.tsx";
+const CHAT_ACTIONS_RIGHT = "modules/chat_input/native/action_buttons/ChatInputRightActions.tsx";
 const PROFILE_CONTACT_BUTTONS = "modules/user_profile/native/UserProfileContactButtons.tsx";
 const DM_HEADER_BUTTONS = "modules/main_tabs_v2/native/channel/header/PrivateChannelButtons.tsx";
 const VOICE_PANEL_VIDEO_BUTTON = "modules/voice_panel/native/controls/buttons/VoicePanelVideoButton.tsx";
@@ -25,6 +28,7 @@ const logger = new Logger("HideChatButtons");
 const defaults = {
     gift: true, appLauncher: true, voiceMessage: false, thread: false,
     profileVoice: false, profileVideo: false, dmVoice: false, dmVideo: false, voicePanelVideo: false,
+    swipeCollapse: false,
 };
 let settings = { ...defaults };
 let patcher = createPatcher("HideChatButtons");
@@ -114,6 +118,15 @@ function SettingsPage() {
                     <Switch label="Voice message button" field="voiceMessage" icon="MicrophoneIcon" />
                     <Switch label="Thread button" field="thread" icon="ThreadIcon" />
                 </TableRowGroup>
+                <TableRowGroup title="Chat bar">
+                    <TableSwitchRow
+                        label="Swipe to collapse"
+                        subLabel="Swipe the buttons beside the text field away to give it room. Swipe left from the right side, or tap the arrow, to bring them back."
+                        icon={<TableRow.Icon source={findAssetId("ArrowsLeftRightIcon") ?? findAssetId("ChevronSmallRightIcon")} />}
+                        value={settings.swipeCollapse}
+                        onValueChange={(value: boolean) => void (settings.swipeCollapse = value)}
+                    />
+                </TableRowGroup>
                 <TableRowGroup title="Calls">
                     <Switch label="Voice call on profiles" field="profileVoice" icon="PhoneCallIcon" />
                     <Switch label="Video call on profiles" field="profileVideo" icon="VideoIcon" />
@@ -127,11 +140,11 @@ function SettingsPage() {
 }
 
 export default definePlugin({
-    id: "discordia:hide-chat-buttons",
+    id: "distra:hide-chat-buttons",
     manifest: {
         name: "Hide Chat Buttons",
         description: "Hides buttons you don't use: gift, app launcher, voice messages and threads in the chat bar, and call buttons on profiles, in DMs and in voice channels.",
-        authors: [{ name: "Discordia" }, { name: "SerStars (HideChatButtons)" }, { name: "ssense (HideGiftButton)" }, { name: "janisslsm (HideCallButtons)" }],
+        authors: [{ name: "Distra" }, { name: "SerStars (HideChatButtons)" }, { name: "ssense (HideGiftButton)" }, { name: "janisslsm (HideCallButtons)" }],
         version: "1.1.0",
     },
     async start() {
@@ -139,6 +152,12 @@ export default definePlugin({
         patcher = createPatcher("HideChatButtons");
         if (!afterComponentRender(patcher, CHAT_INPUT, (_props, element) => void hideButtons(element))) {
             logger.warn("Chat input component not found");
+        }
+        for (const [path, side] of [[CHAT_ACTIONS_LEFT, "left"], [CHAT_ACTIONS_RIGHT, "right"]] as const) {
+            if (!afterComponentRender(patcher, path, (_props, element) =>
+                settings.swipeCollapse ? <SwipeCluster side={side}>{element}</SwipeCluster> : element)) {
+                logger.warn(`Chat bar buttons (${side}) not found`);
+            }
         }
         patchCallButtons();
     },

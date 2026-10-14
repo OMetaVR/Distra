@@ -9,7 +9,7 @@ export interface ModuleRecord {
     importedAll?: unknown;
     importedDefault?: unknown;
     publicModule: { exports: any };
-    /** Recorded by Discordia from Discord's `fileFinishedImporting` calls. */
+    /** Recorded by Distra from Discord's `fileFinishedImporting` calls. */
     __filePath?: string;
 }
 

@@ -156,7 +156,7 @@ function patchTabsUI(tabs, patches) {
                     const sections = config.sections;
 
                     const section = sections?.find((x) =>
-                        ["Discordia", "Bunny", "Kettu", "Revenge"].includes(x?.label),
+                        ["Distra", "Bunny", "Kettu", "Revenge"].includes(x?.label),
                     );
 
                     // If unable to find a section
@@ -195,7 +195,7 @@ function patchTabsUI(tabs, patches) {
                     ).props;
 
                     const section = sections?.find((x) =>
-                        ["Discordia", "Bunny", "Kettu", "Revenge"].includes(x?.label),
+                        ["Distra", "Bunny", "Kettu", "Revenge"].includes(x?.label),
                     );
 
                     // If unable to find a section

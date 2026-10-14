@@ -1,7 +1,7 @@
 import { Forms, General } from "@vendetta/ui/components";
 import { storage } from '@vendetta/plugin';
 import { useProxy } from '@vendetta/storage';
-import { loadBadges } from "./utils";
+import { applyBadgeLimit, loadBadges } from "./utils";
 import { getAssetIDByName } from "@vendetta/ui/assets";
 import { url } from "@vendetta/metro/common";
 const { ScrollView } = General;
@@ -24,6 +24,12 @@ export default () => {
                 onPress={() => url.openDeeplink("https://discord.gg/eTvYv95PCG")}
             />
             <FormSection title="Badge Config">
+                <FormSwitchRow
+                    label="Show every badge"
+                    subLabel="Discord folds a profile's badges after six behind a +N chip. Show all of them, wrapped under the name."
+                    value={!!storage.showAll}
+                    onValueChange={v => { update("showAll", v); applyBadgeLimit(); }}
+                />
                 <FormSwitchRow
                     label="Show custom badges first"
                     value={!!storage.left}

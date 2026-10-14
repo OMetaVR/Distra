@@ -22,17 +22,19 @@ export default function SmartMention({
 		null,
 	);
 
-	React.useEffect(
-		() =>
-			!loadedUsername
-			&& loadUsername
-			&& (UserStore.getUser(userId)
-				? setLoadedUsername(UserStore.getUser(userId).username)
-				: fetchProfile(userId).then(x => {
-					setLoadedUsername(x.user.username);
-				})),
-		[loadUsername],
-	);
+	React.useEffect(() => {
+		// The effect must not return anything: its Promise was used as the cleanup function, and React threw
+		// "Object is not a function" when the mention unmounted (it crashed the app in NexxUtils credits).
+		if (loadedUsername || !loadUsername) return;
+
+		const cached = UserStore.getUser(userId);
+		if (cached) setLoadedUsername(cached.username);
+		else {
+			fetchProfile(userId).then(x => {
+				setLoadedUsername(x.user.username);
+			}).catch(() => {});
+		}
+	}, [loadUsername]);
 
 	return (
 		<Text

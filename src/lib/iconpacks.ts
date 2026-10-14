@@ -3,8 +3,8 @@
 // resolves is checked against the active pack, which mirrors the assets/ layout
 // (e.g. rosiecord's Plumpy pack: modules/main_tabs_v2/native/images/...).
 //
-// Packs live in Documents/Discordia/IconPacks/<name>/ or ship inside the app at
-// Discord.app/DiscordiaIconPacks/<name>/ (IPA builds). Switching packs applies
+// Packs live in Documents/Distra/IconPacks/<name>/ or ship inside the app at
+// Discord.app/DistraIconPacks/<name>/ (IPA builds). Switching packs applies
 // on reload. Native images from Assets.car are not covered; IPA builds can
 // replace Assets.car for those.
 
@@ -92,7 +92,7 @@ export async function initIconPack() {
     // custom transformer claims it first, so patch that first.
     const AssetSourceResolver = find(fromPredicate(
         m => typeof m === "function" && typeof m.prototype?.defaultAsset === "function" && typeof m.prototype?.scaledAssetPath === "function",
-        "discordia.AssetSourceResolver",
+        "distra.AssetSourceResolver",
     ));
 
     if (AssetSourceResolver) {

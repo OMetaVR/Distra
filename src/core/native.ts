@@ -75,6 +75,20 @@ export const chatManagerShim: Record<string, any> = {
 /** Sets where `chatManagerShim.updateRows` forwards to (plugins may already have patched it). */
 export const setChatUpdateRows = (fn: (...args: any[]) => unknown) => void (chatUpdateRows = fn);
 
+/**
+ * iOS still registers a native DCDChatManager whose updateRows Discord no longer calls; plugins
+ * must get the shim instead. What the shim doesn't define is read from the native module, and
+ * patches (assignments) land on the shim.
+ */
+let chatManagerView: any;
+function chatManager(native: any) {
+    if (native == null) return chatManagerShim;
+    return chatManagerView ??= new Proxy(chatManagerShim, {
+        get: (target, key) => key in target ? target[key as any] : native[key],
+        has: (target, key) => key in target || key in native,
+    });
+}
+
 const aliasCache = new Map<string, any>();
 
 /**
@@ -112,7 +126,7 @@ function legacyView(module: any) {
 }
 
 function resolveAlias(name: string) {
-    if (name === "DCDChatManager") return chatManagerShim;
+    if (name === "DCDChatManager") return chatManager(undefined);
     if (aliasCache.has(name)) return aliasCache.get(name);
     let module: any;
     for (const replacement of LEGACY_NAMES[name] ?? []) {
@@ -124,9 +138,13 @@ function resolveAlias(name: string) {
     return alias;
 }
 
+/** `nativeModuleProxy` with legacy names resolving, once installed. */
+let aliasedModules: Record<string, any> | undefined;
+
 /**
  * Wraps `nativeModuleProxy` so legacy module names resolve. Must run before Discord's bundle
- * reads it (React Native's NativeModules module captures it once).
+ * reads it (React Native's NativeModules module captures it once). On iOS the global is
+ * read-only; `exposeNativeModuleAliases` then puts the wrapper on React Native's exports instead.
  */
 export function installNativeModuleAliases() {
     const proxy = globalThis.nativeModuleProxy;
@@ -138,10 +156,11 @@ export function installNativeModuleAliases() {
         try {
             value = proxy[key as any];
         } catch { }
+        if (key === "DCDChatManager") return chatManager(value);
         if (value != null || typeof key !== "string") return value;
-        return key in LEGACY_NAMES || key === "DCDChatManager" ? resolveAlias(key) : value;
+        return key in LEGACY_NAMES ? resolveAlias(key) : value;
     };
-    const wrapped = new Proxy({}, {
+    aliasedModules = new Proxy({}, {
         get: (_, key) => lookup(key),
         set(_, key, value) {
             try {
@@ -164,8 +183,19 @@ export function installNativeModuleAliases() {
     });
 
     try {
-        globalThis.nativeModuleProxy = wrapped;
-    } catch {
-        realProxy = undefined;
+        globalThis.nativeModuleProxy = aliasedModules;
+    } catch { }
+}
+
+/**
+ * Makes `ReactNative.NativeModules` the aliased proxy when the global couldn't be replaced
+ * (it's non-writable on iOS), so plugins reading old module names still find them.
+ */
+export function exposeNativeModuleAliases(reactNative: any) {
+    if (!aliasedModules || globalThis.nativeModuleProxy === aliasedModules || reactNative == null) return;
+    try {
+        Object.defineProperty(reactNative, "NativeModules", { get: () => aliasedModules, configurable: true, enumerable: true });
+    } catch (e) {
+        console.error("[Distra] could not expose native module aliases", e);
     }
 }

@@ -1,12 +1,14 @@
 // Styles logged messages as Discord builds their chat rows (RowManager#generate):
 // deleted ones get colored text, a highlight and a "deleted" label; edited ones show
-// each previous version above the current content.
+// each previous version above the current content (Discord's own tag marks them edited).
 
 import type { Patcher } from "@/lib/patcher";
 import { findByNameLazy } from "@/metro";
 import { ReactNative } from "@/metro/common";
 
 import { settings } from "./settings";
+import { ZWSP } from "./capture";
+import type { StoredMessage } from "./db";
 import { edits, isDeleted, logged } from "./state";
 
 const RowManager = findByNameLazy("RowManager");
@@ -15,18 +17,36 @@ const color = (hex: string) => ReactNative.processColor(hex);
 
 /**
  * Wraps content nodes so they render in `hex`. Chat rows have no colored-text node, but
- * links take a color, so the content becomes a link that does nothing when tapped.
+ * links take a color. Discord 348+ reads link styling from a target object; tapping
+ * opens the author's profile, like tapping their name.
  */
-function colored(content: any[], hex: string) {
+function colored(content: any[], hex: string, message: any) {
     return {
         type: "link",
         content,
-        target: "usernameOnClick",
-        context: { username: 1, medium: true, usernameOnClick: { linkColor: color(hex) } },
+        target: { action: "bindUserMenu", userId: message.author?.id, messageChannelId: message.channel_id, linkColor: color(hex), medium: false },
     };
 }
 
+/** Colors the plain text in `nodes`, leaving mentions, links and emoji as they are. */
+function colorText(nodes: any[], hex: string, message: any): any[] {
+    return nodes.map(node => {
+        if (node?.type === "text") return colored([node], hex, message);
+        if (Array.isArray(node?.content) && node.type !== "link") return { ...node, content: colorText(node.content, hex, message) };
+        return node;
+    });
+}
+
 const text = (content: string) => ({ type: "text", content });
+
+/** Removes the invisible characters capture.ts adds to force a redraw. */
+function stripRedrawMarker(nodes: any[]): any[] {
+    return nodes.flatMap(node => {
+        if (node?.type !== "text" || typeof node.content !== "string" || !node.content.includes(ZWSP)) return [node];
+        const content = node.content.replace(new RegExp(`${ZWSP}+$`), "");
+        return content ? [{ ...node, content }] : [];
+    });
+}
 
 function timeLabel(ms: number) {
     const date = new Date(ms);
@@ -35,24 +55,48 @@ function timeLabel(ms: number) {
     return sameDay ? time : `${date.toLocaleDateString()} ${time}`;
 }
 
-/**
- * Points image urls of a deleted message's attachments at their greyed-out local copies.
- * CDN and media-proxy urls carry signatures and resize parameters, so they're matched
- * by the attachment id path segment (`/attachments/<channel>/<id>/<file>`).
- */
-function swapImages(node: any, localById: Map<string, string>, depth = 0) {
-    if (!node || typeof node !== "object" || depth > 6) return;
+function cloneData(value: any, depth = 0): any {
+    if (!value || typeof value !== "object" || depth > 6) return value;
+    if (Array.isArray(value)) return value.map(item => cloneData(item, depth + 1));
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, cloneData(item, depth + 1)]));
+}
+
+/** Replaces every image url string in `node` that `matches` with `local`. */
+function replaceUrls(node: any, matches: (url: string) => boolean, local: string, depth = 0) {
+    if (!node || typeof node !== "object" || depth > 4) return;
     for (const key of Object.keys(node)) {
         const value = node[key];
-        if (typeof value === "string" && value.startsWith("http")) {
-            for (const [id, local] of localById) {
-                if (value.includes(`/${id}/`)) {
-                    node[key] = local;
-                    break;
+        if (typeof value === "string" && /^(https?|file):/.test(value) && matches(value)) node[key] = local;
+        else if (value && typeof value === "object") replaceUrls(value, matches, local, depth + 1);
+    }
+}
+
+/** "cdn.example.com/a/b.png" for "https://cdn.example.com/a/b.png?x=1": what media proxy urls contain. */
+const fingerprint = (url: string) => url.replace(/^[a-z]+:\/\//, "").replace(/[?#].*$/, "");
+
+/**
+ * Shows the greyed-out copies of a deleted message's images in its row. Attachments are matched
+ * by id; embed images by their original url, which media proxy urls contain, or by the saved original.
+ */
+function swapImages(rowMessage: any, stored: StoredMessage) {
+    // The row can share its attachment and embed objects with the message store, which the
+    // full-size viewer reads: swap in copies so the viewer keeps the originals.
+    if (Array.isArray(rowMessage.attachments)) rowMessage.attachments = rowMessage.attachments.map((a: any) => cloneData(a));
+    if (Array.isArray(rowMessage.embeds)) rowMessage.embeds = rowMessage.embeds.map((e: any) => cloneData(e));
+    for (const attachment of stored.attachments) {
+        if (!attachment.l) continue;
+        const target = rowMessage.attachments?.find((a: any) => a?.id === attachment.id);
+        if (target) replaceUrls(target, () => true, attachment.l);
+    }
+    for (const embed of stored.embeds ?? []) {
+        for (const image of [embed.image, embed.thumbnail]) {
+            if (!image?.l) continue;
+            const prints = [fingerprint(image.u), image.o && fingerprint(image.o)].filter(Boolean) as string[];
+            for (const rowEmbed of rowMessage.embeds ?? []) {
+                for (const part of [rowEmbed?.image, rowEmbed?.thumbnail, rowEmbed?.video]) {
+                    replaceUrls(part, url => prints.some(print => url.includes(print)), image.l);
                 }
             }
-        } else if (value && typeof value === "object") {
-            swapImages(value, localById, depth + 1);
         }
     }
 }
@@ -63,11 +107,12 @@ export function patchRows(patcher: Patcher) {
         const id = data.message?.id;
         if (!id || !logged.has(id)) return;
 
+        if (Array.isArray(row.message.content)) row.message.content = stripRedrawMarker(row.message.content);
         const history = edits.get(id);
+        const message = data.message;
         if (history?.length && Array.isArray(row.message.content)) {
             const previous = history.flatMap(edit => [
-                colored([text(edit.content || " ")], settings.editedTextColor),
-                colored([text(" (edited)")], settings.editedTextColor),
+                colored([text(edit.content || " ")], settings.editedTextColor, message),
                 text("\n"),
             ]);
             row.message.content = [...previous, ...row.message.content];
@@ -75,7 +120,8 @@ export function patchRows(patcher: Patcher) {
 
         if (isDeleted(id)) {
             const stored = logged.get(id)!;
-            if (Array.isArray(row.message.content)) row.message.content = [colored(row.message.content, settings.deletedTextColor)];
+            if (Array.isArray(row.message.content)) row.message.content = colorText(row.message.content, settings.deletedTextColor, message);
+            row.message.textColor = color(settings.deletedTextColor);
             row.message.edited = settings.showDeleteTime ? `deleted ${timeLabel(stored.deleted_at!)}` : "deleted";
             if (settings.highlightDeleted) {
                 row.backgroundHighlight = {
@@ -84,8 +130,7 @@ export function patchRows(patcher: Patcher) {
                     gutterColor: color(`${settings.highlightColor}CC`),
                 };
             }
-            const localById = new Map(stored.attachments.filter(a => a.l).map(a => [a.id, a.l!]));
-            if (localById.size) swapImages(row.message, localById);
+            swapImages(row.message, stored);
         }
     });
 }

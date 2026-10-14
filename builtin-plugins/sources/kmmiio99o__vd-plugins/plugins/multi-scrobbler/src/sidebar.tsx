@@ -153,7 +153,7 @@ function patchTabsUI(tabs, patches) {
                     const sections = config.sections;
 
                     const section = sections?.find((x: any) =>
-                        ["Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
+                        ["Distra", "Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
                             (mod) => x.label === mod && x.title === mod,
                         ),
                     );
@@ -176,7 +176,7 @@ function patchTabsUI(tabs, patches) {
                         (i) => i.props?.sections,
                     ).props;
                     const section = sections?.find((x: any) =>
-                        ["Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
+                        ["Distra", "Bunny", "Revenge", "Kettu", "Vencore", "ShiggyCord"].some(
                             (mod) => x.label === mod && x.title === mod,
                         ),
                     );

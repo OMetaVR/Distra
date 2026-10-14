@@ -14,6 +14,8 @@ const patch = () => {
   };
 
   delete apply["React"];
+  // Distra: leave globals that already exist (ReactNative, ...) alone, so unloading doesn't delete them.
+  for (const key of Object.keys(apply)) if (key in window) delete apply[key];
 
   Object.assign(window, apply);
 

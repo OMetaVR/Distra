@@ -1,0 +1,115 @@
+diff -ruN a/plugins/MoreConfirm/src/index.ts b/plugins/MoreConfirm/src/index.ts
+--- a/plugins/MoreConfirm/src/index.ts	2026-10-14 17:27:29.116342969 -0400
++++ b/plugins/MoreConfirm/src/index.ts	2026-10-14 16:17:39.402032900 -0400
+@@ -19,6 +19,9 @@
+ 
+ import { logger, patcher } from "@vendetta";
+ import { findByProps, findByStoreName } from "@vendetta/metro";
++import { storage } from "@vendetta/plugin";
++
++import Settings from "./Settings";
+ 
+ const dialog = findByProps("show", "confirm", "close");
+ const relationshipManager = findByProps("addRelationship");
+@@ -26,18 +29,29 @@
+ const actionSheetManager = findByProps("hideActionSheet");
+ const UserStore = findByStoreName("UserStore");
+ 
++// Distra: every confirmation can be switched off in the settings page (on by default, as before).
++const enabled = (key: string) => (storage as Record<string, any>)[key] !== false;
++
++// Accounts without a discriminator ("0") are shown by username only.
++const tag = ({ username, discriminator }: { username: string; discriminator?: string }) =>
++    discriminator && discriminator !== "0" ? `${username}#${discriminator}` : username;
++
+ export default new class MoreConfirm {
+     patches = [] as (() => void)[];
++    settings = Settings;
+ 
+     onLoad() {
+         this.patches.push(patcher.instead("handleStartCall", callManager, (args, orig) => {
+-            const [{ rawRecipients: [{ username, discriminator }, multiple] }, isVideo] = args;
++            const [{ rawRecipients: [recipient, multiple] }, isVideo] = args;
++            if (!enabled(isVideo ? "videoCalls" : "voiceCalls")) return orig(...args);
++
++            const name = tag(recipient);
+             const action = isVideo ? "video call" : "call";
+ 
+             // if `multiple` is defined, it's probably a group call
+             dialog.show({
+-                title: multiple ? `Start a group ${action}?` : `Start a ${action} with ${username}#${discriminator}?`,
+-                body: multiple ? "Are you sure you want to start the group call?" : `Are you sure you want to ${action} ${username}#${discriminator}?`,
++                title: multiple ? `Start a group ${action}?` : `Start a ${action} with ${name}?`,
++                body: multiple ? "Are you sure you want to start the group call?" : `Are you sure you want to ${action} ${name}?`,
+                 confirmText: "Yes",
+                 cancelText: "Cancel",
+                 confirmColor: "brand",
+@@ -53,17 +67,21 @@
+ 
+         this.patches.push(patcher.instead("addRelationship", relationshipManager, (args, orig) => {
+             if (typeof args[0] !== "object" || !args[0].userId) return orig.apply(this, args);
+-            const { username, discriminator } = UserStore.getUser(args[0].userId);
++            const block = args[0].type === 2;
++            if (!enabled(block ? "block" : "addFriend")) return orig.apply(this, args);
++
++            const user = UserStore.getUser(args[0].userId);
++            if (!user) return orig.apply(this, args);
++            const name = tag(user);
+ 
+             // This is hacky, but it *works*
+             const hideASInterval = setInterval(() => actionSheetManager.hideActionSheet(), 100);
+             setTimeout(() => clearInterval(hideASInterval), 3000);
+ 
+-            const block = args[0].type === 2;
+             return new Promise(r => {
+                 dialog.show({
+-                    title: `${block ? "Block" : "Friend"} ${username}#${discriminator}?`,
+-                    body: `Are you sure you want to ${block ? "block" : "friend"} ${username}#${discriminator}?`,
++                    title: `${block ? "Block" : "Friend"} ${name}?`,
++                    body: `Are you sure you want to ${block ? "block" : "friend"} ${name}?`,
+                     confirmText: "Yes",
+                     cancelText: "Cancel",
+                     confirmColor: "brand",
+diff -ruN a/plugins/MoreConfirm/src/Settings.tsx b/plugins/MoreConfirm/src/Settings.tsx
+--- a/plugins/MoreConfirm/src/Settings.tsx	1969-12-31 19:00:00.000000000 -0500
++++ b/plugins/MoreConfirm/src/Settings.tsx	2026-10-14 16:44:05.948560600 -0400
+@@ -0,0 +1,39 @@
++import { findByProps } from "@vendetta/metro";
++import { React } from "@vendetta/metro/common";
++import { storage } from "@vendetta/plugin";
++import { useProxy } from "@vendetta/storage";
++import { getAssetIDByName } from "@vendetta/ui/assets";
++
++const { ScrollView } = findByProps("ScrollView");
++const { TableRowGroup, TableSwitchRow, Stack, TableRow } = findByProps("TableSwitchRow", "TableRowGroup", "Stack", "TableRow");
++
++// One switch per action MoreConfirm asks about. Anything not set yet counts as on.
++const options = [
++    { key: "voiceCalls", label: "Voice calls", subLabel: "Ask before starting a voice call or group call.", icon: "PhoneCallIcon" },
++    { key: "videoCalls", label: "Video calls", subLabel: "Ask before starting a video call or group video call.", icon: "VideoIcon" },
++    { key: "addFriend", label: "Friend requests", subLabel: "Ask before sending a friend request or accepting one.", icon: "UserPlusIcon" },
++    { key: "block", label: "Blocking", subLabel: "Ask before blocking someone.", icon: "UserMinusIcon" },
++];
++
++export default function Settings() {
++    useProxy(storage);
++
++    return (
++        <ScrollView contentContainerStyle={{ paddingBottom: 38 }}>
++            <Stack style={{ paddingVertical: 24, paddingHorizontal: 12 }} spacing={24}>
++                <TableRowGroup title="Ask for confirmation before...">
++                    {options.map(({ key, label, subLabel, icon }) => (
++                        <TableSwitchRow
++                            key={key}
++                            label={label}
++                            subLabel={subLabel}
++                            icon={<TableRow.Icon source={getAssetIDByName(icon) ?? getAssetIDByName("CheckmarkLargeIcon")} />}
++                            value={(storage as Record<string, any>)[key] !== false}
++                            onValueChange={(value: boolean) => ((storage as Record<string, any>)[key] = value)}
++                        />
++                    ))}
++                </TableRowGroup>
++            </Stack>
++        </ScrollView>
++    );
++}

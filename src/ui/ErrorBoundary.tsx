@@ -12,7 +12,7 @@ interface State {
     error: unknown;
 }
 
-/** Keeps a crashing Discordia (or plugin) page from taking down Discord's navigator. */
+/** Keeps a crashing Distra (or plugin) page from taking down Discord's navigator. */
 export class ErrorBoundary extends Component<Props, State> {
     state: State = { error: null };
 

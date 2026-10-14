@@ -1,6 +1,6 @@
 {
     "name": "SilentLeave",
-    "description": "Leave the current Group DM silently with /leave silent command",
+    "description": "Leave group DMs silently: adds a Leave silently button to the leave confirmation, and a /leave silent command.",
     "authors": [
         {
             "name": "coder.gg",

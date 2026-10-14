@@ -1,5 +1,5 @@
 // Home screen app icon. iOS only allows switching to alternate icons declared
-// in Info.plist; IPA builds add Discordia's icons alongside Discord's own.
+// in Info.plist; IPA builds add Distra's icons alongside Discord's own.
 
 import { callNative } from "@/core/bridge";
 

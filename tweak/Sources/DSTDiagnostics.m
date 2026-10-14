@@ -1,16 +1,16 @@
 // On-device diagnostics, so problems can be investigated without a Mac:
 //
 //   - every native and JS log line goes to an in-memory buffer and to
-//     Documents/Discordia/logs/latest.log (the previous launch is kept as previous.log)
-//   - a banner shortly after launch says whether Discordia started
+//     Documents/Distra/logs/latest.log (the previous launch is kept as previous.log)
+//   - a banner shortly after launch says whether Distra started
 //   - a three-finger long press anywhere opens a log viewer with Copy/Share
 
-#import "Discordia.h"
+#import "Distra.h"
 
 static const NSTimeInterval kBannerTimeout = 15;
 static const NSUInteger kMaxBufferedLines = 2000;
 
-@interface DCDDiagnostics () <UIAdaptivePresentationControllerDelegate>
+@interface DSTDiagnostics () <UIAdaptivePresentationControllerDelegate>
 @property (nonatomic, strong) NSMutableArray<NSString *> *lines;
 @property (nonatomic, strong) dispatch_queue_t queue;
 @property (nonatomic, strong) NSFileHandle *file;
@@ -22,10 +22,10 @@ static const NSUInteger kMaxBufferedLines = 2000;
 @property (nonatomic) BOOL viewerOpen;
 @end
 
-@implementation DCDDiagnostics
+@implementation DSTDiagnostics
 
 + (instancetype)shared {
-    static DCDDiagnostics *shared;
+    static DSTDiagnostics *shared;
     static dispatch_once_t once;
     dispatch_once(&once, ^{ shared = [self new]; });
     return shared;
@@ -34,10 +34,10 @@ static const NSUInteger kMaxBufferedLines = 2000;
 - (instancetype)init {
     if ((self = [super init])) {
         _lines = [NSMutableArray array];
-        _queue = dispatch_queue_create("dev.discordia.diagnostics", DISPATCH_QUEUE_SERIAL);
+        _queue = dispatch_queue_create("dev.distra.diagnostics", DISPATCH_QUEUE_SERIAL);
         _launchDate = [NSDate date];
 
-        NSURL *directory = [DCDRootURL() URLByAppendingPathComponent:@"logs" isDirectory:YES];
+        NSURL *directory = [DSTRootURL() URLByAppendingPathComponent:@"logs" isDirectory:YES];
         NSURL *latest = [directory URLByAppendingPathComponent:@"latest.log"];
         NSURL *previous = [directory URLByAppendingPathComponent:@"previous.log"];
         NSFileManager *fm = NSFileManager.defaultManager;
@@ -51,7 +51,7 @@ static const NSUInteger kMaxBufferedLines = 2000;
 }
 
 - (NSURL *)previousLogURL {
-    return [DCDRootURL() URLByAppendingPathComponent:@"logs/previous.log"];
+    return [DSTRootURL() URLByAppendingPathComponent:@"logs/previous.log"];
 }
 
 #pragma mark - Logging
@@ -93,7 +93,7 @@ static const NSUInteger kMaxBufferedLines = 2000;
 - (NSString *)summary {
     NSDictionary *info = NSBundle.mainBundle.infoDictionary;
     NSMutableArray *rows = [NSMutableArray array];
-    [rows addObject:[NSString stringWithFormat:@"Discordia tweak %@ (%@)", DCDLoaderVersion, DCDIsJailbroken() ? @"jailbreak" : @"injected"]];
+    [rows addObject:[NSString stringWithFormat:@"Distra tweak %@ (%@)", DSTLoaderVersion, DSTIsJailbroken() ? @"jailbreak" : @"injected"]];
     [rows addObject:[NSString stringWithFormat:@"Discord %@ (%@) %@", info[@"CFBundleShortVersionString"], info[@"CFBundleVersion"], NSBundle.mainBundle.bundleIdentifier]];
     [rows addObject:[NSString stringWithFormat:@"iOS %@", UIDevice.currentDevice.systemVersion]];
     [rows addObject:self.hookName
@@ -106,7 +106,7 @@ static const NSUInteger kMaxBufferedLines = 2000;
     } else {
         [rows addObject:@"JS: has not reported ready"];
     }
-    [rows addObject:[NSString stringWithFormat:@"Boot mode: %ld, failed launches before this one: %ld", (long)DCDBootGuard.shared.mode, (long)DCDBootGuard.shared.failedBoots]];
+    [rows addObject:[NSString stringWithFormat:@"Boot mode: %ld, failed launches before this one: %ld", (long)DSTBootGuard.shared.mode, (long)DSTBootGuard.shared.failedBoots]];
     return [rows componentsJoinedByString:@"\n"];
 }
 
@@ -129,7 +129,7 @@ static const NSUInteger kMaxBufferedLines = 2000;
 }
 
 - (void)showBanner {
-    if (self.bannerShown || ![DCDLoaderConfig()[@"showStartupBanner"] boolValue]) return;
+    if (self.bannerShown || ![DSTLoaderConfig()[@"showStartupBanner"] boolValue]) return;
     UIWindow *window = [self keyWindow];
     if (!window) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ [self showBanner]; });
@@ -140,13 +140,13 @@ static const NSUInteger kMaxBufferedLines = 2000;
     NSString *text;
     BOOL problem = YES;
     if (!self.hookName) {
-        text = @"Discordia loaded, but Discord's JS bundle was never intercepted.";
+        text = @"Distra loaded, but Discord's JS bundle was never intercepted.";
     } else if (!self.jsStatus) {
-        text = @"Discordia was injected, but its JS hasn't started.";
+        text = @"Distra was injected, but its JS hasn't started.";
     } else if ([self.jsStatus[@"failedSteps"] count] > 0) {
-        text = [NSString stringWithFormat:@"Discordia started with %lu error(s).", (unsigned long)[self.jsStatus[@"failedSteps"] count]];
+        text = [NSString stringWithFormat:@"Distra started with %lu error(s).", (unsigned long)[self.jsStatus[@"failedSteps"] count]];
     } else {
-        text = [NSString stringWithFormat:@"Discordia %@ is running.", self.jsStatus[@"version"] ?: DCDLoaderVersion];
+        text = [NSString stringWithFormat:@"Distra %@ is running.", self.jsStatus[@"version"] ?: DSTLoaderVersion];
         problem = NO;
     }
     text = [text stringByAppendingString:@"\nTap here, or hold three fingers anywhere, for logs."];
@@ -184,10 +184,10 @@ static const NSUInteger kMaxBufferedLines = 2000;
 
 - (void)installGestureOnWindow:(UIWindow *)window {
     for (UIGestureRecognizer *recognizer in window.gestureRecognizers) {
-        if ([recognizer.name isEqualToString:@"DiscordiaDiagnostics"]) return;
+        if ([recognizer.name isEqualToString:@"DistraDiagnostics"]) return;
     }
     UILongPressGestureRecognizer *press = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressed:)];
-    press.name = @"DiscordiaDiagnostics";
+    press.name = @"DistraDiagnostics";
     press.numberOfTouchesRequired = 3;
     press.minimumPressDuration = 0.8;
     press.cancelsTouchesInView = NO;
@@ -217,7 +217,7 @@ static const NSUInteger kMaxBufferedLines = 2000;
     if (!top) return;
 
     UIViewController *viewer = [UIViewController new];
-    viewer.title = @"Discordia Logs";
+    viewer.title = @"Distra Logs";
     viewer.view.backgroundColor = UIColor.systemBackgroundColor;
 
     UISegmentedControl *picker = [[UISegmentedControl alloc] initWithItems:@[@"This launch", @"Previous launch"]];
@@ -276,11 +276,11 @@ static const NSUInteger kMaxBufferedLines = 2000;
 
 @end
 
-void DCDLogNative(NSString *format, ...) {
+void DSTLogNative(NSString *format, ...) {
     va_list args;
     va_start(args, format);
     NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
     va_end(args);
-    os_log(DCDLog(), "%{public}@", message);
-    [DCDDiagnostics.shared log:message source:@"native" level:@"info"];
+    os_log(DSTLog(), "%{public}@", message);
+    [DSTDiagnostics.shared log:message source:@"native" level:@"info"];
 }

@@ -69,8 +69,8 @@ export function createPatcher(owner: string): Patcher {
     };
 }
 
-/** Patcher for Discordia's own core patches. */
-export const corePatcher = createPatcher("Discordia");
+/** Patcher for Distra's own core patches. */
+export const corePatcher = createPatcher("Distra");
 
 /**
  * spitroast with Vendetta's signature, but a callback that throws can't break Discord:
@@ -83,7 +83,7 @@ function guarded<K extends "before" | "after" | "instead">(kind: K) {
             try {
                 return callback.apply(this, args);
             } catch (e) {
-                console.error(`[Discordia] plugin ${kind} patch on "${method}" threw`, e);
+                console.error(`[Distra] plugin ${kind} patch on "${method}" threw`, e);
                 if (kind === "instead") return (args[1] as AnyFn).apply(this, args[0]);
                 return undefined;
             }

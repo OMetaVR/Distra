@@ -1,6 +1,6 @@
 // Prefixed logging, plus an in-memory ring buffer shown in the Developer page.
 // Entries are also forwarded to the tweak's on-device log (three-finger long
-// press, or Documents/Discordia/logs/latest.log).
+// press, or Documents/Distra/logs/latest.log).
 
 import { callNative, isBridgeAvailable } from "@/core/bridge";
 
@@ -73,7 +73,7 @@ export class Logger {
     debug = (...args: unknown[]) => this.write("debug", args);
 }
 
-export const logger = new Logger("Discordia");
+export const logger = new Logger("Distra");
 
 export const getLogEntries = () => entries;
 

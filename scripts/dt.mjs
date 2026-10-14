@@ -4,10 +4,14 @@
 //   node scripts/dt.mjs -f file.js           run a file
 //   node scripts/dt.mjs logs [-f] [--since N] [--grep text]
 //   node scripts/dt.mjs status
+//   node scripts/dt.mjs reload [--build] [--plugins]
+//                                            rebuild dist/distra.js (--build) and the built-in plugins (--plugins),
+//                                            reload the app, wait for it
 //
 // Inside the code, `dt` has inspection helpers (dt.tree({ match }), dt.byName, dt.fibers, ...),
-// and `discordia`, `vendetta`, `bunny`, `enmity` are the usual globals.
+// and `distra`, `vendetta`, `bunny`, `enmity` are the usual globals.
 
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 const port = Number(process.env.DEVTOOLS_PORT ?? 4041);
@@ -42,6 +46,27 @@ const print = value => console.log(typeof value === "string" ? value : JSON.stri
 try {
     if (args[0] === "status") {
         print(await request("/status"));
+    } else if (args[0] === "reload") {
+        const cwd = new URL("..", import.meta.url);
+        if (flag("--plugins")) execFileSync(process.execPath, ["scripts/build-plugins.mjs"], { stdio: "inherit", cwd });
+        if (flag("--build")) execFileSync(process.execPath, ["scripts/build.mjs"], { stdio: "inherit", cwd });
+        const before = (await request("/status")).device?.session;
+        const { ok, result } = await request("/eval", { code: "const updater = globalThis.__turboModuleProxy?.('BundleUpdaterManager') ?? nativeModuleProxy.BundleUpdaterManager; setTimeout(() => updater.reload(), 300); return globalThis.distra?.builtAt ?? 'unstamped'", timeout: 5000 });
+        if (!ok) throw new Error(`reload failed: ${result}`);
+        const deadline = Date.now() + 60_000;
+        let session;
+        while ((session = (await request("/status")).device?.session) === before) {
+            if (Date.now() > deadline) throw new Error("device did not reconnect within 60s");
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        // The debugger connects early in startup; the global appears once initialization finishes.
+        let built;
+        for (let i = 0; i < 40; i++) {
+            built = await request("/eval", { code: "return globalThis.distra?.builtAt ?? 'unstamped'", timeout: 10_000 });
+            if (built.result !== "unstamped") break;
+            await new Promise(resolve => setTimeout(resolve, 250));
+        }
+        console.log(`reloaded (was ${result}, now ${built.result}, session ${session})`);
     } else if (args[0] === "logs") {
         args.shift();
         const follow = flag("-f");

@@ -1,12 +1,16 @@
-// Discordia's startup, called from entry.ts. `init` runs before Discord's app
+// Distra's startup, called from entry.ts. `init` runs before Discord's app
 // component starts (Discord is held until it resolves), `start` runs after.
 
 import { callNative, isBridgeAvailable } from "@/core/bridge";
+import { exposeNativeModuleAliases, reloadApp } from "@/core/native";
 import { startRemoteDebugger } from "@/core/devtools";
+import { installErrorGuard } from "@/core/errorGuard";
 import { isForeignLoader, isSafeMode, loader } from "@/core/loader";
 import { initSettings, loaderConfig, settings } from "@/core/settings";
 import { patchCommands, registerCommand } from "@/lib/commands";
 import { initIconPack } from "@/lib/iconpacks";
+import { unwrapLazy } from "@/lib/lazy";
+import { installChatBar, registerChatBarButton, updateChatBar } from "@/lib/chatBar";
 import { getLogEntries, logger } from "@/lib/logger";
 import { corePatcher, createPatcher } from "@/lib/patcher";
 import * as metro from "@/metro";
@@ -14,11 +18,11 @@ import { loadMetroCache } from "@/metro/cache";
 import * as common from "@/metro/common";
 import { installBunnyGlobals } from "@/compat/bunny";
 import { installEnmityGlobals, loadEnmitySettings } from "@/compat/enmity";
-import { patchChatCommands } from "@/compat/native";
+import { patchChatCommands, patchDiscordLinks } from "@/compat/native";
 import { installVendettaGlobals } from "@/compat/vendetta";
 import * as pluginManager from "@/plugins/manager";
 import { patchSettings, registerSection } from "@/ui/settings";
-import { registerDiscordiaSection } from "@/ui/settings/sections";
+import { registerDistraSection } from "@/ui/settings/sections";
 import { prepareColorModule } from "@/ui/color";
 import { showToast } from "@/ui/toasts";
 
@@ -42,8 +46,10 @@ async function step<T>(name: string, fn: () => T | Promise<T>): Promise<T | unde
 
 export async function init() {
     const started = Date.now();
-    logger.info(`Discordia ${DISCORDIA_VERSION} (${DISCORDIA_COMMIT}) on Discord ${loader.discord.version} (${loader.discord.build}), bundle: ${loader.bundle.source}`);
+    logger.info(`Distra ${DISTRA_VERSION} (${DISTRA_COMMIT}) on Discord ${loader.discord.version} (${loader.discord.build}), bundle: ${loader.bundle.source}`);
     logger.info(`Metro registry: ${Object.keys(globalThis.modules ?? {}).length} modules; native modules: turbo=${typeof globalThis.__turboModuleProxy === "function"} legacy=${globalThis.nativeModuleProxy != null}`);
+
+    installErrorGuard(message => showToast(message));
 
     try {
         startRemoteDebugger();
@@ -51,43 +57,48 @@ export async function init() {
         logger.error("Remote debugger failed to start", e);
     }
 
-    if (isForeignLoader) logger.warn("Not loaded by the Discordia tweak; native features are unavailable");
+    if (isForeignLoader) logger.warn("Not loaded by the Distra tweak; native features are unavailable");
     else if (!isBridgeAvailable()) logger.error("Native bridge module missing; settings will not persist");
 
     await step("settings", initSettings);
     await step("metro cache", () => loadMetroCache(loader.discord.build));
 
     await step("compat globals", async () => {
+        exposeNativeModuleAliases(unwrapLazy(common.ReactNative));
         installVendettaGlobals();
         installBunnyGlobals();
         installEnmityGlobals();
         patchChatCommands();
+        patchDiscordLinks();
         prepareColorModule();
         await loadEnmitySettings();
     });
 
     await step("settings ui", () => {
-        registerDiscordiaSection();
+        registerDistraSection();
         patchSettings();
     });
     await step("commands", patchCommands);
     await step("icon pack", initIconPack);
+    await step("chat bar", installChatBar);
+    // Before plugins start: some use the API (e.g. the chat bar) while loading.
+    globalThis.distra = createGlobalApi();
+    await step("plugins", pluginManager.initPlugins);
 
-    globalThis.discordia = createGlobalApi();
     const durationMs = Date.now() - started;
     logger.info(`Initialized in ${durationMs}ms${isSafeMode() ? " (safe mode)" : ""}${failedSteps.length ? `; failed steps: ${failedSteps.join(", ")}` : ""}`);
 
     if (!isForeignLoader) {
-        callNative("diag.ready", { version: DISCORDIA_VERSION, durationMs, failedSteps, safeMode: isSafeMode() })
+        callNative("diag.ready", { version: DISTRA_VERSION, durationMs, failedSteps, safeMode: isSafeMode() })
             .catch(e => logger.error("Could not report startup status to the tweak", e));
     }
 }
 
 export async function start() {
-    await step("plugins", pluginManager.initPlugins);
+    await step("plugin updates", pluginManager.updatePlugins);
 
     if (isSafeMode()) {
-        setTimeout(() => showToast("Discordia is in safe mode"), 2000);
+        setTimeout(() => showToast("Distra is in safe mode"), 2000);
     }
 
     // Tell the tweak this launch survived, resetting its crash-loop counter.
@@ -98,7 +109,9 @@ export async function start() {
 
 function createGlobalApi() {
     return {
-        version: DISCORDIA_VERSION,
+        version: DISTRA_VERSION,
+        commit: DISTRA_COMMIT,
+        builtAt: DISTRA_BUILT_AT,
         loader,
         settings,
         loaderConfig,
@@ -106,8 +119,10 @@ function createGlobalApi() {
         patcher: { create: createPatcher, core: corePatcher },
         plugins: pluginManager,
         commands: { registerCommand },
+        chatBar: { register: registerChatBarButton, update: updateChatBar },
         settingsUI: { registerSection },
         native: { call: callNative },
+        reload: reloadApp,
         logger,
         getLogEntries,
     };
@@ -115,5 +130,5 @@ function createGlobalApi() {
 
 declare global {
     // eslint-disable-next-line no-var
-    var discordia: ReturnType<typeof createGlobalApi> | undefined;
+    var distra: ReturnType<typeof createGlobalApi> | undefined;
 }

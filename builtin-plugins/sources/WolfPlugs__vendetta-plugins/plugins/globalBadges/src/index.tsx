@@ -1,8 +1,8 @@
 import { findByName } from "@vendetta/metro";
-import { after } from "@vendetta/patcher";
+import { after, instead } from "@vendetta/patcher";
 import Settings from "./Settings";
 import { storage } from "@vendetta/plugin";
-import { GlobalBadges, loadBadges } from "./utils";
+import { GlobalBadges, applyBadgeLimit, badgeUtils, DISCORD_MAX_BADGES, loadBadges } from "./utils";
 import { BadgeProps } from "./types";
 
 const bunny = (window as any).bunny.api.react.jsx;
@@ -10,10 +10,16 @@ const REFRESH_INTERVAL = 1000 * 60 * 30;
 const badgeModule = findByName("useBadges", false);
 
 let unpatch;
+let unpatchIcons;
 let intervalId;
+
+// Distra: Discord 348 renders a badge's icon from `getProfileBadgeIconUrl(badge)` (the ProfileBadge
+// component has no stable name any more), so global badges answer for their own URL there.
+const iconUrls = new Map<string, string>();
 export default {
   onLoad: async () => {
     storage.left ??= false;
+    storage.showAll ??= false;
     storage.showModStyle ??= "none";
     storage.showAero ??= true;
     storage.showAliucord ??= true;
@@ -32,6 +38,12 @@ export default {
     storage.showVelocity ??= true;
     storage.showVencord ??= true;
     storage.showVendroidEnhanced ??= true;
+
+    applyBadgeLimit();
+    if (badgeUtils) {
+      unpatchIcons = instead("getProfileBadgeIconUrl", badgeUtils, ([badge], original) =>
+        iconUrls.get(badge?.id) ?? original(badge));
+    }
 
     await loadBadges();
     intervalId = setInterval(loadBadges, REFRESH_INTERVAL);
@@ -74,6 +86,7 @@ export default {
 
       userBadges.forEach((badge, idx) => {
         const badgeId = `gb-${badge.mod}-${idx}`;
+        iconUrls.set(badgeId, badge.badge);
         badgeProps[badgeId] = {
           id: badgeId,
           source: { uri: badge.badge },
@@ -90,6 +103,8 @@ export default {
   },
   onUnload: () => {
     unpatch?.();
+    unpatchIcons?.();
+    if (badgeUtils) badgeUtils.MAX_DISPLAYED_PROFILE_BADGES = DISCORD_MAX_BADGES;
     clearInterval(intervalId);
   },
   settings: Settings

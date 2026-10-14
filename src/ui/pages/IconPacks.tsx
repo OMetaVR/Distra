@@ -41,7 +41,7 @@ export default function IconPacks() {
                             key={pack.id}
                             label={pack.name}
                             subLabel={[
-                                pack.source === "bundled" ? "Included with this build" : "Documents/Discordia/IconPacks",
+                                pack.source === "bundled" ? "Included with this build" : "Documents/Distra/IconPacks",
                                 applied === pack.id ? "applied" : settings.iconPack === pack.id ? "applies after reload" : null,
                             ].filter(Boolean).join(" · ")}
                             icon={<Icon name="PaintPaletteIcon" />}
@@ -56,7 +56,7 @@ export default function IconPacks() {
                 <Text variant="text-sm/medium" color="text-muted">
                     Packs replace Discord's bundled images and mirror the app's assets folder layout (for example
                     rosiecord's Plumpy and Iconsax packs). Add a pack by copying its folder into
-                    Discordia/IconPacks using the Files app. Packs made for older Discord versions only replace the
+                    Distra/IconPacks using the Files app. Packs made for older Discord versions only replace the
                     icons that still exist.
                 </Text>
             </Stack>

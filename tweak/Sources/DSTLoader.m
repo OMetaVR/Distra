@@ -1,57 +1,57 @@
 // Builds the script evaluated before Discord's bundle: a small payload that
-// describes this launch (globalThis.__DISCORDIA_LOADER__, see src/core/loader.ts)
-// followed by Discordia's JS bundle.
+// describes this launch (globalThis.__DISTRA_LOADER__, see src/core/loader.ts)
+// followed by Distra's JS bundle.
 
-#import "Discordia.h"
+#import "Distra.h"
 
-extern const unsigned char kDiscordiaBundle[];
-extern const size_t kDiscordiaBundleLength;
-extern const char *const kDiscordiaBundleVersion;
+extern const unsigned char kDistraBundle[];
+extern const size_t kDistraBundleLength;
+extern const char *const kDistraBundleVersion;
 
 static const NSTimeInterval kCustomBundleTimeout = 3.0;
 
 #pragma mark - Loader config
 
-static NSURL *DCDLoaderConfigURL(void) {
-    return [DCDRootURL() URLByAppendingPathComponent:@"loader.json"];
+static NSURL *DSTLoaderConfigURL(void) {
+    return [DSTRootURL() URLByAppendingPathComponent:@"loader.json"];
 }
 
-static NSDictionary *DCDDefaultLoaderConfig(void) {
+static NSDictionary *DSTDefaultLoaderConfig(void) {
     return @{
-        @"customLoadUrl": @{ @"enabled": @NO, @"url": @"http://localhost:4040/discordia.js" },
+        @"customLoadUrl": @{ @"enabled": @NO, @"url": @"http://localhost:4040/distra.js" },
         @"safeMode": @NO,
         @"showStartupBanner": @YES,
     };
 }
 
-NSDictionary *DCDLoaderConfig(void) {
-    NSMutableDictionary *config = [DCDDefaultLoaderConfig() mutableCopy];
-    [config addEntriesFromDictionary:DCDReadJSONObject(DCDLoaderConfigURL()) ?: @{}];
-    if (![config[@"customLoadUrl"] isKindOfClass:NSDictionary.class]) config[@"customLoadUrl"] = DCDDefaultLoaderConfig()[@"customLoadUrl"];
+NSDictionary *DSTLoaderConfig(void) {
+    NSMutableDictionary *config = [DSTDefaultLoaderConfig() mutableCopy];
+    [config addEntriesFromDictionary:DSTReadJSONObject(DSTLoaderConfigURL()) ?: @{}];
+    if (![config[@"customLoadUrl"] isKindOfClass:NSDictionary.class]) config[@"customLoadUrl"] = DSTDefaultLoaderConfig()[@"customLoadUrl"];
     return config;
 }
 
-BOOL DCDSetLoaderConfig(NSDictionary *config, NSError **error) {
+BOOL DSTSetLoaderConfig(NSDictionary *config, NSError **error) {
     if (![config isKindOfClass:NSDictionary.class]) {
-        if (error) *error = DCDError(@"Loader config must be an object");
+        if (error) *error = DSTError(@"Loader config must be an object");
         return NO;
     }
-    return DCDWriteJSONObject(config, DCDLoaderConfigURL(), error);
+    return DSTWriteJSONObject(config, DSTLoaderConfigURL(), error);
 }
 
 #pragma mark - Loader
 
-@implementation DCDLoader
+@implementation DSTLoader
 
 + (instancetype)shared {
-    static DCDLoader *shared;
+    static DSTLoader *shared;
     static dispatch_once_t once;
     dispatch_once(&once, ^{ shared = [self new]; });
     return shared;
 }
 
 - (NSURL *)scriptURL {
-    return [NSURL URLWithString:DCDScriptScheme @"://discordia.js"];
+    return [NSURL URLWithString:DSTScriptScheme @"://distra.js"];
 }
 
 /** Synchronously downloads the development bundle, or returns nil. */
@@ -65,22 +65,22 @@ BOOL DCDSetLoaderConfig(NSDictionary *config, NSError **error) {
     [[NSURLSession.sharedSession dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         NSInteger status = [response isKindOfClass:NSHTTPURLResponse.class] ? ((NSHTTPURLResponse *)response).statusCode : 0;
         if (!error && status == 200 && data.length > 0) result = data;
-        else DCDLogNative(@"Custom bundle fetch from %@ failed (HTTP %ld): %@", urlString, (long)status, error.localizedDescription ?: @"empty response");
+        else DSTLogNative(@"Custom bundle fetch from %@ failed (HTTP %ld): %@", urlString, (long)status, error.localizedDescription ?: @"empty response");
         dispatch_semaphore_signal(done);
     }] resume];
     dispatch_semaphore_wait(done, dispatch_time(DISPATCH_TIME_NOW, (int64_t)((kCustomBundleTimeout + 1) * NSEC_PER_SEC)));
     return result;
 }
 
-- (NSDictionary *)payloadWithConfig:(NSDictionary *)config guard:(DCDBootGuard *)guard bundleSource:(NSString *)source bundleVersion:(NSString *)version {
+- (NSDictionary *)payloadWithConfig:(NSDictionary *)config guard:(DSTBootGuard *)guard bundleSource:(NSString *)source bundleVersion:(NSString *)version {
     NSDictionary *info = NSBundle.mainBundle.infoDictionary;
-    BOOL safeMode = guard.mode == DCDBootModeSafe;
+    BOOL safeMode = guard.mode == DSTBootModeSafe;
     return @{
-        @"name": DCDLoaderName,
-        @"version": DCDLoaderVersion,
+        @"name": DSTLoaderName,
+        @"version": DSTLoaderVersion,
         @"platform": @"ios",
-        @"jailbroken": @(DCDIsJailbroken()),
-        @"bridge": @{ @"module": @"FileReaderModule", @"method": @"readAsDataURL", @"key": @"discordia" },
+        @"jailbroken": @(DSTIsJailbroken()),
+        @"bridge": @{ @"module": @"FileReaderModule", @"method": @"readAsDataURL", @"key": @"distra" },
         @"discord": @{
             @"version": info[@"CFBundleShortVersionString"] ?: @"unknown",
             @"build": info[@"CFBundleVersion"] ?: @"unknown",
@@ -97,17 +97,17 @@ BOOL DCDSetLoaderConfig(NSDictionary *config, NSError **error) {
 }
 
 - (NSData *)scriptForLaunch {
-    DCDBootGuard *guard = DCDBootGuard.shared;
-    if ([guard beginLaunch] == DCDBootModeDisabled) {
-        DCDLogNative(@"Too many failed launches; starting Discord without Discordia");
-        DCDShowRecoveryAlertIfNeeded();
+    DSTBootGuard *guard = DSTBootGuard.shared;
+    if ([guard beginLaunch] == DSTBootModeDisabled) {
+        DSTLogNative(@"Too many failed launches; starting Discord without Distra");
+        DSTShowRecoveryAlertIfNeeded();
         return nil;
     }
 
-    NSDictionary *config = DCDLoaderConfig();
+    NSDictionary *config = DSTLoaderConfig();
     NSData *bundle;
     NSString *source = @"embedded";
-    NSString *version = @(kDiscordiaBundleVersion);
+    NSString *version = @(kDistraBundleVersion);
 
     NSDictionary *custom = config[@"customLoadUrl"];
     if ([custom[@"enabled"] boolValue] && [custom[@"url"] isKindOfClass:NSString.class]) {
@@ -118,18 +118,18 @@ BOOL DCDSetLoaderConfig(NSDictionary *config, NSError **error) {
         }
     }
     if (!bundle) {
-        bundle = [NSData dataWithBytesNoCopy:(void *)kDiscordiaBundle length:kDiscordiaBundleLength freeWhenDone:NO];
+        bundle = [NSData dataWithBytesNoCopy:(void *)kDistraBundle length:kDistraBundleLength freeWhenDone:NO];
     }
 
     NSData *payloadJSON = [NSJSONSerialization dataWithJSONObject:[self payloadWithConfig:config guard:guard bundleSource:source bundleVersion:version] options:0 error:nil];
     NSMutableData *script = [NSMutableData dataWithCapacity:bundle.length + payloadJSON.length + 64];
-    [script appendData:[@"globalThis.__DISCORDIA_LOADER__=" dataUsingEncoding:NSUTF8StringEncoding]];
+    [script appendData:[@"globalThis.__DISTRA_LOADER__=" dataUsingEncoding:NSUTF8StringEncoding]];
     [script appendData:payloadJSON];
     [script appendData:[@";\n" dataUsingEncoding:NSUTF8StringEncoding]];
     [script appendData:bundle];
 
-    if (guard.mode == DCDBootModeSafe) DCDShowRecoveryAlertIfNeeded();
-    DCDLogNative(@"Injecting Discordia (%@ bundle %@, %lu bytes)", source, version, (unsigned long)script.length);
+    if (guard.mode == DSTBootModeSafe) DSTShowRecoveryAlertIfNeeded();
+    DSTLogNative(@"Injecting Distra (%@ bundle %@, %lu bytes)", source, version, (unsigned long)script.length);
     return script;
 }
 

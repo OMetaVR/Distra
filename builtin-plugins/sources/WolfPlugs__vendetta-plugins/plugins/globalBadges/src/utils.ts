@@ -1,3 +1,4 @@
+import { findByProps } from "@vendetta/metro";
 import { storage } from "@vendetta/plugin";
 import { Badge } from "./types";
 
@@ -85,4 +86,12 @@ export async function loadBadges() {
     } catch (e) {
         console.error("Failed to load global badges", e);
     }
+}
+
+// Discord shows this many badges on a profile before collapsing the rest into a "+N" chip.
+export const badgeUtils = findByProps("getProfileBadgeIconUrl");
+export const DISCORD_MAX_BADGES = badgeUtils?.MAX_DISPLAYED_PROFILE_BADGES ?? 6;
+
+export function applyBadgeLimit() {
+    if (badgeUtils) badgeUtils.MAX_DISPLAYED_PROFILE_BADGES = storage.showAll ? 99 : DISCORD_MAX_BADGES;
 }

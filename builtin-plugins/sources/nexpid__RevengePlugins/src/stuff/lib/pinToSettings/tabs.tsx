@@ -67,7 +67,7 @@ export function patchTabsUI(tabs: PinToSettingsTabs, patches: (() => void)[]) {
 					const sections = config.sections;
 
 					const section = sections?.find((x: any) =>
-						["Bunny", "Revenge", "Kettu"].some(
+						["Distra", "Bunny", "Revenge", "Kettu"].some(
 							mod => x.label === mod && x.title === mod,
 						)
 					);
@@ -91,7 +91,7 @@ export function patchTabsUI(tabs: PinToSettingsTabs, patches: (() => void)[]) {
 						i => i.props?.sections,
 					).props;
 					const section = sections?.find((x: any) =>
-						["Bunny", "Revenge", "Kettu"].some(
+						["Distra", "Bunny", "Revenge", "Kettu"].some(
 							mod => x.label === mod && x.title === mod,
 						)
 					);

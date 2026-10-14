@@ -2,6 +2,7 @@
 
 import { logger } from "@/lib/logger";
 import { corePatcher } from "@/lib/patcher";
+import { isLocalOnly, sendLocalMessage } from "@/lib/localMessage";
 import { byMethods, waitFor } from "@/metro";
 import { commands as commandsModule, messageUtil } from "@/metro/common";
 
@@ -64,7 +65,10 @@ export function registerCommand(command: Command): () => void {
         Promise.resolve()
             .then(() => execute.call(command, args, ctx))
             .then(result => {
-                if (result && typeof result === "object") messageUtil.sendMessage(ctx.channel.id, result);
+                if (!result || typeof result !== "object") return;
+                // `{ type: 4, data }` / flags 64 replies are for you only; anything else is sent as a message.
+                if (isLocalOnly(result)) sendLocalMessage(ctx.channel.id, result);
+                else messageUtil.sendMessage(ctx.channel.id, result);
             })
             .catch(e => logger.error(`Command /${command.name} failed`, e));
     };

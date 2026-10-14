@@ -63,7 +63,7 @@ export function patchTabsUI(tile: SettingsTile) {
                         const sections = config.sections;
 
                         const section = sections?.find((x: any) =>
-                            ["Bunny", "Kettu", "Revenge"].some(
+                            ["Distra", "Bunny", "Kettu", "Revenge"].some(
                                 (mod) => x.label === mod && x.title === mod,
                             ),
                         );
@@ -106,7 +106,7 @@ export function patchTabsUI(tile: SettingsTile) {
                         (i) => i.props?.sections,
                     ).props;
                     const section = sections?.find((x: any) =>
-                        ["Bunny", "Kettu", "Revenge"].some(
+                        ["Distra", "Bunny", "Kettu", "Revenge"].some(
                             (mod) => x.label === mod && x.title === mod,
                         ),
                     );

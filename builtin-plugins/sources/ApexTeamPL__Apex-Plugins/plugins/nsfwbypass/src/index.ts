@@ -9,6 +9,8 @@ const { Text } = findByProps("Button", "Text", "View");
 const { FormInput } = findByProps("FormSection");
 
 const NSFWStuff = findByProps("isNSFWInvite");
+// Distra: Discord 348 moved shouldNSFWGateGuild to its own module (age_gate/native/AgeGateUtils).
+const GateUtils = findByProps("shouldNSFWGateGuild") ?? NSFWStuff;
 const UserStore = findByStoreName("UserStore");
 const { getChannel } = findByProps("getChannel") || findByName("getChannel", false);
 
@@ -59,9 +61,9 @@ export default {
         storage.nsfwPassword ??= "";
 
         if (storage.nsfwBypass) {
-            patches.push(instead("handleNSFWGuildInvite", NSFWStuff, () => false));
-            patches.push(instead("isNSFWInvite", NSFWStuff, () => false));
-            patches.push(instead("shouldNSFWGateGuild", NSFWStuff, () => false));
+            if (NSFWStuff?.handleNSFWGuildInvite) patches.push(instead("handleNSFWGuildInvite", NSFWStuff, () => false));
+            if (NSFWStuff?.isNSFWInvite) patches.push(instead("isNSFWInvite", NSFWStuff, () => false));
+            if (GateUtils?.shouldNSFWGateGuild) patches.push(instead("shouldNSFWGateGuild", GateUtils, () => false));
             patches.push(after("getCurrentUser", UserStore, (_, user) => {
                 if (user?.hasOwnProperty("nsfwAllowed")) {
                     user.nsfwAllowed = true;

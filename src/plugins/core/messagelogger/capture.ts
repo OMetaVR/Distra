@@ -17,7 +17,7 @@ const ChannelStore = findByStoreNameLazy("ChannelStore");
 const UserStore = findByStoreNameLazy("UserStore");
 
 /** Marks events we dispatch ourselves so they pass through untouched. */
-export const OWN_EVENT = "__discordiaLogger";
+export const OWN_EVENT = "__distraLogger";
 
 type Listener = (id: string) => void;
 const changeListeners = new Set<Listener>();
@@ -61,38 +61,138 @@ function toStored(message: any, deletedAt: number | null): db.StoredMessage {
             s: a.size ?? undefined,
             t: a.content_type ?? undefined,
         })),
+        embeds: existing?.embeds?.length ? existing.embeds : toStoredEmbeds(message.embeds),
         deleted_at: deletedAt ?? existing?.deleted_at ?? null,
         updated_at: Date.now(),
     };
 }
 
-/** Saves greyed-out copies of a deleted message's images, then re-renders it. */
+const embedImage = (image: any): db.StoredEmbedImage | undefined => image?.url ? {
+    u: image.url,
+    p: (image.proxyURL ?? image.proxy_url) !== image.url ? image.proxyURL ?? image.proxy_url : undefined,
+    w: image.width ?? undefined,
+    h: image.height ?? undefined,
+} : undefined;
+
+/** Message records keep embeds in Discord's client format; this keeps what's needed to show them again. */
+function toStoredEmbeds(embeds: any[] | undefined): db.StoredEmbed[] | undefined {
+    if (!embeds?.length) return undefined;
+    return embeds.map(embed => ({
+        t: embed.type ?? "rich",
+        url: embed.url ?? undefined,
+        title: embed.rawTitle ?? embed.title ?? undefined,
+        description: embed.rawDescription ?? embed.description ?? undefined,
+        color: typeof embed.color === "number" ? embed.color : undefined,
+        author: embed.author?.name ? { name: embed.author.name, url: embed.author.url, icon_url: embed.author.iconURL ?? embed.author.icon_url } : undefined,
+        footer: embed.footer?.text ? { text: embed.footer.text, icon_url: embed.footer.iconURL ?? embed.footer.icon_url } : undefined,
+        fields: embed.fields?.length ? embed.fields.map((f: any) => ({ name: f.rawName ?? f.name, value: f.rawValue ?? f.value, inline: f.inline })) : undefined,
+        image: embedImage(embed.image),
+        thumbnail: embedImage(embed.thumbnail),
+    }));
+}
+
+/** Simple string hash, for naming saved embed images. */
+function hashKey(text: string) {
+    let hash = 5381;
+    for (let i = 0; i < text.length; i++) hash = (hash * 33) ^ text.charCodeAt(i);
+    return (hash >>> 0).toString(36);
+}
+
+/** Every image of a stored message with the key its files are saved under. */
+function imagesOf(stored: db.StoredMessage) {
+    const images: { key: string; source: string; target: db.StoredAttachment | db.StoredEmbedImage }[] = [];
+    for (const a of stored.attachments) {
+        if (isImage({ content_type: a.t, filename: a.f })) images.push({ key: a.id, source: a.u, target: a });
+    }
+    for (const embed of stored.embeds ?? []) {
+        for (const image of [embed.image, embed.thumbnail]) {
+            if (image) images.push({ key: `e${hashKey(image.u)}`, source: image.p ?? image.u, target: image });
+        }
+    }
+    return images;
+}
+
+/**
+ * Saves two copies of each image in a deleted message: a small greyed-out one shown in the
+ * chat and a recompressed original for the full-size viewer (Discord's CDN stops serving a
+ * deleted message's attachments). Then redraws the message with them.
+ */
+const imageAttempts = new Set<string>();
+
 function saveImages(stored: db.StoredMessage) {
-    if (!settings.saveImages) return;
-    const pending = stored.attachments.filter(a => isImage({ content_type: a.t, filename: a.f }) && !a.l);
+    if (!settings.saveImages || imageAttempts.has(stored.id)) return;
+    imageAttempts.add(stored.id);
+    const pending = imagesOf(stored).filter(image => (!image.target.l || !image.target.o) && !image.target.x);
     if (!pending.length) return;
 
-    Promise.allSettled(pending.map(async attachment => {
-        const result = await callNative<{ uri: string }>(
-            "image.cache", attachment.p ?? attachment.u, `logger/images/${attachment.id}.jpg`, { maxSize: 720, quality: 0.7, greyscale: true, alpha: 0.55 });
-        attachment.l = result.uri;
+    Promise.allSettled(pending.map(async ({ key, source, target }) => {
+        try {
+            // Same url for both, so the second request is served from the HTTP cache.
+            const grey = await callNative<{ uri: string }>("image.cache", source, db.imagePath(key), { maxSize: 720, quality: 0.6, greyscale: true, alpha: 0.75 });
+            target.l = grey.uri;
+            const original = await callNative<{ uri: string }>("image.cache", source, db.imagePath(key, "o"), { maxSize: 2048, quality: 0.8 });
+            target.o = original.uri;
+        } catch (e) {
+            // Gone from the CDN: remember, so it isn't requested again on every launch.
+            if (/HTTP 40[34]/.test(String(e))) target.x = true;
+            throw e;
+        }
     })).then(async results => {
-        if (!results.some(r => r.status === "fulfilled")) return;
-        await db.setAttachments(stored.id, stored.attachments);
+        const failed = results.filter(r => r.status === "rejected");
+        if (failed.length) logger.warn(`Could not save ${failed.length} image(s) of ${stored.id}`, (failed[0] as PromiseRejectedResult).reason);
+        if (failed.length === results.length) {
+            if (imagesOf(stored).some(image => image.target.x)) await db.setMedia(stored);
+            return;
+        }
+        await db.setMedia(stored);
         refresh(stored.id);
     });
 }
 
-/** Re-renders a message row by re-dispatching it unchanged. */
-export function refresh(id: string) {
-    const message = logged.get(id);
-    const current = message && MessageStore.getMessage(message.channel_id, id);
-    if (!current) return;
-    FluxDispatcher.dispatch({ type: "MESSAGE_UPDATE", message: toPlain(current), [OWN_EVENT]: true });
-    notify(id);
+/** API-format attachments and embeds pointing at the saved originals, so the full-size viewer opens those. */
+function localMedia(stored: db.StoredMessage | undefined) {
+    if (!stored || ![...stored.attachments, ...(stored.embeds ?? []).flatMap(e => [e.image, e.thumbnail])].some(item => item?.o)) return {};
+    return { attachments: toApiAttachments(stored), embeds: toApiEmbeds(stored) };
 }
 
-const toPlain = (message: any) => typeof message?.toJS === "function" ? message.toJS() : { ...message };
+const toApiAttachments = (stored: db.StoredMessage) => stored.attachments.map(a => ({
+    id: a.id, filename: a.f, url: a.o ?? a.u, proxy_url: a.o ?? a.p ?? a.u, width: a.w, height: a.h, size: a.s ?? 0, content_type: a.t,
+}));
+
+const toApiImage = (image: db.StoredEmbedImage | undefined) => image && ({ url: image.o ?? image.u, proxy_url: image.o ?? image.p ?? image.u, width: image.w, height: image.h });
+
+const toApiEmbeds = (stored: db.StoredMessage) => (stored.embeds ?? []).map(e => ({
+    type: e.t, url: e.url, title: e.title, description: e.description, color: e.color, author: e.author, footer: e.footer, fields: e.fields,
+    image: toApiImage(e.image), thumbnail: toApiImage(e.thumbnail),
+}));
+
+export const ZWSP = "\u200b";
+
+/**
+ * Update events that make the chat redraw a message's row. The chat only redraws messages
+ * whose content changed, so the first appends an invisible character and the second,
+ * dispatched shortly after, restores the content. Discord ignores updates to empty content,
+ * so messages without text keep the character (the row renderer hides it).
+ */
+function redrawEvents(message: any) {
+    const base = { id: message.id, channel_id: message.channel_id, ...(isDeleted(message.id) ? localMedia(logged.get(message.id)) : {}) };
+    const content: string = message.content ?? "";
+    const change = { type: "MESSAGE_UPDATE", message: { ...base, content: content + ZWSP }, [OWN_EVENT]: true };
+    const restore = content ? { type: "MESSAGE_UPDATE", message: { ...base, content }, [OWN_EVENT]: true } : null;
+    return [change, restore] as const;
+}
+
+const RESTORE_DELAY_MS = 250;
+
+/** Redraws a logged message's chat row, e.g. after its decoration changed. */
+export function refresh(id: string, channelId = logged.get(id)?.channel_id) {
+    const current = channelId && MessageStore.getMessage(channelId, id);
+    if (!current) return;
+    const [change, restore] = redrawEvents(current);
+    FluxDispatcher.dispatch(change);
+    if (restore) setTimeout(() => FluxDispatcher.dispatch(restore), RESTORE_DELAY_MS);
+    notify(id);
+}
 
 /** Handles one deleted message id. Returns an update event that keeps it on screen, or null to let the delete through. */
 function handleDelete(channelId: string, id: string, now: number): any | null {
@@ -107,7 +207,10 @@ function handleDelete(channelId: string, id: string, now: number): any | null {
     notify(id);
 
     if (settings.ignorePluralKit) checkPluralKit(channelId, id);
-    return { type: "MESSAGE_UPDATE", message: toPlain(message), [OWN_EVENT]: true };
+    // Replaces the delete: the message stays in the store, and its row is redrawn as deleted.
+    const [change, restore] = redrawEvents(message);
+    if (restore) setTimeout(() => FluxDispatcher.dispatch(restore), RESTORE_DELAY_MS);
+    return change;
 }
 
 /** PluralKit deletes the original message after proxying it; those deletes aren't interesting. */
@@ -124,12 +227,14 @@ function checkPluralKit(channelId: string, id: string) {
 /** Removes a logged message: from the log and, for deleted ones, from the chat. */
 export function forgetMessage(channelId: string, id: string, removeFromChat: boolean) {
     const wasDeleted = isDeleted(id);
+    const stored = logged.get(id);
+    if (stored) db.removeImages(stored);
     logged.delete(id);
     edits.delete(id);
     deletedByChannel.get(channelId)?.delete(id);
     db.db.batch([["DELETE FROM edits WHERE message_id = ?", [id]], ["DELETE FROM messages WHERE id = ?", [id]]]).catch(() => { });
     if (wasDeleted && removeFromChat) FluxDispatcher.dispatch({ type: "MESSAGE_DELETE", id, channelId, [OWN_EVENT]: true });
-    else refresh(id);
+    else refresh(id, channelId);
     notify(id);
 }
 
@@ -140,6 +245,8 @@ function handleUpdate(event: any) {
     const previous = MessageStore.getMessage(channelId, next.id);
     // Embed unfurls arrive as updates without a content change.
     if (!previous || previous.content === next.content || shouldIgnore(previous)) return;
+    // Already recorded from MESSAGE_END_EDIT; the gateway echo of your own edit comes after it.
+    if (logged.get(next.id)?.content === next.content) return;
 
     const editedAt = Date.parse(next.edited_timestamp) || Date.now();
     const edit: db.StoredEdit = { message_id: next.id, edited_at: editedAt, content: previous.content ?? "" };
@@ -161,8 +268,8 @@ function toApiMessage(stored: db.StoredMessage) {
         author: { id: stored.author_id, username: stored.author.u, global_name: stored.author.g ?? null, avatar: stored.author.a ?? null, discriminator: "0", bot: stored.author.b ?? false },
         timestamp: new Date(snowflakeTime(stored.id)).toISOString(),
         edited_timestamp: null,
-        attachments: stored.attachments.map(a => ({ id: a.id, filename: a.f, url: a.u, proxy_url: a.p ?? a.u, width: a.w, height: a.h, size: a.s ?? 0, content_type: a.t })),
-        embeds: [],
+        attachments: toApiAttachments(stored),
+        embeds: toApiEmbeds(stored),
         mentions: [],
         mention_roles: [],
         mention_everyone: false,
@@ -174,14 +281,13 @@ function toApiMessage(stored: db.StoredMessage) {
 }
 
 /** Re-inserts logged deleted messages into a freshly loaded page of messages. */
-function handleLoad(event: any) {
+function handleLoad(event: any, isLatestPage = !event.hasMoreAfter && !event.isAfter) {
     const ids = deletedByChannel.get(event.channelId);
     if (!ids?.size || !Array.isArray(event.messages) || !event.messages.length) return;
 
     const loaded = event.messages.map((m: any) => m.id as string).sort((a: string, b: string) => a.length - b.length || (a < b ? -1 : 1));
     const oldest = loaded[0];
     const newest = loaded[loaded.length - 1];
-    const isLatestPage = !event.hasMoreAfter && !event.isAfter;
     const present = new Set(loaded);
 
     const extra = [...ids]
@@ -189,12 +295,13 @@ function handleLoad(event: any) {
         .filter(id => (id.length > oldest.length || (id.length === oldest.length && id >= oldest))
             && (isLatestPage || id.length < newest.length || (id.length === newest.length && id <= newest)))
         .map(id => logged.get(id))
-        .filter(Boolean)
-        .map(stored => toApiMessage(stored!));
+        .filter(Boolean) as db.StoredMessage[];
     if (!extra.length) return;
+    // Logged before images were saved (or the save failed): try again while the CDN may still have them.
+    setTimeout(() => extra.forEach(saveImages), 0);
 
     // The API returns newest first.
-    event.messages = [...event.messages, ...extra].sort((a: any, b: any) =>
+    event.messages = [...event.messages, ...extra.map(toApiMessage)].sort((a: any, b: any) =>
         b.id.length - a.id.length || (b.id < a.id ? -1 : b.id > a.id ? 1 : 0));
 }
 
@@ -214,14 +321,29 @@ export function patchDispatcher(patcher: Patcher) {
                     const kept = event.ids.filter((id: string) => handleDelete(event.channelId, id, now) == null);
                     // Logged messages stay in the store unchanged, so re-render them to show them as deleted.
                     const loggedIds = event.ids.filter((id: string) => !kept.includes(id));
-                    setTimeout(() => loggedIds.forEach(refresh), 0);
+                    setTimeout(() => loggedIds.forEach((id: string) => refresh(id, event.channelId)), 0);
                     return [{ ...event, ids: kept }];
                 }
                 case "MESSAGE_UPDATE":
                     if (settings.logEdits) handleUpdate(event);
                     return;
+                // Your own edits reach the store through the edit request's response; the
+                // MESSAGE_UPDATE that follows from the gateway no longer changes anything.
+                case "MESSAGE_END_EDIT":
+                    if (settings.logEdits && event.response?.ok !== false && event.response?.body?.id) {
+                        handleUpdate({ message: event.response.body, channelId: event.channelId });
+                    }
+                    return;
                 case "LOAD_MESSAGES_SUCCESS":
                     handleLoad(event);
+                    return;
+                // Opening a channel from the on-device cache (the latest messages).
+                case "LOCAL_MESSAGES_LOADED":
+                    handleLoad(event, true);
+                    return;
+                // Jumping to a message.
+                case "LOAD_MESSAGES_AROUND_SUCCESS":
+                    handleLoad(event, false);
                     return;
             }
         } catch (e) {

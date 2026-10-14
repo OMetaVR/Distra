@@ -17,7 +17,7 @@ import { fromPredicate } from "@/metro/filters";
 import { pluginDataPath } from "@/plugins/paths";
 import * as pluginManager from "@/plugins/manager";
 import { showConfirmationAlert, showInputAlert } from "@/ui/alerts";
-import { rawColors, resolveSemanticColor, semanticColors } from "@/ui/color";
+import { constantsWithColors, rawColors, resolveSemanticColor, semanticColors } from "@/ui/color";
 import { Codeblock, Search } from "@/ui/CompatComponents";
 import * as components from "@/ui/components";
 import { ErrorBoundary } from "@/ui/ErrorBoundary";
@@ -36,6 +36,9 @@ const LEGACY_EXPORTS: Record<string, string | null> = {
     ActionSheetContentContainer: null,
 };
 
+/** Row components that became statics of ActionSheetRow (`ActionSheetRow.Group`). */
+const ROW_STATICS: Record<string, string> = { ActionSheetRowGroup: "Group", ActionSheetRowIcon: "Icon", Group: "Group", Icon: "Icon" };
+
 function LegacyContainer({ children }: { children?: React.ReactNode }) {
     return common.React.createElement(common.ReactNative.View, null, children);
 }
@@ -47,9 +50,21 @@ function LegacyContainer({ children }: { children?: React.ReactNode }) {
 function findByPropsCompat(...props: string[]) {
     // A lone "KeyboardAwareScrollView" also matches modules that merely re-export it.
     if (props.length === 1 && props[0] === "KeyboardAwareScrollView") props = [...props, "listenToKeyboardEvents"];
+    // `findByProps("ScrollView")` meant React Native itself; Animated also exports ScrollView/View now.
+    if (props.length === 1 && props[0] === "ScrollView") props = [...props, "AppRegistry"];
 
     const found = metro.findByProps(...props);
-    if (found != null || !props.some(prop => prop in LEGACY_EXPORTS)) return found;
+    if (found != null) return found;
+
+    // findByProps("ActionSheetRowGroup") / findByProps("ActionSheetRow", "Group"): the row module, with the statics as exports.
+    if (props.some(prop => prop in ROW_STATICS) && props.every(prop => prop in ROW_STATICS || prop === "ActionSheetRow")) {
+        const rows = metro.findByProps("ActionSheetRow");
+        const Row = rows?.ActionSheetRow;
+        if (Row && props.every(prop => prop === "ActionSheetRow" || Row[ROW_STATICS[prop]])) {
+            return { ...rows, ...Object.fromEntries(props.filter(prop => prop in ROW_STATICS).map(prop => [prop, Row[ROW_STATICS[prop]]])) };
+        }
+    }
+    if (!props.some(prop => prop in LEGACY_EXPORTS)) return found;
 
     const modern = props.flatMap(prop => prop in LEGACY_EXPORTS ? (LEGACY_EXPORTS[prop] ? [LEGACY_EXPORTS[prop]!] : []) : [prop]);
     const base = modern.length ? metro.findByProps(...modern) : metro.findByProps("ActionSheetRow");
@@ -65,6 +80,26 @@ export const vendettaLoaderIdentity = {
         loaderConfig: true,
     },
 };
+
+/**
+ * Vendetta's `assets.all` (every registered asset by name; NexxUtils' toast test picks from it).
+ * A non-enumerable getter, so spreading the assets API (Bunny's does) doesn't build it eagerly.
+ */
+function withAllAssets<T extends object>(api: T): T & { readonly all: Record<string, any> } {
+    Object.defineProperty(api, "all", {
+        enumerable: false,
+        get() {
+            const all: Record<string, any> = {};
+            for (let id = 1; ; id++) {
+                const asset = getAssetById(id);
+                if (!asset) break;
+                all[asset.name] ??= { ...asset, id };
+            }
+            return all;
+        },
+    });
+    return api as any;
+}
 
 export function createVendettaObject() {
     const metroApi = {
@@ -85,7 +120,7 @@ export function createVendettaObject() {
         findByTypeNameAll: (name: string, defaultExp = true) => metro.findByTypeNameAll(name, defaultExp),
         findByStoreName: (name: string) => metro.findByStoreName(name),
         common: {
-            constants: common.constants,
+            constants: constantsWithColors,
             channels: metro.findByPropsLazy("getVoiceChannelId"),
             i18n: common.i18n,
             url: common.url,
@@ -110,7 +145,7 @@ export function createVendettaObject() {
     };
 
     return {
-        version: `discordia-${DISCORDIA_VERSION}`,
+        version: `distra-${DISTRA_VERSION}`,
         patcher: { before, after, instead },
         metro: metroApi,
         constants: {
@@ -132,11 +167,8 @@ export function createVendettaObject() {
                 Object.fromEntries(Object.entries(object).filter(([key]) => !keys.includes(key))),
         },
         debug: {
-            connectToDebugger: () => console.warn("[Discordia] connectToDebugger is not supported yet"),
-            getDebugInfo: () => ({
-                vendetta: { version: DISCORDIA_VERSION, loader: loader.name },
-                discord: { version: loader.discord.version, build: loader.discord.build },
-            }),
+            connectToDebugger: () => console.warn("[Distra] connectToDebugger is not supported yet"),
+            getDebugInfo,
         },
         ui: {
             components: {
@@ -156,7 +188,7 @@ export function createVendettaObject() {
             semanticColors,
             rawColors,
             colors: { semanticColors, rawColors, resolveSemanticColor },
-            assets: {
+            assets: withAllAssets({
                 find: (filter: (asset: any) => boolean) => {
                     for (let id = 1; ; id++) {
                         const asset = getAssetById(id);
@@ -170,22 +202,22 @@ export function createVendettaObject() {
                 },
                 getAssetByID: getAssetById,
                 getAssetIDByName: findAssetId,
-            },
+            }),
         },
         commands: {
             registerCommand,
             unregisterCommand,
-            unregisterAllCommands: () => console.warn("[Discordia] unregisterAllCommands: commands are removed when their plugin stops"),
+            unregisterAllCommands: () => console.warn("[Distra] unregisterAllCommands: commands are removed when their plugin stops"),
         },
         plugins: createPluginsApi(),
-        // Discordia has no theme support yet; these keep theme-aware plugins from crashing.
+        // Distra has no theme support yet; these keep theme-aware plugins from crashing.
         themes: {
-            themes: {},
-            installTheme: () => Promise.reject(new Error("Themes are not supported by Discordia yet")),
+            themes: liveView(() => ({}), () => { }),
+            installTheme: () => Promise.reject(new Error("Themes are not supported by Distra yet")),
             removeTheme: () => Promise.resolve(false),
             selectTheme: () => Promise.resolve(),
             applyTheme: () => { },
-            fetchTheme: () => Promise.reject(new Error("Themes are not supported by Discordia yet")),
+            fetchTheme: () => Promise.reject(new Error("Themes are not supported by Distra yet")),
             getCurrentTheme: () => null,
         },
         storage: {
@@ -204,24 +236,98 @@ export function createVendettaObject() {
             config: loaderConfig,
         },
         logger: new Logger("Vendetta"),
-        unload: () => console.warn("[Discordia] vendetta.unload() is not supported"),
+        unload: () => console.warn("[Distra] vendetta.unload() is not supported"),
     };
 }
 
-/** Vendetta's plugin manager API, mapped onto Discordia's. */
-function createPluginsApi() {
+/** Vendetta's `debug.getDebugInfo()`: versions, OS and device, in the same shape. */
+function getDebugInfo() {
+    const RN = common.ReactNative;
+    const constants: any = RN.Platform?.constants ?? {};
+    const rnVersion = constants.reactNativeVersion;
+    let hermes: Record<string, any> = {};
+    try {
+        hermes = (globalThis as any).HermesInternal?.getRuntimeProperties?.() ?? {};
+    } catch { }
+    let device: Record<string, any> = {};
+    try {
+        const module = RN.NativeModules.DCDDeviceManager;
+        device = module?.getConstants?.() ?? module ?? {};
+    } catch { }
     return {
-        get plugins() {
-            return Object.fromEntries(Object.values(pluginManager.plugins)
-                .filter(record => record.flavor === "vendetta")
-                .map(record => [record.id, { id: record.id, manifest: record.manifest, enabled: record.enabled, update: record.autoUpdate, js: "" }]));
+        vendetta: { version: DISTRA_VERSION, loader: loader.name },
+        discord: { version: loader.discord.version, build: loader.discord.build },
+        react: {
+            version: common.React.version,
+            nativeVersion: rnVersion ? `${rnVersion.major}.${rnVersion.minor}.${rnVersion.patch}${rnVersion.prerelease ? `-${rnVersion.prerelease}` : ""}` : undefined,
         },
-        fetchPlugin: (id: string) => pluginManager.updatePlugin(id),
-        installPlugin: (id: string, enabled = true) => pluginManager.installPlugin(id, "vendetta", enabled).then(() => undefined),
-        startPlugin: (id: string) => pluginManager.enablePlugin(id),
-        stopPlugin: (id: string, disable = true) => disable ? pluginManager.disablePlugin(id) : pluginManager.stopPlugin(id),
-        removePlugin: (id: string) => pluginManager.uninstallPlugin(id),
-        getSettings: (id: string) => pluginManager.getInstance(id)?.SettingsComponent,
+        hermes: {
+            version: hermes["OSS Release Version"],
+            buildType: hermes.Build,
+            bytecodeVersion: hermes["Bytecode Version"],
+        },
+        os: { name: constants.systemName ?? RN.Platform?.OS, version: constants.osVersion ?? RN.Platform?.Version },
+        device: {
+            manufacturer: device.deviceManufacturer,
+            brand: device.deviceBrand,
+            model: device.deviceModel,
+            codename: device.device ?? device.deviceProduct,
+        },
+    };
+}
+
+/** Vendetta-flavored built-ins, keyed by the url Vendetta would have installed them from. */
+function builtinsByUrl() {
+    return new Map(Object.values(pluginManager.builtins)
+        .filter(record => record.flavor === "vendetta")
+        .map(record => [record.builtin?.upstreamInstallUrl ? pluginManager.normalizeUrl(record.builtin.upstreamInstallUrl) : record.id, record]));
+}
+
+/** Plugin ids as Vendetta plugins see them (urls) to Distra's ids. Built-ins answer for their upstream url. */
+function resolveId(id: string) {
+    if (pluginManager.plugins[id]) return id;
+    return builtinsByUrl().get(pluginManager.normalizeUrl(id))?.id ?? id;
+}
+
+/**
+ * A live view of `build()` that also carries a Vendetta storage emitter, like Vendetta's own
+ * `plugins`/`themes` storages (Cloud Sync, Plugin Browser subscribe to it). `watch` wires up when it fires.
+ */
+function liveView(build: () => Record<string, any>, watch: (emitter: storage.Emitter) => void) {
+    const emitter = new storage.Emitter();
+    watch(emitter);
+    return new Proxy({}, {
+        get: (_, key) => key === storage.vendettaEmitterSymbol ? emitter : build()[key as string],
+        has: (_, key) => key in build(),
+        ownKeys: () => Reflect.ownKeys(build()),
+        getOwnPropertyDescriptor: (_, key) => {
+            const value = build()[key as string];
+            return value === undefined ? undefined : { value, writable: false, enumerable: true, configurable: true };
+        },
+    });
+}
+
+/** Vendetta's plugin manager API, mapped onto Distra's. Enabled built-in plugins are listed too. */
+function createPluginsApi() {
+    const entry = (id: string, record: any) => [id, { id, manifest: record.manifest, enabled: record.enabled, update: record.autoUpdate, js: "" }];
+    const plugins = liveView(() => Object.fromEntries([
+        // Disabled built-ins count as not installed.
+        ...[...builtinsByUrl()].filter(([, record]) => record.enabled).map(([url, record]) => entry(url, record)),
+        ...Object.values(pluginManager.plugins).filter(record => record.flavor === "vendetta").map(record => entry(record.id, record)),
+    ]), emitter => pluginManager.onPluginsChanged(event => emitter.emit(event)));
+    return {
+        plugins,
+        fetchPlugin: (id: string) => pluginManager.plugins[resolveId(id)] ? pluginManager.updatePlugin(resolveId(id)) : Promise.resolve(),
+        installPlugin: (id: string, enabled = true) => {
+            const builtin = resolveId(id);
+            // Installing a plugin Distra already ships enables the built-in copy instead.
+            if (pluginManager.builtins[builtin]) return enabled ? pluginManager.enablePlugin(builtin).then(() => undefined) : Promise.resolve();
+            return pluginManager.installPlugin(id, "vendetta", enabled).then(() => undefined);
+        },
+        startPlugin: (id: string) => pluginManager.enablePlugin(resolveId(id)),
+        stopPlugin: (id: string, disable = true) => disable ? pluginManager.disablePlugin(resolveId(id)) : pluginManager.stopPlugin(resolveId(id)),
+        removePlugin: (id: string) => pluginManager.builtins[resolveId(id)] ? pluginManager.disablePlugin(resolveId(id)) : pluginManager.uninstallPlugin(id),
+        getSettings: (id: string) => pluginManager.getInstance(resolveId(id))?.SettingsComponent,
     };
 }
 

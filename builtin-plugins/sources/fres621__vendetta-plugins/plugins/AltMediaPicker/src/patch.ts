@@ -16,7 +16,10 @@ function mediapick(channelId) {
                     channelId,
                     {
                         node: {
+                            // Distra: Discord 348 keys uploads by the node's id; without one, picked photos collide.
+                            id: asset.uri,
                             image: {
+                                id: asset.uri,
                                 playableDuration: 0,
                                 height: asset.height,
                                 filename: asset.fileName,

@@ -1,10 +1,11 @@
-Package: dev.discordia.tweak
-Name: Discordia
+Package: dev.distra.tweak
+Name: Distra
 Version: 0.1.0
 Architecture: iphoneos-arm
 Description: Discord client mod with Vendetta, Bunny, Enmity and Aliucord plugin support, icon packs and more.
-Maintainer: Discordia
-Author: Discordia
+Maintainer: Distra
+Author: Distra
 Section: Tweaks
 Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 15.0)
-Conflicts: dev.beefers.vendetta, app.enmity, io.github.pyoncord, mod.vendetta
+Replaces: dev.discordia.tweak
+Conflicts: dev.discordia.tweak, dev.beefers.vendetta, app.enmity, io.github.pyoncord, mod.vendetta

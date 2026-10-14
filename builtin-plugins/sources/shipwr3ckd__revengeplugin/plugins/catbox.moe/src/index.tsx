@@ -18,7 +18,9 @@ export default {
     unpatches.push(patchUploader());
     unpatches.push(patchMessageSender());
 
-    warmUpUploader();
+    // Distra: no warm-up. It uploaded a junk file to catbox and litterbox on every launch, which
+    // litterbox now answers with 403; the first real upload works without it.
+    void warmUpUploader;
     console.log("[catbox.moe] Plugin loaded.");
     this.settings = settings;
   },

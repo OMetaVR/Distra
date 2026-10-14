@@ -12,17 +12,41 @@ import { readJSON, writeJSON } from "./fs";
 export type StorageEvent = { type: "SET" | "DEL"; path: string[]; value?: unknown };
 type Listener = (event: StorageEvent) => void;
 
-const emitterSymbol = Symbol.for("discordia.storage.emitter");
-const syncAwaitSymbol = Symbol.for("discordia.storage.syncAwait");
+const emitterSymbol = Symbol.for("distra.storage.emitter");
+/** Where Vendetta's storage proxies expose their emitter; plugins read it directly. */
+export const vendettaEmitterSymbol = Symbol.for("vendetta.storage.emitter");
+const syncAwaitSymbol = Symbol.for("distra.storage.syncAwait");
 
-class Emitter {
+type TypedListener = (event: StorageEvent["type"], data: { path: string[]; value?: unknown }) => void;
+
+/**
+ * Change events. `on(listener)` gets every event; `on("SET" | "DEL", listener)` and `off` are
+ * Vendetta's emitter API, for plugins that subscribe to storage proxies themselves.
+ */
+export class Emitter {
     private listeners = new Set<Listener>();
-    on(listener: Listener) {
-        this.listeners.add(listener);
-        return () => void this.listeners.delete(listener);
+    private typed = new Map<string, Set<TypedListener>>();
+    on(listener: Listener): () => void;
+    on(event: string, listener: TypedListener): () => void;
+    on(eventOrListener: string | Listener, listener?: TypedListener) {
+        if (typeof eventOrListener === "function") {
+            this.listeners.add(eventOrListener);
+            return () => void this.listeners.delete(eventOrListener);
+        }
+        const set = this.typed.get(eventOrListener) ?? new Set();
+        set.add(listener!);
+        this.typed.set(eventOrListener, set);
+        return () => void this.off(eventOrListener, listener!);
+    }
+    off(event: string, listener: TypedListener) {
+        this.typed.get(event)?.delete(listener);
+    }
+    once(event: string, listener: TypedListener) {
+        const unsubscribe = this.on(event, (...args) => (unsubscribe(), listener(...args)));
     }
     emit(event: StorageEvent) {
         for (const listener of this.listeners) listener(event);
+        for (const listener of this.typed.get(event.type) ?? []) listener(event.type, { path: event.path, value: event.value });
     }
 }
 
@@ -37,7 +61,7 @@ export function createProxy<T extends object>(target: T = {} as T): { proxy: T; 
 
         const proxy = new Proxy(object, {
             get(t, key, receiver) {
-                if (key === emitterSymbol) return emitter;
+                if (key === emitterSymbol || key === vendettaEmitterSymbol) return emitter;
                 const value = Reflect.get(t, key, receiver);
                 if (typeof key === "symbol" || value == null || typeof value !== "object") return value;
                 return wrap(value, [...path, key]);
@@ -80,7 +104,7 @@ export interface StorageBackend<T = any> {
     set(data: T): void | Promise<void>;
 }
 
-/** Persists a JSON value at `path` (relative to Documents/Discordia). */
+/** Persists a JSON value at `path` (relative to Documents/Distra). */
 export function createFileBackend<T extends object>(path: string, defaults: T = {} as T): StorageBackend<T> {
     return {
         async get() {
@@ -148,7 +172,7 @@ export function awaitStorage(...stores: object[]) {
     })));
 }
 
-/** Storage file for a JSON blob in Documents/Discordia, with in-memory fallback when the bridge is missing. */
+/** Storage file for a JSON blob in Documents/Distra, with in-memory fallback when the bridge is missing. */
 export function createFileStorage<T extends object>(path: string, defaults: T): Promise<T> {
     return createStorage(createFileBackend(path, defaults)).catch(e => {
         logger.error(`Storage ${path} unavailable, falling back to memory`, e);

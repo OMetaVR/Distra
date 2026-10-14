@@ -280,7 +280,8 @@ export default function Header() {
                 </RN.Pressable>
 
                 <RN.View style={styles.textContainer}>
-                    <RN.Text style={[TextStyleSheet["display-md"], { color: resolveSemanticColor(semanticColors["TEXT_DEFAULT"]) }]}>
+                    {/* Distra: display-md was wide enough to wrap "Commands" onto a second line. */}
+                    <RN.Text numberOfLines={1} adjustsFontSizeToFit style={[TextStyleSheet["heading-xl/bold"] ?? TextStyleSheet["display-md"], { color: resolveSemanticColor(semanticColors["TEXT_DEFAULT"]) }]}>
             Commands
                     </RN.Text>
                     <RN.Text style={[TextStyleSheet["text-md/bold"], { color: resolveSemanticColor(semanticColors["TEXT_MUTED"]) }]}>

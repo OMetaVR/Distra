@@ -2,6 +2,7 @@ import { Logger } from "@/lib/logger";
 import { createPatcher } from "@/lib/patcher";
 
 import { definePlugin } from "../types";
+import { patchMessageActions } from "./actions";
 import { onLoggedChange, OWN_EVENT, patchDispatcher } from "./capture";
 import * as db from "./db";
 import { removeKeptMessages } from "./flush";
@@ -16,11 +17,11 @@ let patcher = createPatcher("MessageLogger");
 export { onLoggedChange, OWN_EVENT };
 
 export default definePlugin({
-    id: "discordia:message-logger",
+    id: "distra:message-logger",
     manifest: {
         name: "Message Logger",
         description: "Keeps deleted messages (in red, with greyed-out images) and shows edit history above edited messages. Saved on your device, so it survives restarts.",
-        authors: [{ name: "Discordia" }],
+        authors: [{ name: "Distra" }],
         version: "1.0.0",
     },
 
@@ -40,6 +41,7 @@ export default definePlugin({
         patcher = createPatcher("MessageLogger");
         patchDispatcher(patcher);
         patchRows(patcher);
+        patchMessageActions(patcher);
     },
 
     stop() {

@@ -101,6 +101,25 @@ createServer(async (request, response) => {
     if (!isLocal(request) && process.env.DEVTOOLS_TRACE !== "0") console.log(`${new Date().toLocaleTimeString()} ${request.method} ${url.pathname} from ${request.headers["x-forwarded-for"] ?? request.socket.remoteAddress}`);
     const route = `${request.method} ${url.pathname}`;
     try {
+        // The development bundle, for Developer > Load from custom URL (rebuild with `node scripts/build.mjs`),
+        // and the built-in plugins it loads from next to itself (`node scripts/build-plugins.mjs`).
+        const served = { "GET /distra.js": "application/javascript", "GET /builtins.json": "application/json" }[route];
+        if (served) {
+            const file = path.join(stateDir, url.pathname.slice(1));
+            if (!existsSync(file)) return json(response, 404, { error: `no ${url.pathname.slice(1)}; run pnpm build` });
+            response.writeHead(200, { "Content-Type": served, "Cache-Control": "no-store" });
+            return response.end(readFileSync(file));
+        }
+
+        // Files built-in plugins load from the repository (builtin-plugins/assets), for testing before they're pushed.
+        if (request.method === "GET" && url.pathname.startsWith("/assets/")) {
+            const name = path.basename(url.pathname);
+            const file = path.join(root, "builtin-plugins", "assets", name);
+            if (!existsSync(file)) return json(response, 404, { error: "not found" });
+            response.writeHead(200, { "Content-Type": { ".mp3": "audio/mpeg", ".png": "image/png" }[path.extname(name)] ?? "application/octet-stream" });
+            return response.end(readFileSync(file));
+        }
+
         // Device endpoints
         if (["POST /hello", "GET /poll", "POST /result", "POST /log"].includes(route)) {
             if (url.searchParams.get("token") !== token) {
@@ -181,6 +200,6 @@ createServer(async (request, response) => {
     const addresses = Object.values(networkInterfaces()).flat()
         .filter(info => info?.family === "IPv4" && !info.internal)
         .map(info => `http://${info.address}:${port}/?token=${token}`);
-    console.log(`Remote debugger listening. Enter one of these in Discordia > Developer > Remote debugger:\n  ${addresses.join("\n  ")}`);
+    console.log(`Remote debugger listening. Enter one of these in Distra > Developer > Remote debugger:\n  ${addresses.join("\n  ")}`);
     console.log(`Logs: ${path.relative(root, logFile)}`);
 });

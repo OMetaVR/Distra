@@ -1,0 +1,32 @@
+diff -ruN a/plugins/freemoji/src/msgProcessor.ts b/plugins/freemoji/src/msgProcessor.ts
+--- a/plugins/freemoji/src/msgProcessor.ts	2026-10-14 17:27:26.738461358 -0400
++++ b/plugins/freemoji/src/msgProcessor.ts	2026-10-14 10:10:16.130879500 -0400
+@@ -15,7 +15,9 @@
+ 		const emoji = getCustomEmojiById(emojiString[2]);
+ 
+ 		// Check emoji usability
++		// Distra: emojis from servers you've left aren't in EmojiStore; treat them as unusable.
+ 		if (
++			!emoji ||
+ 			emoji.guildId != getGuildId() ||
+ 			emoji.animated
+ 		) {
+@@ -24,7 +26,7 @@
+ 			// I dunno if webp works everywhere
+ 			const ext = "webp";
+ 			let baseUrl = `https://cdn.discordapp.com/emojis/${emojiString[2]}.${ext}?size=${size}&quality=lossless&name=${emojiString[1]}`;
+-			if (emoji.animated) {
++			if (emoji?.animated) {
+     			baseUrl += "&animated=true";
+ 			}
+ 			
+@@ -43,7 +45,8 @@
+ }
+ 
+ export default function modifyIfNeeded(msg: Message) {
+-	if (!msg.content.match(hasEmotesRegex)) return;
++	// Distra: messages without text (command results, stickers) have no content.
++	if (typeof msg?.content !== "string" || !msg.content.match(hasEmotesRegex)) return;
+ 	if (!storage.forceMoji) { if (storage.haveNitro) return; }
+ 
+ 	// Find all emojis from the captured message string and return object with ~~emojiURLS and~~ content

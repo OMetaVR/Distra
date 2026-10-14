@@ -3,6 +3,7 @@ import { storage } from "@vendetta/plugin";
 import { useProxy } from "@vendetta/storage";
 import { showConfirmationAlert } from "@vendetta/ui/alerts";
 import { showToast } from "@vendetta/ui/toasts";
+import { getAssetIDByName } from "@vendetta/ui/assets";
 import { clipboard } from "@vendetta/metro/common";
 import { findByProps, findByStoreName } from "@vendetta/metro";
 
@@ -92,7 +93,7 @@ function SettingsPage({ onBack }) {
   const enableUnsafeFeatures = (value) => {
     if (value) {
       showConfirmationAlert({
-        title: "⚠️ Enable Unsafe Features - Security Warning",
+        title: "Enable Unsafe Features - Security Warning",
         content: "Unsafe features include token copying, manual token adding, and detailed logging. These features can compromise your account security if misused. Tokens provide full access to accounts and should never be shared. Only enable if you understand the security implications.",
         confirmText: "I Understand - Enable",
         cancelText: "Cancel",
@@ -178,7 +179,7 @@ function SettingsPage({ onBack }) {
           }
         }, React.createElement(ReactNative.Text, {
           style: { color: 'white', fontSize: 16, fontWeight: 'bold' }
-        }, "📤 Export Accounts to Clipboard")),
+        }, "Export Accounts to Clipboard")),
 
         React.createElement(ReactNative.TextInput, {
           key: "import-input",
@@ -212,7 +213,7 @@ function SettingsPage({ onBack }) {
           }
         }, React.createElement(ReactNative.Text, {
           style: { color: 'white', fontSize: 16, fontWeight: 'bold' }
-        }, "📥 Import Accounts")),
+        }, "Import Accounts")),
 
         React.createElement(ReactNative.TouchableOpacity, {
           key: "force-logout-btn",
@@ -226,7 +227,7 @@ function SettingsPage({ onBack }) {
           }
         }, React.createElement(ReactNative.Text, {
           style: { color: 'white', fontSize: 16, fontWeight: 'bold' }
-        }, "🚪 Force Logout"))
+        }, "Force Logout"))
       ]),
 
       React.createElement(ReactNative.View, {
@@ -911,9 +912,11 @@ export default function AccountsManager(props) {
           borderRadius: 6,
           backgroundColor: '#4f545c'
         }
-      }, React.createElement(ReactNative.Text, {
-        style: { color: 'white', fontSize: 18 }
-      }, "⚙️"))
+      // Distra: an icon instead of the emoji.
+      }, React.createElement(ReactNative.Image, {
+        source: getAssetIDByName("SettingsIcon") ?? getAssetIDByName("ic_settings_24px"),
+        style: { width: 20, height: 20, tintColor: 'white' }
+      }))
     ]),
 
     React.createElement(ReactNative.View, {

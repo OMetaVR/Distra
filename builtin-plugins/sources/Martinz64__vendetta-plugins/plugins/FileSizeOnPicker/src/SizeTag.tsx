@@ -16,7 +16,7 @@ export function SizeTag(props) {
     React.useEffect(() => {
         async function fetchData() {
             if(!sizeCache[url]){
-                // Discordia: in bridgeless mode Discord's file module may only be reachable through
+                // Distra: in bridgeless mode Discord's file module may only be reachable through
                 // the native module proxy, and a missing module or rejected promise inside this
                 // effect used to crash the picker.
                 const proxy = (window as any).nativeModuleProxy ?? {};

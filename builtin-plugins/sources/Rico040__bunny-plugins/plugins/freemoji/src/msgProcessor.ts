@@ -15,7 +15,9 @@ function extractUnusableEmojis(messageString: string, size: number) {
 		const emoji = getCustomEmojiById(emojiString[2]);
 
 		// Check emoji usability
+		// Distra: emojis from servers you've left aren't in EmojiStore; treat them as unusable.
 		if (
+			!emoji ||
 			emoji.guildId != getGuildId() ||
 			emoji.animated
 		) {
@@ -24,7 +26,7 @@ function extractUnusableEmojis(messageString: string, size: number) {
 			// I dunno if webp works everywhere
 			const ext = "webp";
 			let baseUrl = `https://cdn.discordapp.com/emojis/${emojiString[2]}.${ext}?size=${size}&quality=lossless&name=${emojiString[1]}`;
-			if (emoji.animated) {
+			if (emoji?.animated) {
     			baseUrl += "&animated=true";
 			}
 			
@@ -43,7 +45,8 @@ function extractUnusableEmojis(messageString: string, size: number) {
 }
 
 export default function modifyIfNeeded(msg: Message) {
-	if (!msg.content.match(hasEmotesRegex)) return;
+	// Distra: messages without text (command results, stickers) have no content.
+	if (typeof msg?.content !== "string" || !msg.content.match(hasEmotesRegex)) return;
 	if (!storage.forceMoji) { if (storage.haveNitro) return; }
 
 	// Find all emojis from the captured message string and return object with ~~emojiURLS and~~ content

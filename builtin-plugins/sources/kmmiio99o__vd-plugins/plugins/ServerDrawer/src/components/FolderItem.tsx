@@ -86,7 +86,22 @@ function FadeIn({ children }: { children: React.ReactNode }) {
     return <Animated.View style={{ opacity }}>{children}</Animated.View>;
 }
 
-export default function FolderItem({ node, onPick, showNames }: { node: GuildNode; onPick: (id: string) => void; showNames?: boolean }) {
+/** A line across the whole row of the wrapping grid, ending a run of servers. */
+export function RowSeparator() {
+    return <View style={{ width: "100%", height: StyleSheet.hairlineWidth * 2, marginVertical: 4, borderRadius: 1, backgroundColor: colors?.BACKGROUND_MODIFIER_ACCENT ?? "rgba(255,255,255,0.18)" }} />;
+}
+
+interface FolderItemProps {
+    node: GuildNode;
+    onPick: (id: string) => void;
+    showNames?: boolean;
+    /** Open folders list their servers in a separate rail, not inline. */
+    sidebar?: boolean;
+    /** A line after an open folder's servers, before the next servers. */
+    separator?: boolean;
+}
+
+export default function FolderItem({ node, onPick, showNames, sidebar, separator }: FolderItemProps) {
     const open = useFolderExpanded(node.id);
 
     const toggle = () => {
@@ -191,11 +206,12 @@ export default function FolderItem({ node, onPick, showNames }: { node: GuildNod
                             </View>,
                         ),
                     )}
-                    {node.children.map((ch) => (
+                    {!sidebar && node.children.map((ch) => (
                         <FadeIn key={ch.id}>
                             <GuildItem node={ch} onPick={onPick} showNames={showNames} />
                         </FadeIn>
                     ))}
+                    {!sidebar && separator && <RowSeparator />}
                 </>
             ) : (
                 folderButton(folderContent(<FolderCover node={node} />))

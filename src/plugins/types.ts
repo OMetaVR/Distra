@@ -1,4 +1,4 @@
-export type PluginFlavor = "discordia" | "vendetta" | "bunny" | "enmity" | "aliucord";
+export type PluginFlavor = "distra" | "vendetta" | "bunny" | "enmity" | "aliucord";
 
 export interface PluginAuthor {
     name: string;
@@ -27,18 +27,18 @@ export interface PluginRecord {
     autoUpdate: boolean;
     /** Last error from starting or updating, cleared on success. */
     error?: string;
-    /** Set for plugins that ship with Discordia (builtin-plugins/). */
+    /** Set for plugins that ship with Distra (builtin-plugins/). */
     builtin?: BuiltinInfo;
 }
 
 export interface BuiltinInfo {
     /** Compatibility as reported by the community plugin list, or "legacy" for Enmity-era plugins. */
     status: "working" | "warning" | "legacy";
-    /** First-party plugin compiled into Discordia (src/plugins/core). */
+    /** First-party plugin compiled into Distra (src/plugins/core). */
     core?: boolean;
     warning: string | null;
     upstreamInstallUrl: string | null;
-    source: { repository: string; commit: string; license: string; path: string; build: "source" | "upstream-prebuilt" | "discordia" };
+    source: { repository: string; commit: string; license: string; path: string; build: "source" | "upstream-prebuilt" | "distra" };
 }
 
 /** A running plugin. */

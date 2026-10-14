@@ -2,6 +2,8 @@ import { storage } from "@vendetta/plugin";
 import { useProxy } from "@vendetta/storage";
 import { React, ReactNative as RN } from "@vendetta/metro/common";
 import { findByProps } from "@vendetta/metro";
+// Distra: the asset module no longer exports getAssetByName; icons come from getAssetIDByName.
+import { getAssetIDByName } from "@vendetta/ui/assets";
 import { semanticColors } from "@vendetta/ui";
 import { showConfirmationAlert } from "@vendetta/ui/alerts";
 import { url } from "@vendetta/metro/common";
@@ -103,7 +105,7 @@ export const Settings: React.FC<SettingsProps> = () => {
                 label: "🌟 Enhanced Visual Accessibility",
                 subLabel: "⚠️ Advanced visual enhancement features - Use with caution",
                 leading: React.createElement(FormRow.Icon, {
-                    source: findByProps("getAssetByName")?.getAssetByName("ic_accessibility")?.id || findByProps("getAssetByName")?.getAssetByName("ic_person")?.id
+                    source: getAssetIDByName("ic_accessibility") || getAssetIDByName("ic_person")
                 }),
                 value: storage.ageBypass,
                 onValueChange: handleVisualA11yToggle
@@ -112,7 +114,7 @@ export const Settings: React.FC<SettingsProps> = () => {
                 label: "Enable NSFW Content Bypass",
                 subLabel: "Bypasses all NSFW restrictions and gates completely",
                 leading: React.createElement(FormRow.Icon, {
-                    source: findByProps("getAssetByName")?.getAssetByName("ic_warning")?.id
+                    source: getAssetIDByName("ic_warning")
                 }),
                 value: storage.nsfwBypass,
                 onValueChange: (value: boolean) => {
@@ -123,7 +125,7 @@ export const Settings: React.FC<SettingsProps> = () => {
                 label: "Show NSFW Channel Warning",
                 subLabel: "Display a warning popup when entering NSFW channels",
                 leading: React.createElement(FormRow.Icon, {
-                    source: findByProps("getAssetByName")?.getAssetByName("ic_alert")?.id
+                    source: getAssetIDByName("ic_alert")
                 }),
                 value: storage.showWarningPopup,
                 onValueChange: (value: boolean) => {
@@ -134,7 +136,7 @@ export const Settings: React.FC<SettingsProps> = () => {
                 label: "🔒 Lock NSFW Channels",
                 subLabel: storage.nsfwPassword ? "Password protected NSFW channel access" : "Set a password to enable NSFW channel locking",
                 leading: React.createElement(FormRow.Icon, {
-                    source: findByProps("getAssetByName")?.getAssetByName("ic_lock")?.id
+                    source: getAssetIDByName("ic_lock")
                 }),
                 value: storage.lockNSFWChannels,
                 onValueChange: (value: boolean) => {

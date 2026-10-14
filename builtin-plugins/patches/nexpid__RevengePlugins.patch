@@ -1,5 +1,47 @@
+diff -ruN a/src/plugins/cloud-sync/src/components/Settings.tsx b/src/plugins/cloud-sync/src/components/Settings.tsx
+--- a/src/plugins/cloud-sync/src/components/Settings.tsx	2026-10-14 17:27:24.602754153 -0400
++++ b/src/plugins/cloud-sync/src/components/Settings.tsx	2026-10-14 15:56:41.117642300 -0400
+@@ -80,7 +80,8 @@
+ 
+ 	const doBumpiness = () => {
+ 		if (
+-			!settings.developerSettings
++			true // Distra: the title wobble is a dev-mode easter egg that never stops; keep it off
++			|| !settings.developerSettings
+ 			|| vstorage.realTrackingAnalyticsSentToChina.pressedSettings
+ 		) {
+ 			return;
+@@ -96,7 +97,8 @@
+ 
+ 	React.useEffect(() => {
+ 		if (
+-			!settings.developerSettings
++			true // Distra: see above
++			|| !settings.developerSettings
+ 			|| vstorage.realTrackingAnalyticsSentToChina.pressedSettings
+ 		) {
+ 			bumpyScaleX.value = Reanimated.withTiming(1, { duration: 150 });
+diff -ruN a/src/plugins/nexxutils/src/modules/BetterComponents/index.ts b/src/plugins/nexxutils/src/modules/BetterComponents/index.ts
+--- a/src/plugins/nexxutils/src/modules/BetterComponents/index.ts	2026-10-14 17:27:24.618915268 -0400
++++ b/src/plugins/nexxutils/src/modules/BetterComponents/index.ts	2026-10-14 16:08:27.837321400 -0400
+@@ -100,9 +100,13 @@
+ 			label: "Test Toast",
+ 			type: "button",
+ 			action() {
+-				const list = Object.values(assets.all);
++				// Random image asset from the registry; `assets.all` is empty on some clients, so fall back to a fixed icon
++				const list = Object.values(assets.all ?? {}).filter(
++					(x: any) => x && typeof x.id === "number" && /^(png|jpe?g|webp)$/i.test(x.type ?? ""),
++				) as { name: string; id: number }[];
+ 				const item = list[Math.floor(Math.random() * list.length)];
+-				showToast(item.name, item.id);
++				if (item) showToast(item.name, item.id);
++				else showToast("Test toast", getAssetIDByName("CheckmarkLargeIcon"));
+ 			},
+ 			icon: getAssetIDByName("BugIcon"),
+ 		},
 diff -ruN a/src/plugins/nexxutils/src/modules/SendSpotifyInvite/index.ts b/src/plugins/nexxutils/src/modules/SendSpotifyInvite/index.ts
---- a/src/plugins/nexxutils/src/modules/SendSpotifyInvite/index.ts	2026-10-13 10:54:27.011981304 -0400
+--- a/src/plugins/nexxutils/src/modules/SendSpotifyInvite/index.ts	2026-10-14 17:27:24.619937514 -0400
 +++ b/src/plugins/nexxutils/src/modules/SendSpotifyInvite/index.ts	2026-10-13 10:35:18.584611400 -0400
 @@ -1,6 +1,7 @@
 -import { findByTypeName } from "@vendetta/metro";
@@ -45,3 +87,264 @@ diff -ruN a/src/plugins/nexxutils/src/modules/SendSpotifyInvite/index.ts b/src/p
  			this.patches.add(
  				after("type", MediaKeyboardListHeader, (_, ret) => {
  					return {
+diff -ruN a/src/plugins/nexxutils/src/modules/SpotifyListenAlong/components/core.ts b/src/plugins/nexxutils/src/modules/SpotifyListenAlong/components/core.ts
+--- a/src/plugins/nexxutils/src/modules/SpotifyListenAlong/components/core.ts	2026-10-14 17:27:24.620385656 -0400
++++ b/src/plugins/nexxutils/src/modules/SpotifyListenAlong/components/core.ts	2026-10-14 16:08:15.017980900 -0400
+@@ -11,7 +11,7 @@
+ const { play, sync } = findByProps("play", "sync");
+ 
+ interface Activity {
+-	party: { id: `${string}:${string}` };
++	party?: { id: `${string}:${string}` };
+ }
+ export interface ListenButtonProps {
+ 	button: any;
+@@ -38,7 +38,7 @@
+ 	const [val, forceUpdate] = React.useReducer(x => ~x, 0);
+ 	React.useEffect(() => fluxSubscribe("SPOTIFY_PLAYER_STATE", forceUpdate));
+ 
+-	const userId = activity.party.id.split(":")[1];
++	const userId = activity.party?.id?.split(":")[1] ?? "";
+ 	const logic = React.useMemo(() => {
+ 		const selfUserId = UserStore.getCurrentUser().id;
+ 		const selfActivity = SpotifyStore.getActivity() as Activity;
+@@ -48,7 +48,7 @@
+ 
+ 		return {
+ 			isYou: selfUserId === userId,
+-			isListeningAlong: selfActivity?.party.id === activity.party.id,
++			isListeningAlong: !!selfActivity?.party?.id && selfActivity.party.id === activity.party?.id,
+ 			isPlayable: hasConnectedAccount && canPlaySpotify,
+ 		};
+ 	}, [userId, activity, val]);
+diff -ruN a/src/plugins/nexxutils/src/modules/SpotifyListenAlong/components/SimplifiedListenButton.tsx b/src/plugins/nexxutils/src/modules/SpotifyListenAlong/components/SimplifiedListenButton.tsx
+--- a/src/plugins/nexxutils/src/modules/SpotifyListenAlong/components/SimplifiedListenButton.tsx	2026-10-14 17:27:24.620385656 -0400
++++ b/src/plugins/nexxutils/src/modules/SpotifyListenAlong/components/SimplifiedListenButton.tsx	2026-10-14 16:08:21.818584000 -0400
+@@ -1,11 +1,31 @@
+-import { ReactNative as RN } from "@vendetta/metro/common";
++import { React, ReactNative as RN } from "@vendetta/metro/common";
+ 
+ import { IconButton } from "$/lib/redesign";
+ 
+ import UserPlayIcon from "../../../../assets/SpotifyListenAlong/UserPlayIcon.png";
+ import { doSync, type ListenButtonProps, useListenButton, useLoading } from "./core";
+ 
+-export default function SimplifiedListenButton({
++/** If the listen button ever fails to render, show Discord's own button instead of taking the profile down */
++class Fallback extends React.Component<
++	React.PropsWithChildren<{ fallback: React.ReactNode }>,
++	{ failed: boolean }
++> {
++	state = { failed: false };
++
++	static getDerivedStateFromError() {
++		return { failed: true };
++	}
++
++	componentDidCatch(error: unknown) {
++		console.warn("[NexxUtils] Add Listen Along button failed to render:", error);
++	}
++
++	render() {
++		return this.state.failed ? this.props.fallback : this.props.children;
++	}
++}
++
++function ListenButton({
+ 	button,
+ 	activity,
+ }: ListenButtonProps) {
+@@ -14,11 +34,11 @@
+ 	const loading = _loading && !disabled;
+ 
+ 	return (
+-		<RN.View style={{ flexDirection: "row", flex: 1 }}>
++		<RN.View style={{ flexDirection: "row", flex: 1, gap: 6 }}>
+ 			<IconButton
+ 				size="md"
+ 				variant="secondary"
+-				style={[{ paddingRight: 6 }, !!disabled && { opacity: 0.5 }]}
++				style={[!!disabled && { opacity: 0.5 }]}
+ 				loading={loading}
+ 				icon={UserPlayIcon}
+ 				onPress={() => (
+@@ -29,3 +49,11 @@
+ 		</RN.View>
+ 	);
+ }
++
++export default function SimplifiedListenButton(props: ListenButtonProps) {
++	return (
++		<Fallback fallback={props.button}>
++			<ListenButton {...props} />
++		</Fallback>
++	);
++}
+diff -ruN a/src/plugins/nexxutils/src/modules/SpotifyListenAlong/index.ts b/src/plugins/nexxutils/src/modules/SpotifyListenAlong/index.ts
+--- a/src/plugins/nexxutils/src/modules/SpotifyListenAlong/index.ts	2026-10-14 17:27:24.620385656 -0400
++++ b/src/plugins/nexxutils/src/modules/SpotifyListenAlong/index.ts	2026-10-14 16:08:15.017473900 -0400
+@@ -9,7 +9,7 @@
+ import ClassicListenButton from "./components/ClassicListenButton";
+ import SimplifiedListenButton from "./components/SimplifiedListenButton";
+ 
+-const { SpotifyPlayButton } = findByProps("SpotifyPlayButton");
++const { SpotifyPlayButton } = findByProps("SpotifyPlayButton") ?? {};
+ const PlayOnSpotifyButton = findByProps("PlayOnSpotifyButton");
+ 
+ export default new Module({
+@@ -29,36 +29,56 @@
+ 	},
+ 	handlers: {
+ 		onStart() {
+-			this.patches.add(
+-				after(
+-					"render",
+-					SpotifyPlayButton.prototype,
+-					(
+-						_,
+-						{
+-							props: button,
+-							_owner: {
+-								stateNode: {
+-									props: { activity },
++			// Discord 348 renders its "Play on Spotify" button for activities from PlayOnSpotifyButton (profile
++			// activity card), a function component. SpotifyPlayButton still exists in the module but nothing renders
++			// it anymore (and it was a class with a render method on older versions, which this used to patch).
++			if (typeof SpotifyPlayButton?.prototype?.render === "function") {
++				this.patches.add(
++					after(
++						"render",
++						SpotifyPlayButton.prototype,
++						(
++							_,
++							{
++								props: button,
++								_owner: {
++									stateNode: {
++										props: { activity },
++									},
+ 								},
+ 							},
+-						},
+-					) =>
+-						React.createElement(ClassicListenButton, {
+-							button,
+-							activity,
+-						}),
+-				),
+-			);
++						) =>
++							React.createElement(ClassicListenButton, {
++								button,
++								activity,
++							}),
++					),
++				);
++			} else {
++				console.warn(
++					"[NexxUtils] Add Listen Along: SpotifyPlayButton is not a class component on this Discord version; skipping that patch",
++				);
++			}
++
++			if (typeof PlayOnSpotifyButton?.PlayOnSpotifyButton !== "function") {
++				console.warn(
++					"[NexxUtils] Add Listen Along: PlayOnSpotifyButton not found on this Discord version; nothing to patch",
++				);
++				return;
++			}
+ 			this.patches.add(
+ 				after(
+ 					"PlayOnSpotifyButton",
+ 					PlayOnSpotifyButton,
+-					([{ activity }], button) =>
+-						React.createElement(SimplifiedListenButton, {
++					([props], button) => {
++						const activity = props?.activity;
++						// Only Spotify activities that are a listen along party can be joined
++						if (typeof activity?.party?.id !== "string" || !activity.party.id.includes(":")) return;
++						return React.createElement(SimplifiedListenButton, {
+ 							button,
+ 							activity,
+-						}),
++						});
++					},
+ 				),
+ 			);
+ 		},
+diff -ruN a/src/plugins/song-spotlight/src/components/ProfileSongs.tsx b/src/plugins/song-spotlight/src/components/ProfileSongs.tsx
+--- a/src/plugins/song-spotlight/src/components/ProfileSongs.tsx	2026-10-14 17:27:24.622743396 -0400
++++ b/src/plugins/song-spotlight/src/components/ProfileSongs.tsx	2026-10-14 16:27:46.453639500 -0400
+@@ -1,7 +1,6 @@
+ import { logger } from "@vendetta";
+ import { findByName, findByProps, findByStoreName } from "@vendetta/metro";
+ import { React, ReactNative as RN, stylesheet } from "@vendetta/metro/common";
+-import { semanticColors } from "@vendetta/ui";
+ import type { ViewProps } from "react-native";
+ 
+ import { FlashList } from "$/deps";
+@@ -40,7 +39,9 @@
+ 
+ 	const styles = stylesheet.createThemedStyleSheet({
+ 		card: {
+-			backgroundColor: semanticColors.CARD_SECONDARY_BG,
++			// Discord 348's own profile cards (About Me, ...) have no box of their own, so neither does this one.
++			// A translucent grey fill here showed up as a visible rectangle on every profile.
++			backgroundColor: "transparent",
+ 			minHeight: 200,
+ 		},
+ 	});
+diff -ruN a/src/stuff/components/SmartMention.tsx b/src/stuff/components/SmartMention.tsx
+--- a/src/stuff/components/SmartMention.tsx	2026-10-14 17:27:24.624614374 -0400
++++ b/src/stuff/components/SmartMention.tsx	2026-10-14 16:08:27.836962300 -0400
+@@ -22,17 +22,19 @@
+ 		null,
+ 	);
+ 
+-	React.useEffect(
+-		() =>
+-			!loadedUsername
+-			&& loadUsername
+-			&& (UserStore.getUser(userId)
+-				? setLoadedUsername(UserStore.getUser(userId).username)
+-				: fetchProfile(userId).then(x => {
+-					setLoadedUsername(x.user.username);
+-				})),
+-		[loadUsername],
+-	);
++	React.useEffect(() => {
++		// The effect must not return anything: its Promise was used as the cleanup function, and React threw
++		// "Object is not a function" when the mention unmounted (it crashed the app in NexxUtils credits).
++		if (loadedUsername || !loadUsername) return;
++
++		const cached = UserStore.getUser(userId);
++		if (cached) setLoadedUsername(cached.username);
++		else {
++			fetchProfile(userId).then(x => {
++				setLoadedUsername(x.user.username);
++			}).catch(() => {});
++		}
++	}, [loadUsername]);
+ 
+ 	return (
+ 		<Text
+diff -ruN a/src/stuff/lib/pinToSettings/tabs.tsx b/src/stuff/lib/pinToSettings/tabs.tsx
+--- a/src/stuff/lib/pinToSettings/tabs.tsx	2026-10-14 17:27:24.625180379 -0400
++++ b/src/stuff/lib/pinToSettings/tabs.tsx	2026-10-14 11:14:50.134081700 -0400
+@@ -67,7 +67,7 @@
+ 					const sections = config.sections;
+ 
+ 					const section = sections?.find((x: any) =>
+-						["Bunny", "Revenge", "Kettu"].some(
++						["Distra", "Bunny", "Revenge", "Kettu"].some(
+ 							mod => x.label === mod && x.title === mod,
+ 						)
+ 					);
+@@ -91,7 +91,7 @@
+ 						i => i.props?.sections,
+ 					).props;
+ 					const section = sections?.find((x: any) =>
+-						["Bunny", "Revenge", "Kettu"].some(
++						["Distra", "Bunny", "Revenge", "Kettu"].some(
+ 							mod => x.label === mod && x.title === mod,
+ 						)
+ 					);

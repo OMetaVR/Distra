@@ -10,8 +10,13 @@ const ExperimentStore = findByStoreName("ExperimentStore")
 
 storage.isEnabled ??= false
 
-AppearanceSettings.setShouldSyncAppearanceSettings(false)
-if (storage.theme && storage.isEnabled) {
+// Distra: the original turned off "sync appearance settings across devices" on every start so the
+// theme sticks. Developer Mode and other appearance settings sync with it, so they went back to
+// their defaults each launch. Sync is now only turned off while a client theme is actually in use.
+const setSync = AppearanceSettings.setShouldSyncAppearanceSettings.bind(AppearanceSettings)
+const themeActive = () => !!(storage.theme && storage.isEnabled)
+setSync(!themeActive())
+if (themeActive()) {
     ThemeUtils.updateBackgroundGradientPreset(storage.theme)
 }
 
@@ -31,6 +36,7 @@ const patches = [
     }),
     after("updateMobilePendingThemeIndex", ThemeUtils, (args) => {
         storage.isEnabled = args[0] > 1 // 0 ~ 1 | default || 2 ~ | client themes
+        setSync(!themeActive())
     }),
     after("updateBackgroundGradientPreset", ThemeUtils, (args) => {
         storage.theme = args[0]
@@ -39,5 +45,6 @@ const patches = [
 
 export const onUnload = () => {
     for (const unpatch of patches) unpatch()
+    setSync(true)
 }
 

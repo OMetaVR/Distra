@@ -5,12 +5,12 @@
 //   2. when Discord requires its entry module (id 0), start holding the native
 //      calls that launch the UI (AppRegistry.runApplication), then let the entry
 //      module run normally,
-//   3. initialize Discordia, then replay the held calls so Discord's UI starts.
+//   3. initialize Distra, then replay the held calls so Discord's UI starts.
 //
 // Unlike Kettu/rain (examples/Kettu-github/src/entry.ts), the entry module runs
 // synchronously: in bridgeless mode native may call runApplication as soon as
 // the bundle finishes evaluating, and AppRegistry only exists once the entry
-// module has run. Discord must start even if Discordia fails, so every path
+// module has run. Discord must start even if Distra fails, so every path
 // below ends with the held calls being released.
 
 import { instead } from "spitroast";
@@ -20,16 +20,19 @@ import type { ModuleID, ModuleRegistry } from "@/metro/types";
 // Discord's bundle defines `window` later; plugins and our code expect it now.
 (globalThis as any).window = globalThis;
 
+// Tweak builds from before the rename to Distra set __DISCORDIA_LOADER__ (with bridge key "discordia").
+(globalThis as any).__DISTRA_LOADER__ ??= (globalThis as any).__DISCORDIA_LOADER__;
+
 // Remote debugger: observe React commits (needs to precede React). Only when enabled.
 try {
-    if ((globalThis as any).__DISCORDIA_LOADER__?.config?.remoteDebugger?.enabled) require("@/core/devtools").installReactHook();
+    if ((globalThis as any).__DISTRA_LOADER__?.config?.remoteDebugger?.enabled) require("@/core/devtools").installReactHook();
 } catch { }
 
 // Old native module names (DCDChatManager, MediaManager, ...) for plugins; must precede Discord's bundle.
 try {
     require("@/core/native").installNativeModuleAliases();
 } catch (e) {
-    (globalThis as any).console?.error?.("[Discordia] native module aliases failed", e);
+    (globalThis as any).console?.error?.("[Distra] native module aliases failed", e);
 }
 
 /** Longest Discord's UI is held for initialization before giving up on it. */
@@ -40,18 +43,18 @@ function trace(message: string) {
     try {
         require("@/lib/logger").logger.info(`[entry] ${message}`);
     } catch {
-        (globalThis as any).console?.log?.(`[Discordia] [entry] ${message}`);
+        (globalThis as any).console?.log?.(`[Distra] [entry] ${message}`);
     }
 }
 
 function report(error: unknown) {
     const message = error instanceof Error ? error.stack ?? error.message : String(error);
-    (globalThis as any).console?.error?.(`[Discordia] ${message}`);
+    (globalThis as any).console?.error?.(`[Distra] ${message}`);
     try {
         require("@/lib/logger").logger.error("[entry] Startup failed", error);
     } catch { }
     try {
-        (globalThis as any).alert?.(`Discordia failed to initialize. Discord will start without it.\n\n${message}`);
+        (globalThis as any).alert?.(`Distra failed to initialize. Discord will start without it.\n\n${message}`);
     } catch { }
 }
 
@@ -179,7 +182,7 @@ if (typeof (globalThis as any).__r === "undefined") {
             configurable: true,
             get: () => metroRequire,
             set(original: (id: ModuleID) => unknown) {
-                metroRequire = function discordiaRequire(id: ModuleID) {
+                metroRequire = function distraRequire(id: ModuleID) {
                     if (id !== 0) return original(id);
                     // Hand `__r` back to Metro before anything else can call it.
                     Object.defineProperty(globalThis, "__r", { value: original, writable: true, configurable: true });

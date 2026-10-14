@@ -1,5 +1,5 @@
 import { find, findByName, findByProps, findByStoreName } from "@vendetta/metro";
-import { before } from "@vendetta/patcher";
+import { instead } from "@vendetta/patcher";
 
 import { semanticColors } from "@vendetta/ui";
 import { showToast } from "@vendetta/ui/toasts";
@@ -47,15 +47,15 @@ function as({ "0": link, "1": pageType }) {
 const handleClick = findByProps("handleClick", "isLinkTrusted") ?? findByProps("handleClick");
 
 export default function patch() {
-    return before("handleClick", handleClick, function ([args]) {
-        const { href } = args;
-        const isSpotify = href.startsWith("https://open.spotify.com/");
-        if (!isSpotify) return;
+    // `instead`, not `before`: clearing `href` still let Discord's own link handler run, which opened its
+    // "are you sure you want to open this link" modal behind the preview. Spotify links never reach it now.
+    return instead("handleClick", handleClick, function (args, original) {
+        const href = args[0]?.href;
+        if (typeof href !== "string" || !href.startsWith("https://open.spotify.com/")) return original.apply(this, args);
 
         let type = href.split("/")[3];
-        if (!["track", "playlist", "episode", "album"].includes(type)) return; // Unsupported page
+        if (!["track", "playlist", "episode", "album"].includes(type)) return original.apply(this, args); // Unsupported page
 
-        args.href = undefined;
         renderActionSheet(as, [href, type]);
     });
 }

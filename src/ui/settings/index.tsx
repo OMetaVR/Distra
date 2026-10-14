@@ -1,4 +1,4 @@
-// Injects Discordia's rows into Discord's settings screen.
+// Injects Distra's rows into Discord's settings screen.
 //
 // Discord's settings are data driven: SETTING_RENDERER_CONFIG maps a key to a
 // row definition (pressable row or route), and `createList` receives the
@@ -41,8 +41,8 @@ export function registerSection(name: string, rows: SettingsRow[]) {
     };
 }
 
-/** Route used for every Discordia (and compat plugin) page. */
-export const CUSTOM_PAGE_ROUTE = "DISCORDIA_CUSTOM_PAGE";
+/** Route used for every Distra (and compat plugin) page. */
+export const CUSTOM_PAGE_ROUTE = "DISTRA_CUSTOM_PAGE";
 // Routes other mods used; plugins navigate to these directly.
 const COMPAT_ROUTES = ["VendettaCustomPage", "BUNNY_CUSTOM_PAGE", "PUPU_CUSTOM_PAGE"];
 
@@ -90,8 +90,8 @@ function rowToConfig(row: SettingsRow) {
 
 const routeConfig = (route: string) => ({
     type: "route",
-    title: () => "Discordia",
-    useTitle: () => "Discordia",
+    title: () => "Distra",
+    useTitle: () => "Distra",
     screen: { route, getComponent: () => CustomPage },
 });
 
@@ -99,7 +99,7 @@ let originalConfig: Record<string, any> | undefined;
 /**
  * The config Discord sees. Always the same object, updated in place: plugins that wrap
  * SETTING_RENDERER_CONFIG themselves (as Vendetta-era plugins do) keep a reference to the value
- * they read and spread it on every access, so later Discordia rows must land in that object.
+ * they read and spread it on every access, so later Distra rows must land in that object.
  */
 const liveConfig: Record<string, any> = {};
 
@@ -136,6 +136,32 @@ function patchRendererConfig(rendererConfig: any) {
     logger.info(`Patched SETTING_RENDERER_CONFIG (${Object.keys(originalConfig ?? {}).length} rows)`);
 }
 
+const PLUGIN_SECTION = "Plugin Settings";
+
+/**
+ * Plugins pin their own settings row by appending a key to the Distra section's `settings`.
+ * Those go in a "Plugin Settings" section of their own, so Distra's section stays about Distra.
+ */
+function keepPluginRowsApart(sections: any[], distra: any) {
+    const own = new Set<string>(distra.settings);
+    const ownKeys: string[] = distra.settings;
+    const pinned: string[] = [];
+    let pluginSection: any;
+    Object.defineProperty(distra, "settings", {
+        enumerable: true,
+        configurable: true,
+        get: () => ownKeys,
+        set: (value: string[]) => {
+            for (const key of value) {
+                if (!own.has(key) && !pinned.includes(key)) pinned.push(key);
+            }
+            if (!pinned.length || pluginSection) return;
+            pluginSection = { label: PLUGIN_SECTION, title: PLUGIN_SECTION, settings: pinned };
+            sections.splice(sections.indexOf(distra) + 1, 0, pluginSection);
+        },
+    });
+}
+
 function patchCreateList(listModule: any) {
     let reported = false;
     corePatcher.after("createList", listModule, ([config]) => {
@@ -148,7 +174,9 @@ function patchCreateList(listModule: any) {
         let index = anchor === -1 ? 1 : anchor + 1;
         for (const [name, rows] of Object.entries(registeredSections)) {
             if (!rows.length || sections.some(section => section.label === name)) continue;
-            sections.splice(index++, 0, { label: name, title: name, settings: rows.map(row => row.key) });
+            const section = { label: name, title: name, settings: rows.map(row => row.key) };
+            sections.splice(index++, 0, section);
+            if (name === "Distra") keepPluginRowsApart(sections, section);
         }
 
         if (!reported) {
@@ -175,7 +203,7 @@ export function patchSettings() {
     const rendererConfig = fromPredicate(m => {
         const config = m.SETTING_RENDERER_CONFIG;
         return config != null && typeof config === "object" && Object.keys(config).length > 0;
-    }, "discordia.SETTING_RENDERER_CONFIG");
+    }, "distra.SETTING_RENDERER_CONFIG");
 
     corePatcher.addCleanup(waitFor(rendererConfig, guard("SETTING_RENDERER_CONFIG", patchRendererConfig)));
     corePatcher.addCleanup(waitFor(byMethods("createList"), guard("createList", patchCreateList)));

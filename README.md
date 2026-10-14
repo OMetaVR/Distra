@@ -1,9 +1,9 @@
-# Discordia
+# Distra
 
-A Discord client mod for iOS. Discordia runs plugins written for **Vendetta**,
+A Discord client mod for iOS. Distra runs plugins written for **Vendetta**,
 **Bunny**, **Enmity** and **Aliucord**, plus its own format, and supports
 swappable **icon packs** and extra **app icons**. It is managed from a
-Discordia section in Discord's own settings.
+Distra section in Discord's own settings.
 
 > Early development (beta). Built and tested against Discord 348.0 (113691). See [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -11,14 +11,14 @@ Discordia section in Discord's own settings.
 
 The latest build of `main` is always on the [**beta** release](../../releases/tag/beta):
 
-- **`Discordia.dylib`**: inject into Discord with LiveContainer or an IPA patcher (no Substrate needed).
+- **`Distra.dylib`**: inject into Discord with LiveContainer or an IPA patcher (no Substrate needed).
 - **`*_iphoneos-arm.deb`** / **`*_iphoneos-arm64.deb`**: rootful / rootless jailbreak packages.
 
 ## How it works
 
-Discordia has two halves:
+Distra has two halves:
 
-- **`tweak/`**: a Theos tweak (Objective-C/Logos). It evaluates Discordia's JS right
+- **`tweak/`**: a Theos tweak (Objective-C/Logos). It evaluates Distra's JS right
   before Discord's own bundle in the same Hermes runtime, provides a small native
   bridge (files, loader config, icon packs, app icons), and protects against crash
   loops with an automatic safe mode.
@@ -33,8 +33,8 @@ file whether it's installed with a jailbreak or injected into an IPA.
 
 ## Built-in plugins
 
-Discordia ships **104 plugins**, all disabled until turned on in
-**Settings > Discordia > Plugin Library**:
+Distra ships **104 plugins**, all disabled until turned on in
+**Settings > Distra > Plugin Library**:
 
 - **4 of its own**, rebuilt for current Discord from the most popular plugins of other mods,
   merging their features: **Message Logger** (deleted messages stay in red, edits keep their
@@ -42,7 +42,7 @@ Discordia ships **104 plugins**, all disabled until turned on in
   **Platform Indicators**, **Radial Status**, and **Hide Chat Buttons** (chat bar and call buttons).
 - **100 community plugins** (89 Vendetta/Bunny/Revenge, 11 Enmity), vendored in
   `builtin-plugins/sources/` at pinned upstream commits under their authors' licenses and built
-  with the rest of Discordia. Fixes for current Discord live in `builtin-plugins/patches/`.
+  with the rest of Distra. Fixes for current Discord live in `builtin-plugins/patches/`.
 
 Duplicates were merged or removed (36, each listed with the reason). The library also offers
 17 more plugins that are installed from their authors because their code can't be
@@ -53,7 +53,7 @@ redistributed. Full list and credits: [builtin-plugins/README.md](builtin-plugin
 Requirements: Node 22+, pnpm, and [Theos](https://theos.dev) (macOS or Linux).
 
 ```sh
-pnpm bootstrap        # installs dependencies for Discordia and the built-in plugins
+pnpm bootstrap        # installs dependencies for Distra and the built-in plugins
 pnpm build            # built-in plugins + dev bundle, embedded into tweak/Sources/Generated
 pnpm test             # runs the bundle against an emulated Discord/Metro runtime
 pnpm typecheck
@@ -64,20 +64,20 @@ pnpm tweak:rootless   # release bundle + rootless .deb  (*_iphoneos-arm64.deb)
 
 > On filesystems that don't support Unix permissions (e.g. NTFS), Theos's .deb
 > step fails with "control directory has bad permissions"; add
-> `THEOS_STAGING_DIR=/tmp/discordia-stage` to the `make` command.
+> `THEOS_STAGING_DIR=/tmp/distra-stage` to the `make` command.
 
 ### IPA
 
-`scripts/build-ipa.py` turns a **decrypted** Discord IPA into a Discordia IPA using
+`scripts/build-ipa.py` turns a **decrypted** Discord IPA into a Distra IPA using
 [cyan](https://github.com/asdfzxcvbn/pyzule-rw):
 
 ```sh
 pipx install https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
 python3 scripts/build-ipa.py --ipa Discord.ipa \
-    --deb tweak/packages/dev.discordia.tweak_0.1.0_iphoneos-arm.deb \
-    --output dist/Discordia.ipa \
-    [--icon-pack path/to/Plumpy] [--alt-icon DiscordiaIcon=icon.png] \
-    [--name Discordia --bundle-id dev.discordia.client]
+    --deb tweak/packages/dev.distra.tweak_0.1.0_iphoneos-arm.deb \
+    --output dist/Distra.ipa \
+    [--icon-pack path/to/Plumpy] [--alt-icon DistraIcon=icon.png] \
+    [--name Distra --bundle-id dev.distra.client]
 ```
 
 The GitHub Actions workflow builds the dylib and .debs on every push, and each push
@@ -87,10 +87,10 @@ to `main` replaces the `beta` prerelease with the new build. Run it manually wit
 ## Development loop
 
 ```sh
-pnpm serve   # rebuilds on change, serves http://<lan-ip>:4040/discordia.js
+pnpm serve   # rebuilds on change, serves http://<lan-ip>:4040/distra.js
 ```
 
-On the device, enable **Settings > Discordia > Developer settings**, then in
+On the device, enable **Settings > Distra > Developer settings**, then in
 **Developer** turn on *Load from custom URL* with that address and reload. The
 tweak falls back to the embedded bundle if the server can't be reached.
 
@@ -105,7 +105,7 @@ node scripts/dt.mjs logs -f
 
 In **Developer > Remote debugger**, enter the printed URL and reload. The device then
 long-polls the server: code sent with `dt.mjs` runs in Discord's JS runtime (results come back
-as JSON), and Discordia's log, console output and uncaught errors stream to
+as JSON), and Distra's log, console output and uncaught errors stream to
 `dist/devtools.log`. `dt.tree()` prints the rendered React component tree with each
 component's source file, which is what most plugin fixes need. Anyone with the URL can run code
 in your Discord session, so only use it on a trusted network and turn it off afterwards.
@@ -114,11 +114,11 @@ in your Discord session, so only use it on a trusted network and turn it off aft
 
 No Mac needed:
 
-- **Startup banner**: a few seconds after launch, a banner says whether Discordia started
+- **Startup banner**: a few seconds after launch, a banner says whether Distra started
   (toggle in Developer). No banner at all means the dylib didn't load.
 - **Three-finger long press** anywhere (or tap the banner) opens the log viewer: native and JS
   logs for this launch and the previous one, with Copy/Share.
-- The same logs are in `Documents/Discordia/logs/latest.log` and `previous.log`.
+- The same logs are in `Documents/Distra/logs/latest.log` and `previous.log`.
 
 ## Layout
 

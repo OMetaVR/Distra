@@ -1,6 +1,27 @@
+diff -ruN a/plugins/AltMediaPicker/src/patch.ts b/plugins/AltMediaPicker/src/patch.ts
+--- a/plugins/AltMediaPicker/src/patch.ts	2026-10-14 17:27:22.721193183 -0400
++++ b/plugins/AltMediaPicker/src/patch.ts	2026-10-14 11:05:31.517140200 -0400
+@@ -16,7 +16,10 @@
+                     channelId,
+                     {
+                         node: {
++                            // Distra: Discord 348 keys uploads by the node's id; without one, picked photos collide.
++                            id: asset.uri,
+                             image: {
++                                id: asset.uri,
+                                 playableDuration: 0,
+                                 height: asset.height,
+                                 filename: asset.fileName,
 diff -ruN a/plugins/SpotifyPreview/src/patches/handleClick.tsx b/plugins/SpotifyPreview/src/patches/handleClick.tsx
---- a/plugins/SpotifyPreview/src/patches/handleClick.tsx	2026-10-13 10:54:25.083369399 -0400
-+++ b/plugins/SpotifyPreview/src/patches/handleClick.tsx	2026-10-13 10:28:54.366783100 -0400
+--- a/plugins/SpotifyPreview/src/patches/handleClick.tsx	2026-10-14 17:27:22.740503729 -0400
++++ b/plugins/SpotifyPreview/src/patches/handleClick.tsx	2026-10-14 16:09:33.707924800 -0400
+@@ -1,5 +1,5 @@
+ import { find, findByName, findByProps, findByStoreName } from "@vendetta/metro";
+-import { before } from "@vendetta/patcher";
++import { instead } from "@vendetta/patcher";
+ 
+ import { semanticColors } from "@vendetta/ui";
+ import { showToast } from "@vendetta/ui/toasts";
 @@ -21,7 +21,8 @@
  
  let isList = (type) => type === "playlist" || type === "album";
@@ -11,7 +32,7 @@ diff -ruN a/plugins/SpotifyPreview/src/patches/handleClick.tsx b/plugins/Spotify
  let wv = (link, type) => {
      const bgcolor = resolveSemanticColor(ThemeStore.theme, semanticColors.MODAL_BACKGROUND);
      return (
-@@ -43,7 +44,7 @@
+@@ -43,18 +44,18 @@
      );
  }
  
@@ -19,4 +40,21 @@ diff -ruN a/plugins/SpotifyPreview/src/patches/handleClick.tsx b/plugins/Spotify
 +const handleClick = findByProps("handleClick", "isLinkTrusted") ?? findByProps("handleClick");
  
  export default function patch() {
-     return before("handleClick", handleClick, function ([args]) {
+-    return before("handleClick", handleClick, function ([args]) {
+-        const { href } = args;
+-        const isSpotify = href.startsWith("https://open.spotify.com/");
+-        if (!isSpotify) return;
++    // `instead`, not `before`: clearing `href` still let Discord's own link handler run, which opened its
++    // "are you sure you want to open this link" modal behind the preview. Spotify links never reach it now.
++    return instead("handleClick", handleClick, function (args, original) {
++        const href = args[0]?.href;
++        if (typeof href !== "string" || !href.startsWith("https://open.spotify.com/")) return original.apply(this, args);
+ 
+         let type = href.split("/")[3];
+-        if (!["track", "playlist", "episode", "album"].includes(type)) return; // Unsupported page
++        if (!["track", "playlist", "episode", "album"].includes(type)) return original.apply(this, args); // Unsupported page
+ 
+-        args.href = undefined;
+         renderActionSheet(as, [href, type]);
+     });
+ }

@@ -15,7 +15,15 @@ export const navigation = findByPropsLazy("pushLazy");
 export const tabsNavigationRef = findByPropsLazy("getRootNavigationRef");
 
 // Flux
-export const Flux = findByPropsLazy("connectStores");
+/**
+ * Discord's Flux utilities. The store hooks (useStateFromStores, ...) moved to another module;
+ * they're merged in because plugins read them from Flux.
+ */
+export const Flux = proxyLazy(() => {
+    const flux = findByProps("connectStores");
+    const hooks = findByProps("useStateFromStores");
+    return flux && hooks ? { ...hooks, ...flux, useStateFromStores: flux.useStateFromStores ?? hooks.useStateFromStores } : flux ?? hooks;
+}, { hint: "Flux" });
 export const FluxDispatcher = findByPropsLazy("_interceptors", "dispatch");
 export const { useStateFromStores } = lazyDestructure(() => findByProps("useStateFromStores"));
 
@@ -36,12 +44,13 @@ export const ThemeStore = findByStoreNameLazy("ThemeStore");
 /** Opens a URL the same way Discord's own links do. */
 export const url = {
     openURL: (target: string) => ReactNative.Linking.openURL(target),
+    openDeeplink: (target: string) => ReactNative.Linking.openURL(target),
 };
 
 /** React Native's `resolveAssetSource`, used to redirect bundled image assets. */
 export const resolveAssetSource = proxyLazy(() => find(Object.assign(
     (m: any) => typeof m === "function" && typeof m.setCustomSourceTransformer === "function",
-    { key: "discordia.resolveAssetSource" },
+    { key: "distra.resolveAssetSource" },
 )));
 
 export const ScrollView = proxyLazy(() => ReactNative.ScrollView);

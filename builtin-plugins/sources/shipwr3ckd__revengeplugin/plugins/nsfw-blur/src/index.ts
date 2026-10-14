@@ -1,6 +1,5 @@
 import { findByName, findByProps } from "@vendetta/metro";
 import { before } from "@vendetta/patcher";
-import Settings from "./Settings";
 
 let patches: (() => void)[] = [];
 
@@ -35,5 +34,4 @@ export default {
     patches = [];
   },
 
-  settings: Settings,
 };

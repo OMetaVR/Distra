@@ -1,6 +1,6 @@
 import type { PluginManifest } from "../types";
 
-/** A first-party plugin compiled into Discordia (no eval, full access to Discordia internals). */
+/** A first-party plugin compiled into Distra (no eval, full access to Distra internals). */
 export interface CorePlugin {
     id: string;
     manifest: PluginManifest;

@@ -1,4 +1,4 @@
-// Alerts. Discordia's own UI uses the system alert (React Native's Alert),
+// Alerts. Distra's own UI uses the system alert (React Native's Alert),
 // which is always available and cannot break with Discord updates. The
 // Discord-styled variants exist for plugins that expect Vendetta's API.
 

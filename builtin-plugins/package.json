@@ -1,5 +1,5 @@
 {
-  "name": "discordia-builtin-plugins",
+  "name": "distra-builtin-plugins",
   "private": true,
   "description": "Dependencies needed to build the vendored built-in plugins (scripts/build-plugins.mjs)",
   "dependencies": {

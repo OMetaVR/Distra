@@ -1,13 +1,13 @@
 diff -ruN a/plugins/FileSizeOnPicker/src/SizeTag.tsx b/plugins/FileSizeOnPicker/src/SizeTag.tsx
---- a/plugins/FileSizeOnPicker/src/SizeTag.tsx	2026-10-13 10:54:22.291585095 -0400
-+++ b/plugins/FileSizeOnPicker/src/SizeTag.tsx	2026-10-13 10:15:53.080353300 -0400
+--- a/plugins/FileSizeOnPicker/src/SizeTag.tsx	2026-10-14 17:27:20.069729358 -0400
++++ b/plugins/FileSizeOnPicker/src/SizeTag.tsx	2026-10-14 09:59:51.146814600 -0400
 @@ -16,12 +16,21 @@
      React.useEffect(() => {
          async function fetchData() {
              if(!sizeCache[url]){
 -                const FileManager = NativeModules.NativeFileModule ?? NativeModules.RTNFileManager ?? NativeModules.DCDFileManager
 -                FileManager.getSize(url).then(size => {
-+                // Discordia: in bridgeless mode Discord's file module may only be reachable through
++                // Distra: in bridgeless mode Discord's file module may only be reachable through
 +                // the native module proxy, and a missing module or rejected promise inside this
 +                // effect used to crash the picker.
 +                const proxy = (window as any).nativeModuleProxy ?? {};

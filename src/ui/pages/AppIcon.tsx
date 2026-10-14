@@ -23,9 +23,9 @@ export default function AppIcon() {
         reload();
     };
 
-    // Discordia's icons sort first; IPA builds name them "Discordia*".
+    // Distra's icons sort first; IPA builds name them "Distra*".
     const icons = [...(info?.icons ?? [])].sort((a, b) =>
-        Number(b.name.startsWith("Discordia")) - Number(a.name.startsWith("Discordia")) || a.name.localeCompare(b.name));
+        Number(b.name.startsWith("Distra")) - Number(a.name.startsWith("Distra")) || a.name.localeCompare(b.name));
 
     return (
         <ScrollView contentContainerStyle={{ paddingBottom: 38 }}>
@@ -48,7 +48,7 @@ export default function AppIcon() {
                 </TableRowGroup>
 
                 <Text variant="text-sm/medium" color="text-muted">
-                    iOS can only switch to icons that are built into the app. Discordia IPA builds include extra icons.
+                    iOS can only switch to icons that are built into the app. Distra IPA builds include extra icons.
                 </Text>
             </Stack>
         </ScrollView>

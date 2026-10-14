@@ -10,14 +10,17 @@ import { readJSON, writeJSON } from "@/core/fs";
 import { reloadApp } from "@/core/native";
 import { findAssetId, getAssetById } from "@/lib/assets";
 import { type Command, registerCommand } from "@/lib/commands";
-import { proxyLazy } from "@/lib/lazy";
+import { sendLocalMessage } from "@/lib/localMessage";
+import { proxyLazy, unwrapLazy } from "@/lib/lazy";
 import { Logger } from "@/lib/logger";
 import * as spitroast from "spitroast";
 import { debounce, findInReactTree, findInTree } from "@/lib/utils";
 import * as metro from "@/metro";
 import * as common from "@/metro/common";
 import { fromPredicate } from "@/metro/filters";
+import { LegacyButton } from "@/ui/CompatComponents";
 import { Forms } from "@/ui/components";
+import { constantsWithColors, semanticColors } from "@/ui/color";
 import { createThemedStyleSheet } from "@/ui/styles";
 
 const logger = new Logger("Enmity");
@@ -63,18 +66,23 @@ function safely<T>(caller: string, method: string, run: () => T, fallback: () =>
 }
 
 const patcher = {
-    before(caller: string, module: any, method: string, callback: (self: any, args: any[], original: any) => any, once = false) {
-        return trackPatch(caller, spitroast.instead(method as never, module, function (this: any, args: any[], original: any) {
-            const replaced = safely(caller, method, () => callback(this, args, original), () => undefined);
-            return original.apply(this, Array.isArray(replaced) ? replaced : args);
+    before(caller: string, lazyModule: any, method: string, callback: (self: any, args: any[], original: any) => any, once = false) {
+        const module = unwrapLazy(lazyModule);
+        // A real before-hook, so it runs ahead of other plugins' instead-hooks; args are edited in place
+        // (or a new array is returned).
+        return trackPatch(caller, spitroast.before(method as never, module, function (this: any, args: any[]) {
+            const replaced = safely(caller, method, () => callback(this, args, undefined), () => undefined);
+            return Array.isArray(replaced) ? replaced : undefined;
         } as never, once));
     },
-    instead(caller: string, module: any, method: string, callback: (self: any, args: any[], original: any) => any, once = false) {
+    instead(caller: string, lazyModule: any, method: string, callback: (self: any, args: any[], original: any) => any, once = false) {
+        const module = unwrapLazy(lazyModule);
         return trackPatch(caller, spitroast.instead(method as never, module, function (this: any, args: any[], original: any) {
             return safely(caller, method, () => callback(this, args, original.bind(this)), () => original.apply(this, args));
         } as never, once));
     },
-    after(caller: string, module: any, method: string, callback: (self: any, args: any[], result: any) => any, once = false) {
+    after(caller: string, lazyModule: any, method: string, callback: (self: any, args: any[], result: any) => any, once = false) {
+        const module = unwrapLazy(lazyModule);
         return trackPatch(caller, spitroast.instead(method as never, module, function (this: any, args: any[], original: any) {
             const result = original.apply(this, args);
             const replaced = safely(caller, method, () => callback(this, args, result), () => undefined);
@@ -99,14 +107,19 @@ const patcher = {
 // ---------------------------------------------------------------------------
 // Metro: getByProps(...props, { all, defaultExport }) style lookups.
 
-type EnmityFindOptions = { all?: boolean; defaultExport?: boolean };
+type EnmityFindOptions = { all?: boolean; defaultExport?: boolean; default?: boolean };
+
+/** Enmity spelled the option both `defaultExport` and `default`. */
+const normalizeOptions = (options: EnmityFindOptions = {}): EnmityFindOptions =>
+    ({ ...options, defaultExport: options.defaultExport ?? options.default });
 
 function splitOptions(args: any[]): [any[], EnmityFindOptions] {
     const last = args[args.length - 1];
-    return last && typeof last === "object" && !Array.isArray(last) ? [args.slice(0, -1), last] : [args, {}];
+    return last && typeof last === "object" && !Array.isArray(last) ? [args.slice(0, -1), normalizeOptions(last)] : [args, {}];
 }
 
-function getModule(filter: (m: any) => boolean, { all = false, defaultExport = true }: EnmityFindOptions = {}) {
+function getModule(filter: (m: any) => boolean, options: EnmityFindOptions = {}) {
+    const { all = false, defaultExport = true } = normalizeOptions(options);
     const wrapped = fromPredicate(filter, "");
     return all ? metro.findAll(wrapped, { raw: !defaultExport }) : metro.find(wrapped, { raw: !defaultExport });
 }
@@ -119,23 +132,66 @@ const byKey = (filterFactory: (...args: any[]) => metro.Filter) => (...args: any
 };
 
 const byName = (one: (name: string, expDefault?: boolean) => any, all: (name: string, expDefault?: boolean) => any[]) =>
-    (name: string, options: EnmityFindOptions = {}) => options.all ? all(name, options.defaultExport !== false) : one(name, options.defaultExport !== false);
+    (name: string, rawOptions: EnmityFindOptions = {}) => {
+        const options = normalizeOptions(rawOptions);
+        return options.all ? all(name, options.defaultExport !== false) : one(name, options.defaultExport !== false);
+    };
+
+/** Name of the Enmity plugin being loaded, to attribute lookup misses to. */
+let lookupOwner: string | null = null;
+const reportedMisses = new Set<string>();
+
+/** Attributes the lookups made while `run` executes to `owner` (an Enmity plugin's name). */
+export function withLookupOwner<T>(owner: string, run: () => T): T {
+    const previous = lookupOwner;
+    lookupOwner = owner;
+    try {
+        return run();
+    } finally {
+        lookupOwner = previous;
+    }
+}
+
+/** Warns once per distinct lookup that finds nothing, so plugins broken by Discord updates are easy to diagnose. */
+function logMisses<T extends (...args: any[]) => any>(name: string, lookup: T): T {
+    return ((...args: any[]) => {
+        const result = lookup(...args);
+        if (result == null || (Array.isArray(result) && result.length === 0)) {
+            const shown = args.filter(arg => typeof arg !== "object" || Array.isArray(arg)).map(arg => typeof arg === "function" ? "<filter>" : JSON.stringify(arg)).join(", ");
+            const key = `${lookupOwner ?? "?"}:${name}(${shown})`;
+            if (!reportedMisses.has(key)) {
+                reportedMisses.add(key);
+                new Logger(lookupOwner ?? "Enmity plugin").warn(`Lookup found nothing: ${name}(${shown})`);
+            }
+        }
+        return result;
+    }) as T;
+}
 
 const modules = {
-    getModule,
+    getModule: logMisses("getModule", getModule),
     getModules: (filter: (m: any) => boolean) => getModule(filter, { all: true }),
-    bulk: (...filters: Array<(m: any) => boolean>) => filters.map(filter => getModule(filter)),
-    getByProps: (...args: any[]) => {
+    bulk: (...filters: Array<(m: any) => boolean>) => filters.map(filter => modules.getModule(filter)),
+    getByProps: logMisses("getByProps", (...args: any[]) => {
         const [props, options] = splitOptions(args);
         // The common case goes through findByProps, which prefers Discord's design components.
-        if (!options.all && options.defaultExport !== false) return metro.findByProps(...props);
+        if (!options.all && options.defaultExport !== false) {
+            // getByProps("View") meant React Native itself; Animated also exports View/Text/... now.
+            const RN_EXPORTS = ["View", "Text", "ScrollView", "FlatList", "Image", "Pressable", "StyleSheet"];
+            const lookup = props.length === 1 && RN_EXPORTS.includes(props[0]) ? [...props, "AppRegistry"] : props;
+            const found = metro.findByProps(...lookup);
+            // `const { default: Button } = getByProps("ButtonColors", "ButtonSizes")`: that module had
+            // the old Button as its default export; the design index has neither.
+            if (found && props.includes("ButtonColors") && found.default === undefined) return { ...found, default: LegacyButton };
+            return found;
+        }
         return byKey(metro.byProps)(...args);
-    },
-    // Name lookups go through Discordia's finders, which fall back to source file names
+    }),
+    // Name lookups go through Distra's finders, which fall back to source file names
     // for Discord's minified component names.
-    getByDisplayName: byName(metro.findByDisplayName, metro.findByDisplayNameAll),
-    getByTypeName: byName(metro.findByTypeName, metro.findByTypeNameAll),
-    getByName: byName(metro.findByName, metro.findByNameAll),
+    getByDisplayName: logMisses("getByDisplayName", byName(metro.findByDisplayName, metro.findByDisplayNameAll)),
+    getByTypeName: logMisses("getByTypeName", byName(metro.findByTypeName, metro.findByTypeNameAll)),
+    getByName: logMisses("getByName", byName(metro.findByName, metro.findByNameAll)),
     getByKeyword: (keyword: string, options?: EnmityFindOptions) =>
         getModule(m => Object.keys(m).some(key => key.toLowerCase().includes(keyword.toLowerCase())), options),
     filters: {
@@ -154,14 +210,15 @@ const modules = {
         NavigationStack: common.navigationStack,
         Toasts: common.toasts,
         Clipboard: common.clipboard,
-        Constants: common.constants,
+        Constants: constantsWithColors,
         Assets: common.assetsRegistry,
         Users: common.UserStore,
         Theme: common.ThemeStore,
         Locale: common.i18n,
         Messages: metro.findByPropsLazy("receiveMessage", "sendMessage"),
         Linking: proxyLazy(() => common.ReactNative.Linking),
-        StyleSheet: proxyLazy(() => ({ ...common.ReactNative.StyleSheet, createThemedStyleSheet })),
+        // Discord's StyleSheet carried ThemeColorMap (the semantic colors) in Enmity's day.
+        StyleSheet: proxyLazy(() => ({ ...common.ReactNative.StyleSheet, createThemedStyleSheet, ThemeColorMap: semanticColors })),
         Moment: metro.findByPropsLazy("isMoment"),
         // The rest mirror Enmity's own lookups (examples/enmity/src/data/modules.ts).
         Clyde: metro.findByPropsLazy("createBotMessage"),
@@ -296,7 +353,7 @@ const components = new Proxy({}, {
 
 export function createEnmityObject(flavorName = "Enmity") {
     return {
-        version: `discordia-${DISCORDIA_VERSION}`,
+        version: `distra-${DISTRA_VERSION}`,
         modules,
         patcher,
         plugins,
@@ -351,7 +408,8 @@ export function createEnmityObject(flavorName = "Enmity") {
         native: { reload: reloadApp },
         themer: {},
         clyde: {
-            sendReply: (channelId: string, content: string) => common.messageUtil.sendBotMessage(channelId, content),
+            // Enmity's sendReply took text or `{ embeds, components }`; both are shown only to you.
+            sendReply: (channelId: string, content: unknown) => void sendLocalMessage(channelId, content),
         },
         logger: new Logger(flavorName),
     };

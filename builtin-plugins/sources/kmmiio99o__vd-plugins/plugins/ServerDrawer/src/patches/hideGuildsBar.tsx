@@ -1,6 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import { findAll } from "@vendetta/metro";
+import { before } from "@vendetta/patcher";
 import { useProxy } from "@vendetta/storage";
 import { storage } from "@vendetta/plugin";
 import { RailDmTile } from "../components/DmTile";
@@ -192,6 +193,36 @@ export function rescanHiding(cleanups: (() => void)[]): void {
     hidingComplete = found > 0 && applied === 0;
 }
 
+/**
+ * Discord 348 keeps the messages/channel panel clear of the 72px server rail with a fixed `left`
+ * on its container (nativeID "messages-parent-view", built inside MainChannels). With the servers
+ * moved into the drawer the rail is empty, so the panel is widened over it (unless the DMs tile
+ * stays in the rail).
+ */
+function patchMessagesPanelWidth(cleanups: (() => void)[]) {
+    const ViewType: any = View;
+    if (typeof ViewType?.render !== "function") {
+        console.log(TAG, "WARN: View.render not found; the messages panel keeps its server rail margin");
+        return;
+    }
+    cleanups.push(before("render", ViewType, (args: any[]) => {
+        const props = args[0];
+        if (props?.nativeID !== "messages-parent-view") return;
+        const left = storage.hideDmTile ? DM_WIDTH : 0;
+        const list = Array.isArray(props.style) ? props.style : [props.style];
+        let changed = false;
+        const next = list.map((s: any) => {
+            if (s && typeof s === "object" && s.position === "absolute" && typeof s.left === "number" && s.left !== left) {
+                changed = true;
+                return { ...s, left };
+            }
+            return s;
+        });
+        if (changed) return [{ ...props, style: Array.isArray(props.style) ? next : next[0] }, ...args.slice(1)];
+    }));
+    console.log(TAG, "PATCH: messages panel widened over the empty server rail");
+}
+
 export function patchHideGuildsBar(cleanups: (() => void)[]): boolean {
     let applied = false;
 
@@ -202,6 +233,8 @@ export function patchHideGuildsBar(cleanups: (() => void)[]): boolean {
         transformMessagesPanelProps
     );
     applied = true;
+
+    patchMessagesPanelWidth(cleanups);
 
     // 2+3. Persistent module mutation.
     rescanHiding(cleanups);

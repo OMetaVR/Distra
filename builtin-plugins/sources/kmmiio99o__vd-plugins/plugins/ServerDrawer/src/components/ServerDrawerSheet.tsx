@@ -7,6 +7,7 @@ import { GuildNode } from "../utils/theme";
 import { getGestureContext } from "../utils/gestureContext";
 import GuildItem from "./GuildItem";
 import FolderItem from "./FolderItem";
+import { useExpandedFolders } from "../utils/theme";
 import DmTile from "./DmTile";
 
 const Flux = findByProps("useStateFromStores");
@@ -64,6 +65,7 @@ function DiscoveryTile({ onPress }: { onPress: () => void }) {
 const ICON = 48;
 const GAP = 6;
 const PAD = 12;
+const RAIL = ICON + 20;
 
 const FallbackGestureContext = React.createContext(null);
 
@@ -172,24 +174,42 @@ export default function ServerDrawerSheet({ gestureContext }: { gestureContext: 
 
     const { width: winW } = Dimensions.get("window");
 
-    const cols = Math.max(3, Math.floor((winW - PAD * 2 + GAP) / (ICON + GAP)));
-    const totalW = cols * ICON + (cols - 1) * GAP;
-    const padX = Math.max(0, (winW - totalW) / 2);
+    const sidebar = storage.folderLayout === "sidebar";
+    const openFolders = useExpandedFolders(nodes);
+    const showRail = sidebar && openFolders.length > 0;
+    // The rail takes its room only while a folder is open.
+    const gridW = winW - (showRail ? RAIL : 0);
 
+    const cols = Math.max(3, Math.floor((gridW - PAD * 2 + GAP) / (ICON + GAP)));
+    const totalW = cols * ICON + (cols - 1) * GAP;
+    const padX = Math.max(0, (gridW - totalW) / 2);
+
+    const separator = storage.folderSeparator !== false;
     return (
         <ScrollView style={st.alignTop} showsVerticalScrollIndicator={false}>
-            <View
-                style={[st.grid, { paddingHorizontal: padX, gap: GAP }]}
-                onLayout={onLayout}
-            >
-                {!storage.hideDmTile && <DmTile />}
-                {nodes.map((node) =>
-                    node.type === "folder"
-                        ? <FolderItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
-                        : <GuildItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
+            <View style={st.split} onLayout={onLayout}>
+                <View style={[st.grid, { width: gridW, paddingHorizontal: padX, gap: GAP }]}>
+                    {!storage.hideDmTile && <DmTile />}
+                    {nodes.map((node) =>
+                        node.type === "folder"
+                            ? <FolderItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} sidebar={sidebar} separator={separator} />
+                            : <GuildItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
+                    )}
+                    <CreateJoinButton onPress={openCreateJoin} />
+                    {isDiscoveryEnabled() && <DiscoveryTile onPress={openDiscovery} />}
+                </View>
+                {showRail && (
+                    <View style={st.rail}>
+                        {openFolders.map((folder, i) => (
+                            <View key={folder.id} style={st.railFolder}>
+                                {i > 0 && separator && <View style={st.railLine} />}
+                                {folder.children.map((child) => (
+                                    <GuildItem key={child.id} node={child} onPick={pick} showNames={!!storage.showGuildNames} />
+                                ))}
+                            </View>
+                        ))}
+                    </View>
                 )}
-                <CreateJoinButton onPress={openCreateJoin} />
-                {isDiscoveryEnabled() && <DiscoveryTile onPress={openDiscovery} />}
             </View>
         </ScrollView>
     );
@@ -200,6 +220,28 @@ const st = StyleSheet.create({
         flex: 1,
         justifyContent: "flex-start",
         alignItems: "flex-start",
+    },
+    split: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+    },
+    rail: {
+        width: RAIL,
+        alignItems: "center",
+        paddingTop: 4,
+        paddingBottom: 16,
+        borderLeftWidth: StyleSheet.hairlineWidth * 2,
+        borderLeftColor: "rgba(255,255,255,0.18)",
+    },
+    railFolder: {
+        gap: GAP,
+        alignItems: "center",
+    },
+    railLine: {
+        width: ICON - 12,
+        height: StyleSheet.hairlineWidth * 2,
+        marginVertical: 4,
+        backgroundColor: "rgba(255,255,255,0.18)",
     },
     grid: {
         flexDirection: "row",

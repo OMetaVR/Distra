@@ -11,7 +11,7 @@ const UserStore = findByStoreName("UserStore");
 const { play, sync } = findByProps("play", "sync");
 
 interface Activity {
-	party: { id: `${string}:${string}` };
+	party?: { id: `${string}:${string}` };
 }
 export interface ListenButtonProps {
 	button: any;
@@ -38,7 +38,7 @@ export function useListenButton(activity: ListenButtonProps["activity"]): {
 	const [val, forceUpdate] = React.useReducer(x => ~x, 0);
 	React.useEffect(() => fluxSubscribe("SPOTIFY_PLAYER_STATE", forceUpdate));
 
-	const userId = activity.party.id.split(":")[1];
+	const userId = activity.party?.id?.split(":")[1] ?? "";
 	const logic = React.useMemo(() => {
 		const selfUserId = UserStore.getCurrentUser().id;
 		const selfActivity = SpotifyStore.getActivity() as Activity;
@@ -48,7 +48,7 @@ export function useListenButton(activity: ListenButtonProps["activity"]): {
 
 		return {
 			isYou: selfUserId === userId,
-			isListeningAlong: selfActivity?.party.id === activity.party.id,
+			isListeningAlong: !!selfActivity?.party?.id && selfActivity.party.id === activity.party?.id,
 			isPlayable: hasConnectedAccount && canPlaySpotify,
 		};
 	}, [userId, activity, val]);

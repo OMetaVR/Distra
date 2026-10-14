@@ -15,8 +15,12 @@ function install() {
     installed = true;
     corePatcher.addCleanup(waitFor(byMethods("jsx", "jsxs"), runtime => {
         const handler = ([Component]: any[], element: any) => {
-            if (typeof Component !== "function") return;
-            const list = callbacks.get(Component.name);
+            // Memo and forwardRef components are objects; the name lives on what they wrap.
+            const name = typeof Component === "function"
+                ? Component.name || Component.displayName
+                : Component?.displayName || Component?.type?.name || Component?.render?.name;
+            if (!name) return;
+            const list = callbacks.get(name);
             if (!list) return;
             for (const callback of list) {
                 const result = callback(Component, element);

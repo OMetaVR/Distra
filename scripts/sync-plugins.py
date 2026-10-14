@@ -11,7 +11,7 @@ upstream LICENSE.
     python3 scripts/sync-plugins.py --update   # move every pin to the repo's latest commit first
     python3 scripts/sync-plugins.py --save-patches   # record local edits to sources/ as patches/
 
-Discordia's fixes to vendored plugins live in builtin-plugins/patches/<dir>.patch and are
+Distra's fixes to vendored plugins live in builtin-plugins/patches/<dir>.patch and are
 re-applied after every sync. Edit files under sources/, then run --save-patches.
 """
 

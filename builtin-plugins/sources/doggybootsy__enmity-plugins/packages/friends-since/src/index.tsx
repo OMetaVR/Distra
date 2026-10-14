@@ -37,7 +37,7 @@ const styles = createThemedStyleSheet({
   }
 });
 
-// Discordia: Discord replaced the simplified profile card with UserProfileAboutMeCard (same userId prop).
+// Distra: Discord replaced the simplified profile card with UserProfileAboutMeCard (same userId prop).
 const SimplifiedUserProfileAboutMeCard = getByName("UserProfileAboutMeCard", { default: false }) ?? getByName("SimplifiedUserProfileAboutMeCard", { default: false });
 
 const ic_friend_wave_24px = assets.getIDByName("ic_friend_wave_24px");

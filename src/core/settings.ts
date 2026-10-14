@@ -2,25 +2,25 @@ import { callNative } from "./bridge";
 import { type LoaderConfig, loader } from "./loader";
 import { createFileStorage, createMemoryBackend, createStorage, type StorageBackend } from "./storage";
 
-export interface DiscordiaSettings {
+export interface DistraSettings {
     /** Shows the Developer page. */
     developerSettings: boolean;
     /** Active icon pack id, or null for Discord's own icons. Applied on reload. */
     iconPack: string | null;
-    /** Settings section label the Discordia section is inserted after. */
+    /** Settings section label the Distra section is inserted after. */
     settingsAnchor: string;
 }
 
-const defaults: DiscordiaSettings = {
+const defaults: DistraSettings = {
     developerSettings: false,
     iconPack: null,
     settingsAnchor: "ACCOUNT",
 };
 
-export let settings: DiscordiaSettings = { ...defaults };
+export let settings: DistraSettings = { ...defaults };
 
 /**
- * The tweak's own configuration (Documents/Discordia/loader.json). Read by native
+ * The tweak's own configuration (Documents/Distra/loader.json). Read by native
  * code at launch, so changes apply on the next reload.
  */
 export let loaderConfig: LoaderConfig = loader.config;
@@ -31,6 +31,6 @@ const loaderConfigBackend: StorageBackend<LoaderConfig> = {
 };
 
 export async function initSettings() {
-    settings = await createFileStorage<DiscordiaSettings>("settings.json", defaults);
+    settings = await createFileStorage<DistraSettings>("settings.json", defaults);
     loaderConfig = await createStorage(loaderConfigBackend).catch(() => createStorage(createMemoryBackend(loader.config)));
 }

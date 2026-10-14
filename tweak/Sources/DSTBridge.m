@@ -2,12 +2,12 @@
 // RCTFileReaderModule.readAsDataURL (see Tweak.x and src/core/bridge.ts).
 // Every handler receives the JS arguments and calls `done(result, error)`.
 
-#import "Discordia.h"
+#import "Distra.h"
 
-typedef void (^DCDDone)(id result, NSString *error);
-typedef void (^DCDHandler)(NSArray *args, DCDDone done);
+typedef void (^DSTDone)(id result, NSString *error);
+typedef void (^DSTHandler)(NSArray *args, DSTDone done);
 
-static id DCDArg(NSArray *args, NSUInteger index) {
+static id DSTArg(NSArray *args, NSUInteger index) {
     id value = index < args.count ? args[index] : nil;
     return value == NSNull.null ? nil : value;
 }
@@ -15,26 +15,26 @@ static id DCDArg(NSArray *args, NSUInteger index) {
 #pragma mark - Icon packs
 
 /** Directories that may contain icon packs, in priority order. */
-static NSArray<NSDictionary *> *DCDIconPackRoots(void) {
+static NSArray<NSDictionary *> *DSTIconPackRoots(void) {
     NSMutableArray *roots = [NSMutableArray arrayWithObject:@{
         @"source": @"documents",
-        @"url": [DCDRootURL() URLByAppendingPathComponent:@"IconPacks" isDirectory:YES],
+        @"url": [DSTRootURL() URLByAppendingPathComponent:@"IconPacks" isDirectory:YES],
     }];
     [roots addObject:@{
         @"source": @"bundled",
-        @"url": [NSBundle.mainBundle.bundleURL URLByAppendingPathComponent:@"DiscordiaIconPacks" isDirectory:YES],
+        @"url": [NSBundle.mainBundle.bundleURL URLByAppendingPathComponent:@"DistraIconPacks" isDirectory:YES],
     }];
-    if (DCDIsJailbroken()) {
-        NSString *path = [@DISCORDIA_INSTALL_PREFIX stringByAppendingPathComponent:@"/Library/Application Support/Discordia/IconPacks"];
+    if (DSTIsJailbroken()) {
+        NSString *path = [@DISTRA_INSTALL_PREFIX stringByAppendingPathComponent:@"/Library/Application Support/Distra/IconPacks"];
         [roots addObject:@{ @"source": @"bundled", @"url": [NSURL fileURLWithPath:path isDirectory:YES] }];
     }
     return roots;
 }
 
-static NSArray<NSDictionary *> *DCDListIconPacks(void) {
+static NSArray<NSDictionary *> *DSTListIconPacks(void) {
     NSMutableArray *packs = [NSMutableArray array];
     NSMutableSet *seen = [NSMutableSet set];
-    for (NSDictionary *root in DCDIconPackRoots()) {
+    for (NSDictionary *root in DSTIconPackRoots()) {
         NSArray<NSURL *> *entries = [NSFileManager.defaultManager contentsOfDirectoryAtURL:root[@"url"] includingPropertiesForKeys:@[NSURLIsDirectoryKey] options:NSDirectoryEnumerationSkipsHiddenFiles error:nil];
         for (NSURL *entry in [entries sortedArrayUsingComparator:^(NSURL *a, NSURL *b) { return [a.lastPathComponent compare:b.lastPathComponent]; }]) {
             NSNumber *isDirectory;
@@ -48,9 +48,9 @@ static NSArray<NSDictionary *> *DCDListIconPacks(void) {
     return packs;
 }
 
-static NSDictionary *DCDIconPackIndex(NSString *packId, NSString **error) {
+static NSDictionary *DSTIconPackIndex(NSString *packId, NSString **error) {
     NSDictionary *pack;
-    for (NSDictionary *candidate in DCDListIconPacks()) {
+    for (NSDictionary *candidate in DSTListIconPacks()) {
         if ([candidate[@"id"] isEqualToString:packId]) pack = candidate;
     }
     if (!pack) {
@@ -69,7 +69,7 @@ static NSDictionary *DCDIconPackIndex(NSString *packId, NSString **error) {
 
 #pragma mark - App icons
 
-static NSDictionary *DCDAppIconInfo(void) {
+static NSDictionary *DSTAppIconInfo(void) {
     NSDictionary *icons = NSBundle.mainBundle.infoDictionary[@"CFBundleIcons"][@"CFBundleAlternateIcons"];
     NSMutableArray *list = [NSMutableArray array];
     for (NSString *name in [icons.allKeys sortedArrayUsingSelector:@selector(compare:)]) {
@@ -85,99 +85,99 @@ static NSDictionary *DCDAppIconInfo(void) {
 
 #pragma mark - Handlers
 
-static NSDictionary<NSString *, DCDHandler> *DCDHandlers(void) {
+static NSDictionary<NSString *, DSTHandler> *DSTHandlers(void) {
     static NSDictionary *handlers;
     static dispatch_once_t once;
     dispatch_once(&once, ^{
         handlers = @{
-            // Files, sandboxed to Documents/Discordia
-            @"fs.read": ^(NSArray *args, DCDDone done) {
+            // Files, sandboxed to Documents/Distra
+            @"fs.read": ^(NSArray *args, DSTDone done) {
                 NSError *error;
-                NSURL *url = DCDResolvePath(DCDArg(args, 0), &error);
+                NSURL *url = DSTResolvePath(DSTArg(args, 0), &error);
                 NSString *contents = url ? [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:&error] : nil;
                 done(contents, contents ? nil : error.localizedDescription);
             },
-            @"fs.write": ^(NSArray *args, DCDDone done) {
+            @"fs.write": ^(NSArray *args, DSTDone done) {
                 NSError *error;
-                NSURL *url = DCDResolvePath(DCDArg(args, 0), &error);
-                NSString *contents = DCDArg(args, 1);
-                if (url && ![contents isKindOfClass:NSString.class]) error = DCDError(@"Contents must be a string");
-                BOOL ok = url && !error && DCDWriteData([contents dataUsingEncoding:NSUTF8StringEncoding], url, &error);
+                NSURL *url = DSTResolvePath(DSTArg(args, 0), &error);
+                NSString *contents = DSTArg(args, 1);
+                if (url && ![contents isKindOfClass:NSString.class]) error = DSTError(@"Contents must be a string");
+                BOOL ok = url && !error && DSTWriteData([contents dataUsingEncoding:NSUTF8StringEncoding], url, &error);
                 done(NSNull.null, ok ? nil : error.localizedDescription);
             },
-            @"fs.exists": ^(NSArray *args, DCDDone done) {
+            @"fs.exists": ^(NSArray *args, DSTDone done) {
                 NSError *error;
-                NSURL *url = DCDResolvePath(DCDArg(args, 0), &error);
+                NSURL *url = DSTResolvePath(DSTArg(args, 0), &error);
                 done(@(url && [NSFileManager.defaultManager fileExistsAtPath:url.path]), url ? nil : error.localizedDescription);
             },
-            @"fs.remove": ^(NSArray *args, DCDDone done) {
+            @"fs.remove": ^(NSArray *args, DSTDone done) {
                 NSError *error;
-                NSURL *url = DCDResolvePath(DCDArg(args, 0), &error);
+                NSURL *url = DSTResolvePath(DSTArg(args, 0), &error);
                 if (url && [NSFileManager.defaultManager fileExistsAtPath:url.path]) [NSFileManager.defaultManager removeItemAtURL:url error:&error];
                 done(NSNull.null, url && !error ? nil : error.localizedDescription);
             },
-            @"fs.list": ^(NSArray *args, DCDDone done) {
+            @"fs.list": ^(NSArray *args, DSTDone done) {
                 NSError *error;
-                NSURL *url = DCDResolvePath(DCDArg(args, 0), &error);
+                NSURL *url = DSTResolvePath(DSTArg(args, 0), &error);
                 NSArray *names = url ? [NSFileManager.defaultManager contentsOfDirectoryAtPath:url.path error:&error] : nil;
                 done(names, names ? nil : error.localizedDescription);
             },
 
             // Loader
-            @"loader.getConfig": ^(NSArray *args, DCDDone done) {
-                done(DCDLoaderConfig(), nil);
+            @"loader.getConfig": ^(NSArray *args, DSTDone done) {
+                done(DSTLoaderConfig(), nil);
             },
-            @"loader.setConfig": ^(NSArray *args, DCDDone done) {
+            @"loader.setConfig": ^(NSArray *args, DSTDone done) {
                 NSError *error;
-                BOOL ok = DCDSetLoaderConfig(DCDArg(args, 0), &error);
+                BOOL ok = DSTSetLoaderConfig(DSTArg(args, 0), &error);
                 done(NSNull.null, ok ? nil : error.localizedDescription);
             },
-            @"boot.markStable": ^(NSArray *args, DCDDone done) {
-                [DCDBootGuard.shared markStable];
+            @"boot.markStable": ^(NSArray *args, DSTDone done) {
+                [DSTBootGuard.shared markStable];
                 done(NSNull.null, nil);
             },
 
             // Diagnostics
-            @"log.write": ^(NSArray *args, DCDDone done) {
-                NSArray *entries = DCDArg(args, 0);
+            @"log.write": ^(NSArray *args, DSTDone done) {
+                NSArray *entries = DSTArg(args, 0);
                 if ([entries isKindOfClass:NSArray.class]) {
                     for (NSDictionary *entry in entries) {
                         if (![entry isKindOfClass:NSDictionary.class]) continue;
                         NSString *message = [NSString stringWithFormat:@"[%@] %@", entry[@"tag"] ?: @"?", entry[@"message"] ?: @""];
-                        [DCDDiagnostics.shared log:message source:@"js" level:[entry[@"level"] description]];
+                        [DSTDiagnostics.shared log:message source:@"js" level:[entry[@"level"] description]];
                     }
                 }
                 done(NSNull.null, nil);
             },
-            @"diag.ready": ^(NSArray *args, DCDDone done) {
-                NSDictionary *status = DCDArg(args, 0);
-                if ([status isKindOfClass:NSDictionary.class]) [DCDDiagnostics.shared recordJSStatus:status];
+            @"diag.ready": ^(NSArray *args, DSTDone done) {
+                NSDictionary *status = DSTArg(args, 0);
+                if ([status isKindOfClass:NSDictionary.class]) [DSTDiagnostics.shared recordJSStatus:status];
                 done(NSNull.null, nil);
             },
-            @"diag.showLogs": ^(NSArray *args, DCDDone done) {
-                dispatch_async(dispatch_get_main_queue(), ^{ [DCDDiagnostics.shared presentViewer]; });
+            @"diag.showLogs": ^(NSArray *args, DSTDone done) {
+                dispatch_async(dispatch_get_main_queue(), ^{ [DSTDiagnostics.shared presentViewer]; });
                 done(NSNull.null, nil);
             },
 
             // SQLite
-            @"db.exec": ^(NSArray *args, DCDDone done) {
-                DCDDatabaseExecute(DCDArg(args, 0), DCDArg(args, 1), DCDArg(args, 2), ^(id result, NSString *error) { done(result, error); });
+            @"db.exec": ^(NSArray *args, DSTDone done) {
+                DSTDatabaseExecute(DSTArg(args, 0), DSTArg(args, 1), DSTArg(args, 2), ^(id result, NSString *error) { done(result, error); });
             },
-            @"db.batch": ^(NSArray *args, DCDDone done) {
-                DCDDatabaseBatch(DCDArg(args, 0), DCDArg(args, 1), ^(id result, NSString *error) { done(result, error); });
+            @"db.batch": ^(NSArray *args, DSTDone done) {
+                DSTDatabaseBatch(DSTArg(args, 0), DSTArg(args, 1), ^(id result, NSString *error) { done(result, error); });
             },
-            @"db.size": ^(NSArray *args, DCDDone done) {
-                NSString *name = DCDArg(args, 0);
-                done([name isKindOfClass:NSString.class] ? DCDDatabaseSize(name) : @0, nil);
+            @"db.size": ^(NSArray *args, DSTDone done) {
+                NSString *name = DSTArg(args, 0);
+                done([name isKindOfClass:NSString.class] ? DSTDatabaseSize(name) : @0, nil);
             },
 
             // Images
-            @"image.cache": ^(NSArray *args, DCDDone done) {
-                DCDImageCache(DCDArg(args, 0), DCDArg(args, 1), DCDArg(args, 2), ^(id result, NSString *error) { done(result, error); });
+            @"image.cache": ^(NSArray *args, DSTDone done) {
+                DSTImageCache(DSTArg(args, 0), DSTArg(args, 1), DSTArg(args, 2), ^(id result, NSString *error) { done(result, error); });
             },
-            @"fs.size": ^(NSArray *args, DCDDone done) {
+            @"fs.size": ^(NSArray *args, DSTDone done) {
                 NSError *error;
-                NSURL *url = DCDResolvePath(DCDArg(args, 0), &error);
+                NSURL *url = DSTResolvePath(DSTArg(args, 0), &error);
                 if (!url) return done(nil, error.localizedDescription);
                 unsigned long long total = 0;
                 NSDirectoryEnumerator *enumerator = [NSFileManager.defaultManager enumeratorAtPath:url.path];
@@ -186,32 +186,32 @@ static NSDictionary<NSString *, DCDHandler> *DCDHandlers(void) {
             },
 
             // Built-in plugins
-            @"builtins.index": ^(NSArray *args, DCDDone done) {
-                done(DCDBuiltinIndex(), nil);
+            @"builtins.index": ^(NSArray *args, DSTDone done) {
+                done(DSTBuiltinIndex(), nil);
             },
-            @"builtins.code": ^(NSArray *args, DCDDone done) {
-                NSString *pluginId = DCDArg(args, 0);
-                NSString *code = [pluginId isKindOfClass:NSString.class] ? DCDBuiltinCode(pluginId) : nil;
+            @"builtins.code": ^(NSArray *args, DSTDone done) {
+                NSString *pluginId = DSTArg(args, 0);
+                NSString *code = [pluginId isKindOfClass:NSString.class] ? DSTBuiltinCode(pluginId) : nil;
                 done(code, code ? nil : [NSString stringWithFormat:@"No built-in plugin %@", pluginId]);
             },
 
             // Icon packs
-            @"iconpacks.list": ^(NSArray *args, DCDDone done) {
-                done(DCDListIconPacks(), nil);
+            @"iconpacks.list": ^(NSArray *args, DSTDone done) {
+                done(DSTListIconPacks(), nil);
             },
-            @"iconpacks.index": ^(NSArray *args, DCDDone done) {
+            @"iconpacks.index": ^(NSArray *args, DSTDone done) {
                 NSString *error;
-                NSString *packId = DCDArg(args, 0);
-                NSDictionary *index = [packId isKindOfClass:NSString.class] ? DCDIconPackIndex(packId, &error) : nil;
+                NSString *packId = DSTArg(args, 0);
+                NSDictionary *index = [packId isKindOfClass:NSString.class] ? DSTIconPackIndex(packId, &error) : nil;
                 done(index, index ? nil : error ?: @"Invalid icon pack id");
             },
 
             // App icon (UIKit, so on the main thread)
-            @"appicon.list": ^(NSArray *args, DCDDone done) {
-                dispatch_async(dispatch_get_main_queue(), ^{ done(DCDAppIconInfo(), nil); });
+            @"appicon.list": ^(NSArray *args, DSTDone done) {
+                dispatch_async(dispatch_get_main_queue(), ^{ done(DSTAppIconInfo(), nil); });
             },
-            @"appicon.set": ^(NSArray *args, DCDDone done) {
-                NSString *name = DCDArg(args, 0);
+            @"appicon.set": ^(NSArray *args, DSTDone done) {
+                NSString *name = DSTArg(args, 0);
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [UIApplication.sharedApplication setAlternateIconName:name completionHandler:^(NSError *error) {
                         done(NSNull.null, error.localizedDescription);
@@ -223,12 +223,12 @@ static NSDictionary<NSString *, DCDHandler> *DCDHandlers(void) {
     return handlers;
 }
 
-@implementation DCDBridge
+@implementation DSTBridge
 
 + (void)handleCall:(NSDictionary *)call completion:(void (^)(NSDictionary *))completion {
     NSString *method = [call[@"method"] isKindOfClass:NSString.class] ? call[@"method"] : nil;
     NSArray *args = [call[@"args"] isKindOfClass:NSArray.class] ? call[@"args"] : @[];
-    DCDHandler handler = method ? DCDHandlers()[method] : nil;
+    DSTHandler handler = method ? DSTHandlers()[method] : nil;
 
     if (!handler) {
         completion(@{ @"error": [NSString stringWithFormat:@"Unknown method %@", method ?: @"(none)"] });

@@ -1,11 +1,11 @@
-// Downloads an image and stores a downscaled JPEG under Documents/Discordia
+// Downloads an image and stores a downscaled JPEG under Documents/Distra
 // (bridge method `image.cache`). Optionally greyscales and dims it, which is how
 // the message logger shows deleted images.
 
-#import "Discordia.h"
+#import "Distra.h"
 #import <CoreImage/CoreImage.h>
 
-static UIImage *DCDProcessImage(UIImage *image, CGFloat maxSize, BOOL greyscale, CGFloat alpha) {
+static UIImage *DSTProcessImage(UIImage *image, CGFloat maxSize, BOOL greyscale, CGFloat alpha) {
     CGSize size = image.size;
     CGFloat scale = MIN(1.0, maxSize / MAX(size.width, size.height));
     CGSize target = CGSizeMake(floor(size.width * scale), floor(size.height * scale));
@@ -34,9 +34,9 @@ static UIImage *DCDProcessImage(UIImage *image, CGFloat maxSize, BOOL greyscale,
     }];
 }
 
-void DCDImageCache(NSString *urlString, NSString *relativePath, NSDictionary *options, void (^done)(id result, NSString *error)) {
+void DSTImageCache(NSString *urlString, NSString *relativePath, NSDictionary *options, void (^done)(id result, NSString *error)) {
     NSError *pathError;
-    NSURL *destination = DCDResolvePath(relativePath, &pathError);
+    NSURL *destination = DSTResolvePath(relativePath, &pathError);
     NSURL *url = [urlString isKindOfClass:NSString.class] ? [NSURL URLWithString:urlString] : nil;
     if (!destination) return done(nil, pathError.localizedDescription);
     if (!url.scheme) return done(nil, @"Invalid URL");
@@ -52,10 +52,10 @@ void DCDImageCache(NSString *urlString, NSString *relativePath, NSDictionary *op
         UIImage *image = data && status < 400 ? [UIImage imageWithData:data] : nil;
         if (!image) return done(nil, error.localizedDescription ?: [NSString stringWithFormat:@"Could not load image (HTTP %ld)", (long)status]);
 
-        UIImage *processed = DCDProcessImage(image, maxSize, greyscale, alpha);
+        UIImage *processed = DSTProcessImage(image, maxSize, greyscale, alpha);
         NSData *jpeg = UIImageJPEGRepresentation(processed, quality);
         NSError *writeError;
-        if (!jpeg || !DCDWriteData(jpeg, destination, &writeError)) return done(nil, writeError.localizedDescription ?: @"Could not encode image");
+        if (!jpeg || !DSTWriteData(jpeg, destination, &writeError)) return done(nil, writeError.localizedDescription ?: @"Could not encode image");
 
         done(@{
             @"uri": destination.absoluteString,

@@ -45,7 +45,7 @@ export default function General() {
                 )}
 
                 <TableRowGroup title="Info">
-                    <InfoRow label="Discordia" value={`${DISCORDIA_VERSION} (${DISCORDIA_COMMIT})`} icon="ic_badge_staff" />
+                    <InfoRow label="Distra" value={`${DISTRA_VERSION} (${DISTRA_COMMIT})`} icon="ic_badge_staff" />
                     <InfoRow label="Loader" value={`${loader.name} ${loader.version}`} icon="SettingsIcon" />
                     <InfoRow label="Discord" value={`${loader.discord.version} (${loader.discord.build})`} icon="CircleInformationIcon" />
                     <InfoRow label="Install type" value={loader.jailbroken ? "Jailbreak tweak" : "Injected IPA"} icon="MobilePhoneIcon" />

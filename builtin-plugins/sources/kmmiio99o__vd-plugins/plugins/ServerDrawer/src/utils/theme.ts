@@ -31,3 +31,17 @@ export interface GuildNode {
     expanded?: boolean;
     children: GuildNode[];
 }
+
+/** The expanded folders among `nodes`, in list order. */
+export function useExpandedFolders(nodes: GuildNode[]): GuildNode[] {
+    const ids: string[] = Flux?.useStateFromStores?.(
+        [ExpandedGuildFolderStore],
+        () => {
+            const open = ExpandedGuildFolderStore?.getExpandedFolders?.();
+            return open instanceof Set ? [...open].map(String) : [];
+        },
+        [],
+        (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i]),
+    ) ?? [];
+    return nodes.filter((node) => node.type === "folder" && ids.includes(String(node.id)));
+}

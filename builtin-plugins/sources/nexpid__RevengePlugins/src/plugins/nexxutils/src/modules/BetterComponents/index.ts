@@ -100,9 +100,13 @@ export default new Module({
 			label: "Test Toast",
 			type: "button",
 			action() {
-				const list = Object.values(assets.all);
+				// Random image asset from the registry; `assets.all` is empty on some clients, so fall back to a fixed icon
+				const list = Object.values(assets.all ?? {}).filter(
+					(x: any) => x && typeof x.id === "number" && /^(png|jpe?g|webp)$/i.test(x.type ?? ""),
+				) as { name: string; id: number }[];
 				const item = list[Math.floor(Math.random() * list.length)];
-				showToast(item.name, item.id);
+				if (item) showToast(item.name, item.id);
+				else showToast("Test toast", getAssetIDByName("CheckmarkLargeIcon"));
 			},
 			icon: getAssetIDByName("BugIcon"),
 		},

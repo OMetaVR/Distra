@@ -4,17 +4,17 @@ INSTALL_TARGET_PROCESSES = Discord
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = Discordia
+TWEAK_NAME = Distra
 
-Discordia_FILES = $(wildcard Sources/*.x Sources/*.m) Sources/Generated/EmbeddedBundle.c Sources/Generated/EmbeddedBuiltins.S
-Discordia_CFLAGS = -fobjc-arc -ISources -Wno-unused-function \
-	-DDISCORDIA_TWEAK_VERSION=\"$(THEOS_PACKAGE_BASE_VERSION)\" \
-	-DDISCORDIA_INSTALL_PREFIX=\"$(THEOS_PACKAGE_INSTALL_PREFIX)\"
-Discordia_FRAMEWORKS = Foundation UIKit CoreImage
-Discordia_LIBRARIES = sqlite3
+Distra_FILES = $(wildcard Sources/*.x Sources/*.m) Sources/Generated/EmbeddedBundle.c Sources/Generated/EmbeddedBuiltins.S
+Distra_CFLAGS = -fobjc-arc -ISources -Wno-unused-function \
+	-DDISTRA_TWEAK_VERSION=\"$(THEOS_PACKAGE_BASE_VERSION)\" \
+	-DDISTRA_INSTALL_PREFIX=\"$(THEOS_PACKAGE_INSTALL_PREFIX)\"
+Distra_FRAMEWORKS = Foundation UIKit CoreImage
+Distra_LIBRARIES = sqlite3
 # Hooks use the ObjC runtime directly, so the dylib needs no Substrate/ElleKit
 # when injected into an IPA.
-Discordia_LOGOS_DEFAULT_GENERATOR = internal
+Distra_LOGOS_DEFAULT_GENERATOR = internal
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 

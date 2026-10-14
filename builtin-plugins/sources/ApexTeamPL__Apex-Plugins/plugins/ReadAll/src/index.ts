@@ -41,7 +41,18 @@ function patchFooter(ret: any) {
   patchedObjects.add(ldp);
 }
 
+const GUILDS_BAR_PROPS = "modules/guilds_bar/native/hooks/useGuildsBarProps.tsx";
+
 function scanRegistry(): number {
+  // Distra: function names are stripped in Discord's iOS bundle, so find the hook by its source path.
+  const found = (window as any).distra?.metro?.findByFilePath?.(GUILDS_BAR_PROPS);
+  if (found && typeof found.default === "function") {
+    if (patchedObjects.has(found)) return 1;
+    patchedObjects.add(found);
+    unpatchers.push(after("default", found, (_args: any[], ret: any) => patchFooter(ret)));
+    return 1;
+  }
+
   const modules = (globalThis as any)?.modules;
   if (!modules) return 0;
 

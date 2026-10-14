@@ -23,7 +23,7 @@ export function isBadExports(exports: any): boolean {
         // Catch-all proxies return a value (even null) for any key, e.g. Discord's i18n message
         // proxies, and one in Discord 348 that returns null for every property name. They would
         // match any byProps filter.
-        if (exports.discordiaCatchAllProbe !== undefined || exports["\u0000discordia-probe\u0000"] !== undefined) return true;
+        if (exports.distraCatchAllProbe !== undefined || exports["\u0000distra-probe\u0000"] !== undefined) return true;
         if (exports.constructor === null) return true;
         if (exports.default?.[Symbol.toStringTag] === "IntlMessagesProxy") return true;
         if (Object.getPrototypeOf(exports) === Object.prototype && Reflect.ownKeys(exports).length === 0) return true;
@@ -176,7 +176,7 @@ function onRequire(id: ModuleID, exports: any) {
         try {
             listener(id, exports);
         } catch (e) {
-            console.error("[Discordia] module listener failed", e);
+            console.error("[Distra] module listener failed", e);
         }
     }
 }

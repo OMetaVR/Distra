@@ -1,4 +1,4 @@
-// SQLite through the tweak (Documents/Discordia/db/<name>.sqlite). Snowflakes should be
+// SQLite through the tweak (Documents/Distra/db/<name>.sqlite). Snowflakes should be
 // passed as strings; the native side stores them as 64-bit integers and returns
 // values beyond JS's safe integer range as strings.
 

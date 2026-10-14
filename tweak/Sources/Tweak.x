@@ -1,4 +1,4 @@
-// Hooks. Discordia's script has to run in the same JS runtime as Discord's,
+// Hooks. Distra's script has to run in the same JS runtime as Discord's,
 // immediately before Discord's bundle, every time a JS context is created
 // (launch and every reload). React Native loads the bundle through one of two
 // paths depending on the architecture, so both are hooked:
@@ -9,7 +9,7 @@
 // Discord 348 ships with RCTNewArchEnabled, so the bridgeless path is expected;
 // the bridge hook covers older builds.
 
-#import "Discordia.h"
+#import "Distra.h"
 #import <objc/runtime.h>
 
 typedef void (^RCTPromiseResolveBlock)(id result);
@@ -24,14 +24,14 @@ typedef void (^RCTPromiseRejectBlock)(NSString *code, NSString *message, NSError
 @end
 
 /** Stands in for React Native's RCTSource, which `_loadScriptFromSource:` reads `url` and `data` from. */
-@interface DCDScriptSource : NSObject
+@interface DSTScriptSource : NSObject
 @property (nonatomic, strong) NSURL *url;
 @property (nonatomic, strong) NSData *data;
 @property (nonatomic, readonly) NSUInteger length;
 @property (nonatomic, readonly) NSInteger filesChangedCount;
 @end
 
-@implementation DCDScriptSource
+@implementation DSTScriptSource
 - (NSUInteger)length { return self.data.length; }
 - (NSInteger)filesChangedCount { return 0; }
 @end
@@ -39,26 +39,26 @@ typedef void (^RCTPromiseRejectBlock)(NSString *code, NSString *message, NSError
 static const void *kInjectedKey = &kInjectedKey;
 
 /**
- * Whether Discordia should be injected before `url` on `owner`: once per JS
+ * Whether Distra should be injected before `url` on `owner`: once per JS
  * context (bridge or instance object), and never before our own script.
  */
-static BOOL DCDShouldInject(id owner, NSURL *url) {
-    if ([url.scheme isEqualToString:DCDScriptScheme]) return NO;
+static BOOL DSTShouldInject(id owner, NSURL *url) {
+    if ([url.scheme isEqualToString:DSTScriptScheme]) return NO;
     @synchronized (owner) {
         if (objc_getAssociatedObject(owner, kInjectedKey)) return NO;
         objc_setAssociatedObject(owner, kInjectedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
-    DCDLogNative(@"Discord bundle %@ is loading via %@", url.absoluteString ?: @"(no url)", NSStringFromClass([owner class]));
+    DSTLogNative(@"Discord bundle %@ is loading via %@", url.absoluteString ?: @"(no url)", NSStringFromClass([owner class]));
     return YES;
 }
 
 %hook RCTCxxBridge
 
 - (void)executeApplicationScript:(NSData *)script url:(NSURL *)url async:(BOOL)async {
-    if (DCDShouldInject(self, url)) {
-        NSData *discordia = [DCDLoader.shared scriptForLaunch];
-        [DCDDiagnostics.shared recordHook:@"RCTCxxBridge" injectedBytes:discordia.length];
-        if (discordia) %orig(discordia, DCDLoader.shared.scriptURL, NO);
+    if (DSTShouldInject(self, url)) {
+        NSData *distra = [DSTLoader.shared scriptForLaunch];
+        [DSTDiagnostics.shared recordHook:@"RCTCxxBridge" injectedBytes:distra.length];
+        if (distra) %orig(distra, DSTLoader.shared.scriptURL, NO);
     }
     %orig;
 }
@@ -69,13 +69,13 @@ static BOOL DCDShouldInject(id owner, NSURL *url) {
 
 - (void)_loadScriptFromSource:(id)source {
     NSURL *url = [source respondsToSelector:@selector(url)] ? [source url] : nil;
-    if (DCDShouldInject(self, url)) {
-        NSData *discordia = [DCDLoader.shared scriptForLaunch];
-        [DCDDiagnostics.shared recordHook:@"RCTInstance" injectedBytes:discordia.length];
-        if (discordia) {
-            DCDScriptSource *ours = [DCDScriptSource new];
-            ours.url = DCDLoader.shared.scriptURL;
-            ours.data = discordia;
+    if (DSTShouldInject(self, url)) {
+        NSData *distra = [DSTLoader.shared scriptForLaunch];
+        [DSTDiagnostics.shared recordHook:@"RCTInstance" injectedBytes:distra.length];
+        if (distra) {
+            DSTScriptSource *ours = [DSTScriptSource new];
+            ours.url = DSTLoader.shared.scriptURL;
+            ours.data = distra;
             // Scheduled on the JS thread ahead of Discord's bundle, which is queued next.
             %orig(ours);
         }
@@ -90,14 +90,14 @@ static BOOL DCDShouldInject(id owner, NSURL *url) {
 %hook RCTFileReaderModule
 
 - (void)readAsDataURL:(NSDictionary *)blob resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
-    NSDictionary *call = [blob isKindOfClass:NSDictionary.class] ? blob[@"discordia"] : nil;
+    NSDictionary *call = [blob isKindOfClass:NSDictionary.class] ? blob[@"distra"] : nil;
     if (![call isKindOfClass:NSDictionary.class]) {
         %orig;
         return;
     }
     static dispatch_once_t firstCall;
-    dispatch_once(&firstCall, ^{ DCDLogNative(@"First JS bridge call received: %@", call[@"method"]); });
-    [DCDBridge handleCall:call completion:^(NSDictionary *response) {
+    dispatch_once(&firstCall, ^{ DSTLogNative(@"First JS bridge call received: %@", call[@"method"]); });
+    [DSTBridge handleCall:call completion:^(NSDictionary *response) {
         resolve(response);
     }];
 }
@@ -122,10 +122,10 @@ static BOOL DCDShouldInject(id owner, NSURL *url) {
 
 %ctor {
     @autoreleasepool {
-        [DCDDiagnostics.shared start];
-        DCDLogNative(@"Discordia tweak %s loaded (%@) into %@", DISCORDIA_TWEAK_VERSION, DCDIsJailbroken() ? @"jailbreak" : @"injected", NSBundle.mainBundle.bundleIdentifier);
+        [DSTDiagnostics.shared start];
+        DSTLogNative(@"Distra tweak %s loaded (%@) into %@", DISTRA_TWEAK_VERSION, DSTIsJailbroken() ? @"jailbreak" : @"injected", NSBundle.mainBundle.bundleIdentifier);
         for (NSString *name in @[@"RCTInstance", @"RCTCxxBridge", @"RCTFileReaderModule"]) {
-            DCDLogNative(@"Class %@: %@", name, NSClassFromString(name) ? @"found" : @"MISSING");
+            DSTLogNative(@"Class %@: %@", name, NSClassFromString(name) ? @"found" : @"MISSING");
         }
         %init;
     }
