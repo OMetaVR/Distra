@@ -1,18 +1,34 @@
 # Distra
 
+[![Latest release](https://img.shields.io/github/v/release/OMetaVR/Distra?label=release)](https://github.com/OMetaVR/Distra/releases/latest)
+[![Beta](https://img.shields.io/badge/beta-latest%20main-5865f2)](https://github.com/OMetaVR/Distra/releases/tag/beta)
+[![Build](https://github.com/OMetaVR/Distra/actions/workflows/build.yml/badge.svg)](https://github.com/OMetaVR/Distra/actions/workflows/build.yml)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+
 A Discord client mod for iOS. Distra runs plugins written for **Vendetta**,
 **Bunny**, **Enmity** and **Aliucord**, plus its own format, and supports
 swappable **icon packs** and extra **app icons**. It is managed from a
 Distra section in Discord's own settings.
 
-> Early development (beta). Built and tested against Discord 348.0 (113691). See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Early development. Built and tested against Discord 348.0 (113691). See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+> [!WARNING]
+> Distra is an unofficial modification, not affiliated with or endorsed by Discord. Client mods
+> break Discord's Terms of Service; use them at your own risk. Plugins run with full access to
+> your account, and some (token tools, account switchers, HypeSquad changer, silent leave) act on
+> it directly: only enable what you understand.
 
 ## Install
 
-The latest build of `main` is always on the [**beta** release](../../releases/tag/beta):
+**Releases** ([latest](../../releases/latest)) are tested builds and include everything:
 
-- **`Distra.dylib`**: inject into Discord with LiveContainer or an IPA patcher (no Substrate needed).
+- **`Distra.ipa`**: Discord with Distra already injected, for sideloading (AltStore, SideStore,
+  Sideloadly, TrollStore…). IPAs are only published with full releases.
+- **`Distra.dylib`**: inject into Discord yourself with LiveContainer or an IPA patcher (no Substrate needed).
 - **`*_iphoneos-arm.deb`** / **`*_iphoneos-arm64.deb`**: rootful / rootless jailbreak packages.
+
+The [**beta** prerelease](../../releases/tag/beta) is rebuilt from every push to `main` and has
+the dylib and .debs only.
 
 ## How it works
 
@@ -33,20 +49,22 @@ file whether it's installed with a jailbreak or injected into an IPA.
 
 ## Built-in plugins
 
-Distra ships **104 plugins**, all disabled until turned on in
+Distra ships **98 plugins**, all disabled until turned on in
 **Settings > Distra > Plugin Library**:
 
-- **4 of its own**, rebuilt for current Discord from the most popular plugins of other mods,
+- **5 of its own**, rebuilt for current Discord from the most popular plugins of other mods,
   merging their features: **Message Logger** (deleted messages stay in red, edits keep their
   history, deleted images are greyed out; stored in an on-device SQLite database),
-  **Platform Indicators**, **Radial Status**, and **Hide Chat Buttons** (chat bar and call buttons).
-- **100 community plugins** (89 Vendetta/Bunny/Revenge, 11 Enmity), vendored in
+  **Platform Indicators**, **Radial Status**, **Hide Chat Buttons** (chat bar and call buttons,
+  swipe to collapse) and **Fake Nitro** (fake emoji and sticker links shown as the real thing).
+- **93 community plugins** (86 Vendetta/Bunny/Revenge, 7 Enmity), vendored in
   `builtin-plugins/sources/` at pinned upstream commits under their authors' licenses and built
   with the rest of Distra. Fixes for current Discord live in `builtin-plugins/patches/`.
 
-Duplicates were merged or removed (36, each listed with the reason). The library also offers
-17 more plugins that are installed from their authors because their code can't be
-redistributed. Full list and credits: [builtin-plugins/README.md](builtin-plugins/README.md).
+Duplicates, plugins for features Discord now has itself, and Android-only plugins were merged or
+removed (44, each listed with the reason). The library also offers 17 more plugins that are
+installed from their authors because their code can't be redistributed. Full list and credits:
+[builtin-plugins/README.md](builtin-plugins/README.md).
 
 ## Building
 
@@ -138,6 +156,13 @@ tweak/              Theos project (Tweak.x hooks, loader, bridge, boot guard)
 scripts/            build, plugin sync/build, dev server, IPA builder
 tests/              Node harness emulating Metro + the native bridge
 ```
+
+## License
+
+Distra is licensed under the [GNU General Public License v3.0 or later](LICENSE). The built-in
+plugins in `builtin-plugins/sources/` keep their own licenses (listed per plugin in
+[builtin-plugins/README.md](builtin-plugins/README.md)); several are GPL-3.0, which is one reason
+Distra itself is GPL.
 
 ## Credits
 

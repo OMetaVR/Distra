@@ -1,6 +1,7 @@
 {
   "name": "distra",
   "version": "0.1.0",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "description": "A Discord iOS client mod with Vendetta, Bunny, Enmity and Aliucord plugin support",
   "type": "module",
