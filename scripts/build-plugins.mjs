@@ -401,6 +401,7 @@ for (const plugin of catalog.plugins) {
         manifest,
         status: plugin.status,
         warning: plugin.warning ?? null,
+        requiresRestart: plugin.requiresRestart ?? false,
         upstreamInstallUrl: plugin.upstreamInstallUrl ?? null,
         source: { repository: repo.url, commit: repo.commit, license: repo.license, path: plugin.path, build: buildType },
         hash: createHash("sha256").update(wrapped).digest("hex").slice(0, 16),

@@ -3,7 +3,7 @@ import { patchQuestDockBase } from "./patches/questDockBase";
 import { patchMobileQuestDock } from "./patches/mobileQuestDock";
 import { patchQuestEligibility } from "./patches/questEligibility";
 import { patchDockAssetPrefetch } from "./patches/dockAssetPrefetch";
-import { patchExpanded, patchEmpty } from "./patches/contentPatch";
+import { patchExpanded, patchEmpty, patchCollapsed } from "./patches/contentPatch";
 import { patchHideGuildsBar, isHidingComplete } from "./patches/hideGuildsBar";
 import { patchTransparentBackground } from "./patches/transparentBackground";
 import { patchCreateElement } from "./patches/createElementIntercept";
@@ -17,6 +17,7 @@ export default {
     onLoad() {
         storage.hideDmTile ??= false;
         storage.showGuildNames ??= false;
+        storage.hideOnScroll ??= false;
 
         console.log(TAG, "onLoad");
 
@@ -31,7 +32,7 @@ export default {
         if (patchQuestEligibility(cleanups)) patched++;
         if (patchDockAssetPrefetch(cleanups)) patched++;
         if (patchExpanded(cleanups)) patched++;
-        if (patchEmpty("QuestDockContentCollapsed", cleanups)) patched++;
+        if (patchCollapsed(cleanups)) patched++;
         if (patchEmpty("QuestDockEnrolledHeader", cleanups)) patched++;
         if (patchEmpty("QuestDockUnenrolledHeader", cleanups)) patched++;
         if (patchEmpty("QuestDockEnrolledBody", cleanups)) patched++;

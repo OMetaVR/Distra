@@ -22,16 +22,24 @@ export default function Settings() {
                         onValueChange={(v: boolean) => { storage.showGuildNames = v; }}
                     />
                 </TableRowGroup>
+                <TableRowGroup title="Dock">
+                    <TableSwitchRow
+                        label="Hide while scrolling"
+                        subLabel="Tuck the server row away when you scroll down a list and bring it back when you scroll up (Discord's behaviour for the quest dock)."
+                        value={!!storage.hideOnScroll}
+                        onValueChange={(v: boolean) => { storage.hideOnScroll = v; }}
+                    />
+                </TableRowGroup>
                 <TableRowGroup title="Folders">
                     <TableSwitchRow
-                        label="Open folders in a side list"
-                        subLabel="An open folder's servers appear in their own list to the right of the grid instead of among the other servers. The list only takes room while a folder is open."
-                        value={storage.folderLayout === "sidebar"}
-                        onValueChange={(v: boolean) => { storage.folderLayout = v ? "sidebar" : "inline"; }}
+                        label="Folder animation"
+                        subLabel="An opening folder's servers slide out of it, and the rest glide to their new places."
+                        value={storage.folderAnimation !== false}
+                        onValueChange={(v: boolean) => { storage.folderAnimation = v; }}
                     />
                     <TableSwitchRow
                         label="Separator after open folders"
-                        subLabel="Draw a line where an open folder's servers end and the rest of your servers continue."
+                        subLabel="Draw a line where an open folder's servers end and the rest of your servers continue (in the open drawer)."
                         value={storage.folderSeparator !== false}
                         onValueChange={(v: boolean) => { storage.folderSeparator = v; }}
                     />

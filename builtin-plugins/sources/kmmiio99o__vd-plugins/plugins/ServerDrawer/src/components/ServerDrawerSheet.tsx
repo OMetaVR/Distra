@@ -7,8 +7,9 @@ import { GuildNode } from "../utils/theme";
 import { getGestureContext } from "../utils/gestureContext";
 import GuildItem from "./GuildItem";
 import FolderItem from "./FolderItem";
-import { useExpandedFolders } from "../utils/theme";
-import DmTile from "./DmTile";
+import DmTile, { UnreadDmTile, useUnreadDms } from "./DmTile";
+import Divider, { DividerKind } from "./Dividers";
+import ReadAllTile from "./ReadAllTile";
 
 const Flux = findByProps("useStateFromStores");
 const SortedGuildStore = findByStoreName("SortedGuildStore");
@@ -62,10 +63,7 @@ function DiscoveryTile({ onPress }: { onPress: () => void }) {
     );
 }
 
-const ICON = 48;
-const GAP = 6;
-const PAD = 12;
-const RAIL = ICON + 20;
+import { GAP, ICON, PAD, RADIUS, TOP_PAD } from "../utils/metrics";
 
 const FallbackGestureContext = React.createContext(null);
 
@@ -91,7 +89,7 @@ function CreateJoinButton({ onPress }: { onPress: () => void }) {
     );
 }
 
-export default function ServerDrawerSheet({ gestureContext }: { gestureContext: any }) {
+export default function ServerDrawerSheet({ gestureContext, variant = "grid" }: { gestureContext: any; variant?: "row" | "grid" }) {
     useProxy(storage);
 
     const pick = React.useCallback((id: string) => {
@@ -114,12 +112,6 @@ export default function ServerDrawerSheet({ gestureContext }: { gestureContext: 
     const gestureCtx = (gestureContext ?? getGestureContext()) as React.Context<any> | null;
     const ctx = React.useContext(gestureCtx ?? FallbackGestureContext) as any;
     const minH = ctx?.minExpandedContentHeight;
-
-    const onLayout = React.useCallback((e: any) => {
-        if (!minH) return;
-        const h = e.nativeEvent.layout.height;
-        if (minH.get() !== h) minH.set(h);
-    }, [minH]);
 
     const extCtx = ExternalContext ? React.useContext(ExternalContext) as any : null;
     const setMode = extCtx?.setRestingQuestDockMode;
@@ -172,46 +164,77 @@ export default function ServerDrawerSheet({ gestureContext }: { gestureContext: 
         return () => sub.remove();
     }, [setMode, specs]);
 
-    const { width: winW } = Dimensions.get("window");
-
-    const sidebar = storage.folderLayout === "sidebar";
-    const openFolders = useExpandedFolders(nodes);
-    const showRail = sidebar && openFolders.length > 0;
-    // The rail takes its room only while a folder is open.
-    const gridW = winW - (showRail ? RAIL : 0);
-
-    const cols = Math.max(3, Math.floor((gridW - PAD * 2 + GAP) / (ICON + GAP)));
-    const totalW = cols * ICON + (cols - 1) * GAP;
-    const padX = Math.max(0, (gridW - totalW) / 2);
+    // The dock mounts its closed and open content together and each normally fades itself out;
+    // ours don't, so follow the dock's mode (a shared value React can't subscribe to) by polling.
+    const activeMode = ctx?.activeQuestDockMode;
+    const [open, setOpen] = React.useState(false);
+    React.useEffect(() => {
+        if (!activeMode) return;
+        const read = () => {
+            try {
+                const mode = activeMode.value ?? activeMode.get?.();
+                setOpen(mode != null && mode !== (QuestDockMode?.COLLAPSED ?? "collapsed"));
+            } catch {
+                // keep the last known state
+            }
+        };
+        read();
+        const timer = setInterval(read, 100);
+        return () => clearInterval(timer);
+    }, [activeMode]);
 
     const separator = storage.folderSeparator !== false;
+    const showNames = !!storage.showGuildNames;
+    const unreadDms = useUnreadDms();
+    const row = variant === "row";
+    // Where DMs end and servers begin, and where an open folder's servers end: always marked, as a
+    // short line in the row, and a line (or, with the separator setting off, a gap) in the grid.
+    const groupEnd: DividerKind = row ? "vertical" : "line";
+    const folderEnd: DividerKind = row ? "vertical" : separator ? "line" : "spacer";
+    const hasDmGroup = !storage.hideDmTile || unreadDms.length > 0;
+    const tiles = (
+        <>
+            <ReadAllTile />
+            {!storage.hideDmTile && <DmTile />}
+            {unreadDms.map((id) => <UnreadDmTile key={id} channelId={id} />)}
+            {hasDmGroup && <Divider kind={groupEnd} />}
+            {nodes.map((node) =>
+                node.type === "folder"
+                    ? <FolderItem key={node.id} node={node} onPick={pick} showNames={showNames} divider={folderEnd} />
+                    : <GuildItem key={node.id} node={node} onPick={pick} showNames={showNames} />
+            )}
+            <CreateJoinButton onPress={openCreateJoin} />
+            {isDiscoveryEnabled() && <DiscoveryTile onPress={openDiscovery} />}
+        </>
+    );
+
+    // The dock mounts both its closed and open content at once and fades between them, so each
+    // variant is its own component: the closed one is a single row that swipes sideways.
+    if (variant === "row") {
+        return (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={st.rowScroll} contentContainerStyle={[st.row, { gap: GAP, paddingHorizontal: PAD }]}>
+                {tiles}
+            </ScrollView>
+        );
+    }
+
+    // Open: the whole grid, as tall as its content up to a share of the screen so the dock can
+    // still be dragged shut and there's room to tap outside it.
+    const maxHeight = Math.round(Dimensions.get("window").height * 0.5);
+    const onGridLayout = (e: any) => {
+        if (!minH) return;
+        const h = Math.min(e.nativeEvent.layout.height, maxHeight);
+        if (minH.get() !== h) minH.set(h);
+    };
+    // Kept mounted while the dock is closed so the dock knows how tall to open.
     return (
-        <ScrollView style={st.alignTop} showsVerticalScrollIndicator={false}>
-            <View style={st.split} onLayout={onLayout}>
-                <View style={[st.grid, { width: gridW, paddingHorizontal: padX, gap: GAP }]}>
-                    {!storage.hideDmTile && <DmTile />}
-                    {nodes.map((node) =>
-                        node.type === "folder"
-                            ? <FolderItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} sidebar={sidebar} separator={separator} />
-                            : <GuildItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
-                    )}
-                    <CreateJoinButton onPress={openCreateJoin} />
-                    {isDiscoveryEnabled() && <DiscoveryTile onPress={openDiscovery} />}
+        <View pointerEvents={open ? "auto" : "none"} collapsable={false}>
+            <ScrollView style={{ maxHeight, opacity: open ? 1 : 0 }} showsVerticalScrollIndicator={false}>
+                <View style={[st.grid, { paddingHorizontal: PAD, gap: GAP }]} onLayout={onGridLayout}>
+                    {tiles}
                 </View>
-                {showRail && (
-                    <View style={st.rail}>
-                        {openFolders.map((folder, i) => (
-                            <View key={folder.id} style={st.railFolder}>
-                                {i > 0 && separator && <View style={st.railLine} />}
-                                {folder.children.map((child) => (
-                                    <GuildItem key={child.id} node={child} onPick={pick} showNames={!!storage.showGuildNames} />
-                                ))}
-                            </View>
-                        ))}
-                    </View>
-                )}
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </View>
     );
 }
 
@@ -221,38 +244,29 @@ const st = StyleSheet.create({
         justifyContent: "flex-start",
         alignItems: "flex-start",
     },
-    split: {
+    // The closed dock is a 56pt card that centres its content, so the row needs a size of its own.
+    gridHost: {
+        flex: 1,
+    },
+    rowScroll: {
+        width: "100%",
+        height: "100%",
+    },
+    row: {
         flexDirection: "row",
         alignItems: "flex-start",
-    },
-    rail: {
-        width: RAIL,
-        alignItems: "center",
-        paddingTop: 4,
-        paddingBottom: 16,
-        borderLeftWidth: StyleSheet.hairlineWidth * 2,
-        borderLeftColor: "rgba(255,255,255,0.18)",
-    },
-    railFolder: {
-        gap: GAP,
-        alignItems: "center",
-    },
-    railLine: {
-        width: ICON - 12,
-        height: StyleSheet.hairlineWidth * 2,
-        marginVertical: 4,
-        backgroundColor: "rgba(255,255,255,0.18)",
+        paddingTop: TOP_PAD,
     },
     grid: {
         flexDirection: "row",
         flexWrap: "wrap",
-        paddingTop: 4,
+        paddingTop: TOP_PAD,
         paddingBottom: 16,
     },
     createJoin: {
         width: ICON,
         height: ICON,
-        borderRadius: 16,
+        borderRadius: RADIUS,
         backgroundColor: createJoinBg,
         alignItems: "center",
         justifyContent: "center",
@@ -260,7 +274,7 @@ const st = StyleSheet.create({
     discoveryTile: {
         width: ICON,
         height: ICON,
-        borderRadius: 16,
+        borderRadius: RADIUS,
         alignItems: "center",
         justifyContent: "center",
     },

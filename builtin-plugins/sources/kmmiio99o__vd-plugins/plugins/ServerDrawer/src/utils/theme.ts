@@ -32,16 +32,24 @@ export interface GuildNode {
     children: GuildNode[];
 }
 
-/** The expanded folders among `nodes`, in list order. */
-export function useExpandedFolders(nodes: GuildNode[]): GuildNode[] {
-    const ids: string[] = Flux?.useStateFromStores?.(
-        [ExpandedGuildFolderStore],
-        () => {
-            const open = ExpandedGuildFolderStore?.getExpandedFolders?.();
-            return open instanceof Set ? [...open].map(String) : [];
-        },
-        [],
-        (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i]),
-    ) ?? [];
-    return nodes.filter((node) => node.type === "folder" && ids.includes(String(node.id)));
+const tokenRef: any = findByProps("SemanticColor");
+export const Themes: any = tokenRef?.default;
+const internalResolver: any = Themes?.meta ?? Themes?.internal;
+const UseThemeMod: any = findByProps("useThemeIndex", "getThemeIndex");
+
+/** A semantic colour token resolved for the current theme (light/dark), re-rendering on theme change. */
+export function useTokenColor(token: any): string | undefined {
+    const theme = UseThemeMod?.useTheme?.();
+    if (!internalResolver || !token || theme == null) return undefined;
+    return internalResolver.resolveSemanticColor(theme, token);
+}
+
+/** Colour of message text in the current theme: used for the selected-server ring. */
+export function useTextColor(): string {
+    return useTokenColor(Themes?.colors?.TEXT_DEFAULT ?? Themes?.colors?.TEXT_NORMAL) ?? "#dbdee1";
+}
+
+/** Colour for the thin dividers between groups of tiles. */
+export function useDividerColor(): string {
+    return useTokenColor(Themes?.colors?.BORDER_SUBTLE ?? Themes?.colors?.BACKGROUND_MODIFIER_ACCENT) ?? "rgba(255,255,255,0.18)";
 }

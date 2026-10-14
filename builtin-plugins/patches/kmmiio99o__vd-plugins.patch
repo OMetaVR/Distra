@@ -1,5 +1,5 @@
 diff -ruN a/plugins/Commands/settings/components/Header.tsx b/plugins/Commands/settings/components/Header.tsx
---- a/plugins/Commands/settings/components/Header.tsx	2026-10-14 17:27:29.885660634 -0400
+--- a/plugins/Commands/settings/components/Header.tsx	2026-10-14 18:55:01.896170828 -0400
 +++ b/plugins/Commands/settings/components/Header.tsx	2026-10-14 15:56:24.190619200 -0400
 @@ -280,7 +280,8 @@
                  </RN.Pressable>
@@ -12,7 +12,7 @@ diff -ruN a/plugins/Commands/settings/components/Header.tsx b/plugins/Commands/s
                      </RN.Text>
                      <RN.Text style={[TextStyleSheet["text-md/bold"], { color: resolveSemanticColor(semanticColors["TEXT_MUTED"]) }]}>
 diff -ruN a/plugins/Commands/sidebar.tsx b/plugins/Commands/sidebar.tsx
---- a/plugins/Commands/sidebar.tsx	2026-10-14 17:27:29.885822188 -0400
+--- a/plugins/Commands/sidebar.tsx	2026-10-14 18:55:01.896330792 -0400
 +++ b/plugins/Commands/sidebar.tsx	2026-10-14 11:14:50.156461300 -0400
 @@ -154,7 +154,7 @@
                      const sections = config.sections;
@@ -33,7 +33,7 @@ diff -ruN a/plugins/Commands/sidebar.tsx b/plugins/Commands/sidebar.tsx
                          ),
                      );
 diff -ruN a/plugins/Moyai/src/index.ts b/plugins/Moyai/src/index.ts
---- a/plugins/Moyai/src/index.ts	2026-10-14 17:27:29.887637074 -0400
+--- a/plugins/Moyai/src/index.ts	2026-10-14 18:55:01.898059993 -0400
 +++ b/plugins/Moyai/src/index.ts	2026-10-14 11:00:26.678652200 -0400
 @@ -6,8 +6,9 @@
  const { DCDSoundManager } = ReactNative.NativeModules;
@@ -47,7 +47,7 @@ diff -ruN a/plugins/Moyai/src/index.ts b/plugins/Moyai/src/index.ts
  let SOUND_DURATION = -1;
  
 diff -ruN a/plugins/multi-scrobbler/src/sidebar.tsx b/plugins/multi-scrobbler/src/sidebar.tsx
---- a/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-14 17:27:29.888764463 -0400
+--- a/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-14 18:55:01.899009945 -0400
 +++ b/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-14 11:14:50.164672300 -0400
 @@ -153,7 +153,7 @@
                      const sections = config.sections;
@@ -67,11 +67,414 @@ diff -ruN a/plugins/multi-scrobbler/src/sidebar.tsx b/plugins/multi-scrobbler/sr
                              (mod) => x.label === mod && x.title === mod,
                          ),
                      );
+diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx
+--- a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx	1969-12-31 19:00:00.000000000 -0500
++++ b/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx	2026-10-14 18:43:12.475252000 -0400
+@@ -0,0 +1,184 @@
++import React from "react";
++import { PanResponder, StyleSheet, View } from "react-native";
++import { find, findByProps } from "@vendetta/metro";
++import { storage } from "@vendetta/plugin";
++import ServerDrawerSheet from "./ServerDrawerSheet";
++
++// The closed dock is wrapped in the dock's own gesture detector, which takes every touch on it:
++// a tap opens the dock and any movement drags it, so a row of servers inside it can't scroll or be
++// tapped. The row is therefore drawn on top of the dock card instead, outside that detector, and
++// handles the vertical swipes itself (up opens the dock, down tucks it away).
++
++const ExternalContext = find((m: any) => m?.QuestDockExternalCoordinationContext)?.QuestDockExternalCoordinationContext;
++const QuestDockMode = find((m: any) => m?.QuestDockMode?.COLLAPSED != null)?.QuestDockMode;
++const COLLAPSED = QuestDockMode?.COLLAPSED ?? "collapsed";
++const Dispatcher = findByProps("dispatch", "subscribe", "unsubscribe");
++
++interface Frame { x: number; y: number; width: number; height: number }
++
++let cardFrame: Frame | null = null;
++/** When the card last moved; the row waits for it to settle so it isn't drawn mid-animation. */
++let cardMovedAt = 0;
++const frameListeners = new Set<() => void>();
++const sameFrame = (a: Frame | null, b: Frame) => !!a && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
++
++const flatStyle = (style: any): any => Array.isArray(style) ? Object.assign({}, ...style.map(flatStyle)) : style ?? {};
++
++/**
++ * The dock card itself: the closed content slot is laid out away from where the card shows it, so
++ * its own position is no use. Walk up from the slot to the rounded, clipping, absolutely placed view.
++ */
++function findCard(instance: any): any {
++    for (let fiber = instance?.__internalInstanceHandle?.return, depth = 0; fiber && depth < 30; fiber = fiber.return, depth++) {
++        if (fiber.tag !== 5) continue;
++        const style = flatStyle(fiber.memoizedProps?.style);
++        if (style.position === "absolute" && style.overflow === "hidden" && style.borderRadius != null) {
++            return fiber.stateNode?.canonical?.publicInstance ?? fiber.stateNode;
++        }
++    }
++    return instance;
++}
++
++/** Sits in the dock card's closed content and reports where the card is on screen. */
++export function CollapsedCardTracker() {
++    const ref = React.useRef<View>(null);
++    React.useEffect(() => {
++        const measure = () => findCard(ref.current)?.measureInWindow?.((x: number, y: number, width: number, height: number) => {
++            const next = { x, y, width, height };
++            if (sameFrame(cardFrame, next)) return;
++            cardFrame = next;
++            cardMovedAt = Date.now();
++            frameListeners.forEach((listener) => listener());
++        });
++        measure();
++        const timer = setInterval(measure, 100);
++        return () => clearInterval(timer);
++    }, []);
++    return <View ref={ref} collapsable={false} pointerEvents="none" style={st.tracker} />;
++}
++
++function useCardFrame() {
++    const [frame, setFrame] = React.useState(cardFrame);
++    React.useEffect(() => {
++        const update = () => setFrame(cardFrame);
++        frameListeners.add(update);
++        update();
++        return () => void frameListeners.delete(update);
++    }, []);
++    return frame;
++}
++
++const CLOSED = QuestDockMode?.CLOSED ?? "closed";
++const COLLAPSED_HEIGHT = 56;
++/** Set when the user tucks the dock away with the row's own swipe, so it isn't reopened. */
++let closedByUser = 0;
++
++/**
++ * Whether the dock is resting closed-but-visible (the single row state) with its card settled.
++ * Unless "Hide while scrolling" is on, also undoes Discord tucking the dock away when a list scrolls.
++ */
++function useIsCollapsed(gestureContext: React.Context<any> | null, setMode: (mode: string) => void) {
++    const ctx = gestureContext ? React.useContext(gestureContext) as any : null;
++    const mode = ctx?.activeQuestDockMode;
++    const [collapsed, setCollapsed] = React.useState(false);
++    React.useEffect(() => {
++        if (!mode) return;
++        let last: string | undefined;
++        const read = () => {
++            try {
++                const current = mode.value ?? mode.get?.();
++                if (current === CLOSED && last === COLLAPSED && !storage.hideOnScroll && Date.now() - closedByUser > 1500) {
++                    setMode(COLLAPSED);
++                }
++                last = current;
++                const settled = cardFrame != null && Date.now() - cardMovedAt > 150
++                    && Math.abs(cardFrame.height - COLLAPSED_HEIGHT) < 3;
++                setCollapsed(current === COLLAPSED && settled);
++            } catch {
++                // keep the last known state
++            }
++        };
++        read();
++        const timer = setInterval(read, 100);
++        return () => clearInterval(timer);
++    }, [mode]);
++    return collapsed;
++}
++
++export default function CollapsedOverlay({ gestureContext }: { gestureContext: React.Context<any> | null }) {
++    const ext = ExternalContext ? React.useContext(ExternalContext) as any : null;
++    const frame = useCardFrame();
++
++    // Where this overlay's own origin is on screen, to place the row over the card.
++    const hostRef = React.useRef<View>(null);
++    const [origin, setOrigin] = React.useState<{ x: number; y: number } | null>(null);
++    React.useEffect(() => {
++        (hostRef.current as any)?.measureInWindow?.((x: number, y: number) => {
++            if (!origin || origin.x !== x || origin.y !== y) setOrigin({ x, y });
++        });
++    });
++
++    const setMode = (mode: string | undefined) => {
++        try {
++            if (mode) ext?.setRestingQuestDockMode?.(mode);
++        } catch {
++            // dock coordination unavailable
++        }
++    };
++    const collapsed = useIsCollapsed(gestureContext, setMode);
++
++    // Opening a channel or DM from anywhere (an unread DM, a notification) closes the open dock.
++    React.useEffect(() => {
++        const onSelect = () => {
++            try {
++                const ctxMode = ext?.restingQuestDockMode;
++                if ((ctxMode?.value ?? ctxMode?.get?.()) === (QuestDockMode?.EXPANDED ?? "expanded")) setMode(COLLAPSED);
++            } catch {
++                // dock coordination unavailable
++            }
++        };
++        Dispatcher?.subscribe?.("CHANNEL_SELECT", onSelect);
++        return () => Dispatcher?.unsubscribe?.("CHANNEL_SELECT", onSelect);
++    }, [ext]);
++    // Opens as soon as the finger has moved up a little (or flicks up), rather than on release.
++    const swipe = React.useMemo(() => {
++        let done = false;
++        return PanResponder.create({
++            onMoveShouldSetPanResponderCapture: (_e, { dx, dy }) => Math.abs(dy) > 6 && Math.abs(dy) > Math.abs(dx),
++            onPanResponderGrant: () => void (done = false),
++            onPanResponderMove: (_e, { dy, vy }) => {
++                if (done) return;
++                if (dy < -14 || vy < -0.4) {
++                    done = true;
++                    setMode(QuestDockMode?.EXPANDED ?? "expanded");
++                }
++            },
++            onPanResponderRelease: (_e, { dy }) => {
++                if (!done && dy > 18) {
++                    closedByUser = Date.now();
++                    setMode(CLOSED);
++                }
++            },
++            onPanResponderTerminationRequest: () => false,
++        });
++    }, [ext]);
++
++    const show = collapsed && frame && origin && frame.width > 0;
++    return (
++        <View ref={hostRef} collapsable={false} style={StyleSheet.absoluteFill} pointerEvents="box-none">
++            {show && (
++                <View
++                    {...swipe.panHandlers}
++                    style={[st.card, { left: frame!.x - origin!.x, top: frame!.y - origin!.y, width: frame!.width, height: frame!.height }]}
++                >
++                    <ServerDrawerSheet gestureContext={gestureContext} variant="row" />
++                </View>
++            )}
++        </View>
++    );
++}
++
++const st = StyleSheet.create({
++    tracker: { width: "100%", height: "100%" },
++    card: { position: "absolute", borderRadius: 16, overflow: "hidden", zIndex: 10 },
++});
+diff -ruN a/plugins/ServerDrawer/src/components/Dividers.tsx b/plugins/ServerDrawer/src/components/Dividers.tsx
+--- a/plugins/ServerDrawer/src/components/Dividers.tsx	1969-12-31 19:00:00.000000000 -0500
++++ b/plugins/ServerDrawer/src/components/Dividers.tsx	2026-10-14 18:27:55.776329400 -0400
+@@ -0,0 +1,24 @@
++import React from "react";
++import { StyleSheet, View } from "react-native";
++import { ICON } from "../utils/metrics";
++import { useDividerColor } from "../utils/theme";
++
++export type DividerKind = "line" | "spacer" | "vertical";
++
++/**
++ * Marks where one group of tiles ends (DMs before servers, an open folder's servers before the
++ * rest). In the wrapping grid a line or blank break across the row; in the sideways row a short
++ * vertical line.
++ */
++export default function Divider({ kind }: { kind: DividerKind }) {
++    const color = useDividerColor();
++    if (kind === "vertical") return <View style={[st.vertical, { backgroundColor: color }]} />;
++    if (kind === "spacer") return <View style={st.spacer} />;
++    return <View style={[st.line, { backgroundColor: color }]} />;
++}
++
++const st = StyleSheet.create({
++    vertical: { width: 2, height: Math.round(ICON * 0.6), marginTop: Math.round(ICON * 0.2), borderRadius: 1 },
++    spacer: { width: "100%", height: 2 },
++    line: { width: "100%", height: StyleSheet.hairlineWidth * 2, marginVertical: 4, borderRadius: 1 },
++});
+diff -ruN a/plugins/ServerDrawer/src/components/DmTile.tsx b/plugins/ServerDrawer/src/components/DmTile.tsx
+--- a/plugins/ServerDrawer/src/components/DmTile.tsx	2026-10-14 18:55:01.898211466 -0400
++++ b/plugins/ServerDrawer/src/components/DmTile.tsx	2026-10-14 18:33:44.377352000 -0400
+@@ -1,9 +1,9 @@
+ import React from "react";
+-import { View, Pressable, Image, StyleSheet } from "react-native";
++import { View, Pressable, Image, StyleSheet, Text } from "react-native";
+ import { getAssetIDByName } from "@vendetta/ui/assets";
+-import { findByProps, findByName } from "@vendetta/metro";
++import { findByProps, findByName, findByStoreName } from "@vendetta/metro";
+ 
+-const ICON = 48;
++import { ICON, RADIUS } from "../utils/metrics";
+ 
+ const ChatIcon = getAssetIDByName("ChatIcon");
+ const Haptic = findByProps("triggerHapticFeedback", "HapticFeedbackTypes");
+@@ -12,16 +12,7 @@
+ const Flux = findByProps("useStateFromStores");
+ const NavContext = findByProps("getGuildId");
+ 
+-const tokenRef: any = findByProps("SemanticColor");
+-const Themes: any = tokenRef?.default;
+-const internalResolver: any = Themes?.meta ?? Themes?.internal;
+-const UseThemeMod: any = findByProps("useThemeIndex", "getThemeIndex");
+-
+-function useTokenColor(token: any): string | undefined {
+-    const theme = UseThemeMod?.useTheme?.();
+-    if (!internalResolver || !token || theme == null) return undefined;
+-    return internalResolver.resolveSemanticColor(theme, token);
+-}
++import { Themes, useTokenColor } from "../utils/theme";
+ 
+ function openDms() {
+     Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
+@@ -77,10 +68,78 @@
+ 
+ const st = StyleSheet.create({
+     outer: { width: ICON, height: ICON },
+-    icon: { width: ICON, height: ICON, borderRadius: 16, alignItems: "center", justifyContent: "center" },
++    icon: { width: ICON, height: ICON, borderRadius: RADIUS, alignItems: "center", justifyContent: "center" },
+ });
+ 
+ const railSt = StyleSheet.create({
+     outer: { flex: 1, width: "100%", alignItems: "center", justifyContent: "center" },
+-    icon: { width: ICON, height: ICON, borderRadius: 16, alignItems: "center", justifyContent: "center" },
++    icon: { width: ICON, height: ICON, borderRadius: RADIUS, alignItems: "center", justifyContent: "center" },
++});
++
++const PrivateChannelReadStateStore = findByStoreName("PrivateChannelReadStateStore");
++const ReadStateStore = findByStoreName("ReadStateStore");
++const ChannelStore = findByStoreName("ChannelStore");
++const UserStore = findByStoreName("UserStore");
++const AvatarUtils = findByProps("getUserAvatarURL", "getChannelIconURL");
++
++const sameIds = (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i]);
++
++/** DMs and group DMs with unread messages, as Discord's own server rail lists them. */
++export function useUnreadDms(): string[] {
++    return Flux?.useStateFromStores?.(
++        [PrivateChannelReadStateStore],
++        () => PrivateChannelReadStateStore?.getUnreadPrivateChannelIds?.() ?? [],
++        [],
++        sameIds,
++    ) ?? [];
++}
++
++/** An image source: a CDN url, or a bundled asset id for default avatars and group icons. */
++function dmIcon(channel: any): string | number | undefined {
++    try {
++        if (channel?.type === 1) {
++            const user = UserStore?.getUser?.(channel.getRecipientId?.() ?? channel.recipients?.[0]);
++            return user ? AvatarUtils?.getUserAvatarURL?.(user, false, 128) : undefined;
++        }
++        return AvatarUtils?.getChannelIconURL?.({ id: channel.id, icon: channel.icon, applicationId: channel.application_id, size: 128 });
++    } catch {
++        return undefined;
++    }
++}
++
++/** One unread DM: the person's (or group's) avatar with its mention count. */
++export function UnreadDmTile({ channelId }: { channelId: string }) {
++    const channel = Flux?.useStateFromStores?.([ChannelStore], () => ChannelStore?.getChannel?.(channelId), [channelId]);
++    const mentions = Flux?.useStateFromStores?.([ReadStateStore], () => ReadStateStore?.getMentionCount?.(channelId) ?? 0, [channelId]) ?? 0;
++    const icon = channel ? dmIcon(channel) : undefined;
++    const source = typeof icon === "number" ? icon : icon ? { uri: icon } : undefined;
++
++    return (
++        <Pressable
++            onPress={() => {
++                Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
++                ChannelActions?.selectPrivateChannel?.(channelId);
++            }}
++            style={st.outer}
++        >
++            {source
++                ? <Image source={source} style={unreadSt.avatar} />
++                : <View style={[unreadSt.avatar, unreadSt.fallback]} />}
++            {mentions > 0 && (
++                <View style={unreadSt.outline}>
++                    <View style={unreadSt.badge}>
++                        <Text style={unreadSt.text}>{mentions > 99 ? "99+" : String(mentions)}</Text>
++                    </View>
++                </View>
++            )}
++        </Pressable>
++    );
++}
++
++const unreadSt = StyleSheet.create({
++    avatar: { width: ICON, height: ICON, borderRadius: ICON / 2 },
++    fallback: { backgroundColor: "#5865f2" },
++    outline: { position: "absolute", bottom: -3, right: -3, padding: 2, borderRadius: 999, backgroundColor: "#1a1a2e" },
++    badge: { minWidth: 17, height: 17, borderRadius: 999, backgroundColor: "#ed4245", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
++    text: { color: "#fff", fontSize: 10, fontWeight: "700", lineHeight: 17 },
+ });
 diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerDrawer/src/components/FolderItem.tsx
---- a/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-14 17:27:29.887790968 -0400
-+++ b/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-14 16:17:12.556746400 -0400
-@@ -86,7 +86,22 @@
-     return <Animated.View style={{ opacity }}>{children}</Animated.View>;
+--- a/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-14 18:55:01.898211466 -0400
++++ b/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-14 18:54:46.906792800 -0400
+@@ -1,11 +1,14 @@
+ import React from "react";
+-import { View, Text, Animated, Pressable, Image, ViewStyle, StyleSheet } from "react-native";
++import { View, Text, Animated, Pressable, Image, ViewStyle, StyleSheet, LayoutAnimation } from "react-native";
+ import { find, findByProps, findByStoreName } from "@vendetta/metro";
+ import { getAssetIDByName } from "@vendetta/ui/assets";
++import { storage } from "@vendetta/plugin";
+ import { useFolderExpanded, GuildNode } from "../utils/theme";
+ import GuildIcon from "./GuildIcon";
+ import GuildItem from "./GuildItem";
+ import { ContextMenuModal, ContextMenuItem } from "./ContextMenuModal";
++import SelectionRing, { SELECTED_SCALE, useIsSelected } from "./SelectionRing";
++import Divider, { DividerKind } from "./Dividers";
+ 
+ const GuildActions = findByProps("toggleGuildFolderExpand");
+ const Flux = findByProps("useStateFromStores");
+@@ -14,14 +17,14 @@
+ const Haptic = findByProps("triggerHapticFeedback", "HapticFeedbackTypes");
+ const colors = findByProps("colors", "unsafe_rawColors")?.colors;
+ 
+-const ICON = 48;
+-const MINI = 16;
++import { ICON, MINI, RADIUS } from "../utils/metrics";
+ 
++const INSET = Math.round((ICON - MINI * 2) / 3);
+ const POS: ViewStyle[] = [
+-    { top: 6, left: 6 },
+-    { top: 6, right: 6 },
+-    { bottom: 6, left: 6 },
+-    { bottom: 6, right: 6 },
++    { top: INSET, left: INSET },
++    { top: INSET, right: INSET },
++    { bottom: INSET, left: INSET },
++    { bottom: INSET, right: INSET },
+ ];
+ 
+ const FOLDER_ASSET = getAssetIDByName("FolderIcon");
+@@ -74,22 +77,56 @@
+ 
+ const fc = StyleSheet.create({
+     outer: { width: ICON, height: ICON },
+-    icon: { width: ICON, height: ICON, borderRadius: 16, overflow: "hidden" },
+-    cell: { position: "absolute", width: MINI, height: MINI, borderRadius: 8, overflow: "hidden" },
++    icon: { width: ICON, height: ICON, borderRadius: RADIUS, overflow: "hidden" },
++    cell: { position: "absolute", width: MINI, height: MINI, borderRadius: Math.round(MINI / 2), overflow: "hidden" },
+ });
+ 
+-function FadeIn({ children }: { children: React.ReactNode }) {
+-    const opacity = React.useRef(new Animated.Value(0)).current;
++/**
++ * An opened folder's server sliding out of the folder: each one starts tucked behind the folder
++ * (shifted back, shrunk, transparent) and springs into place, one after another.
++ */
++function SlideOut({ index, children }: { index: number; children: React.ReactNode }) {
++    const animate = storage.folderAnimation !== false;
++    const progress = React.useRef(new Animated.Value(animate ? 0 : 1)).current;
+     React.useEffect(() => {
+-        Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
++        if (!animate) return;
++        Animated.spring(progress, { toValue: 1, delay: index * 30, damping: 16, stiffness: 200, mass: 0.8, useNativeDriver: true }).start();
+     }, []);
+-    return <Animated.View style={{ opacity }}>{children}</Animated.View>;
++    const shift = -(ICON + 6) * Math.min(index + 1, 3);
++    return (
++        <Animated.View style={{
++            opacity: progress.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 0.9, 1] }),
++            transform: [
++                { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [shift, 0] }) },
++                { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) },
++            ],
++        }}>
++            {children}
++        </Animated.View>
++    );
  }
  
 -export default function FolderItem({ node, onPick, showNames }: { node: GuildNode; onPick: (id: string) => void; showNames?: boolean }) {
@@ -84,68 +487,337 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
 +    node: GuildNode;
 +    onPick: (id: string) => void;
 +    showNames?: boolean;
-+    /** Open folders list their servers in a separate rail, not inline. */
-+    sidebar?: boolean;
-+    /** A line after an open folder's servers, before the next servers. */
-+    separator?: boolean;
++    /** What marks the end of an open folder's servers. */
++    divider?: DividerKind;
 +}
 +
-+export default function FolderItem({ node, onPick, showNames, sidebar, separator }: FolderItemProps) {
++export default function FolderItem({ node, onPick, showNames, divider }: FolderItemProps) {
      const open = useFolderExpanded(node.id);
  
      const toggle = () => {
-@@ -191,11 +206,12 @@
++        // The rest of the tiles glide to their new places instead of jumping.
++        if (storage.folderAnimation !== false) {
++            LayoutAnimation.configureNext(LayoutAnimation.create(220, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
++        }
+         GuildActions?.toggleGuildFolderExpand?.(node.id);
+     };
+ 
+@@ -101,13 +138,13 @@
+         Animated.spring(scale, { toValue: v, useNativeDriver: true, damping: 14, stiffness: 220 }).start();
+     }, [scale]);
+ 
++    // Opening swaps the button for its open form, whose Pressable never sees the press end.
++    React.useEffect(() => setPressed(false), [open]);
++    const holdsSelected = useIsSelected(node.children.map((child) => String(child.id)));
++    const ringed = holdsSelected && !open;
+     React.useEffect(() => {
+-        springTo(pressed ? 0.85 : 1);
+-    }, [pressed, springTo]);
+-
+-    React.useEffect(() => {
+-        springTo(1);
+-    }, [open, springTo]);
++        springTo(pressed ? 0.85 : ringed ? SELECTED_SCALE : 1);
++    }, [pressed, ringed, springTo]);
+ 
+     const [menuState, setMenuState] = React.useState<{
+         visible: boolean;
+@@ -176,6 +213,7 @@
+         >
+             <View ref={viewRef} collapsable={false}>
+                 <Animated.View style={{ transform: [{ scale }] }}>{content}</Animated.View>
++                {ringed && <SelectionRing />}
+             </View>
+         </Pressable>
+     );
+@@ -191,11 +229,12 @@
                              </View>,
                          ),
                      )}
 -                    {node.children.map((ch) => (
-+                    {!sidebar && node.children.map((ch) => (
-                         <FadeIn key={ch.id}>
+-                        <FadeIn key={ch.id}>
++                    {node.children.map((ch, i) => (
++                        <SlideOut key={ch.id} index={i}>
                              <GuildItem node={ch} onPick={onPick} showNames={showNames} />
-                         </FadeIn>
+-                        </FadeIn>
++                        </SlideOut>
                      ))}
-+                    {!sidebar && separator && <RowSeparator />}
++                    {divider && <Divider kind={divider} />}
                  </>
              ) : (
                  folderButton(folderContent(<FolderCover node={node} />))
+@@ -217,7 +256,7 @@
+     openIcon: {
+         width: ICON,
+         height: ICON,
+-        borderRadius: 16,
++        borderRadius: RADIUS,
+         alignItems: "center",
+         justifyContent: "center",
+     },
+diff -ruN a/plugins/ServerDrawer/src/components/GuildIcon.tsx b/plugins/ServerDrawer/src/components/GuildIcon.tsx
+--- a/plugins/ServerDrawer/src/components/GuildIcon.tsx	2026-10-14 18:55:01.898211466 -0400
++++ b/plugins/ServerDrawer/src/components/GuildIcon.tsx	2026-10-14 18:31:36.836335600 -0400
+@@ -5,14 +5,14 @@
+ const GuildStore = findByStoreName("GuildStore");
+ const colors = findByProps("colors", "unsafe_rawColors")?.colors;
+ 
+-export default function GuildIcon({ id, size = 48 }: { id: string; size?: number }) {
++export default function GuildIcon({ id, size = 40 }: { id: string; size?: number }) {
+     const g = GuildStore?.getGuild(id);
+     if (!g) return null;
+-    const rad = size >= 40 ? 16 : 8;
++    const rad = size >= 30 ? Math.round(size / 3) : Math.round(size / 2);
+     if (g.icon) {
+         return (
+             <Image
+-                source={{ uri: `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=${size * 2}` }}
++                source={{ uri: `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=128` }}
+                 style={{ width: size, height: size, borderRadius: rad }}
+             />
+         );
+diff -ruN a/plugins/ServerDrawer/src/components/GuildItem.tsx b/plugins/ServerDrawer/src/components/GuildItem.tsx
+--- a/plugins/ServerDrawer/src/components/GuildItem.tsx	2026-10-14 18:55:01.898211466 -0400
++++ b/plugins/ServerDrawer/src/components/GuildItem.tsx	2026-10-14 18:28:29.198806300 -0400
+@@ -4,8 +4,9 @@
+ import { GuildNode } from "../utils/theme";
+ import GuildIcon from "./GuildIcon";
+ import { ContextMenuModal, ContextMenuItem } from "./ContextMenuModal";
++import SelectionRing, { SELECTED_SCALE, useIsSelected } from "./SelectionRing";
+ 
+-const ICON = 48;
++import { ICON, RADIUS } from "../utils/metrics";
+ 
+ const Flux = findByProps("useStateFromStores");
+ const GuildReadStateStore = findByStoreName("GuildReadStateStore");
+@@ -57,9 +58,10 @@
+         Animated.spring(scale, { toValue: v, useNativeDriver: true, damping: 14, stiffness: 220 }).start();
+     }, [scale]);
+ 
++    const selected = useIsSelected([node.id as string]);
+     React.useEffect(() => {
+-        springTo(pressed ? 0.85 : 1);
+-    }, [pressed, springTo]);
++        springTo(pressed ? 0.85 * (selected ? SELECTED_SCALE : 1) : selected ? SELECTED_SCALE : 1);
++    }, [pressed, selected, springTo]);
+ 
+     const [menuState, setMenuState] = React.useState<{
+         visible: boolean;
+@@ -128,8 +130,9 @@
+                 <View style={st.outer}>
+                     <View ref={viewRef} style={st.iconWrap} collapsable={false}>
+                         <Animated.View style={[st.icon, { transform: [{ scale }] }]}>
+-                            <GuildIcon id={guildId} />
++                            <GuildIcon id={guildId} size={ICON} />
+                         </Animated.View>
++                        {selected && <SelectionRing />}
+                         <Badge guildId={guildId} />
+                     </View>
+                     {showNames && (
+@@ -154,7 +157,7 @@
+ const st = StyleSheet.create({
+     outer: { width: ICON, alignItems: "center" },
+     iconWrap: { width: ICON, height: ICON },
+-    icon: { width: ICON, height: ICON, borderRadius: 16, overflow: "hidden" },
++    icon: { width: ICON, height: ICON, borderRadius: RADIUS, overflow: "hidden" },
+     label: {
+         marginTop: 4,
+         width: ICON,
+diff -ruN a/plugins/ServerDrawer/src/components/ReadAllTile.tsx b/plugins/ServerDrawer/src/components/ReadAllTile.tsx
+--- a/plugins/ServerDrawer/src/components/ReadAllTile.tsx	1969-12-31 19:00:00.000000000 -0500
++++ b/plugins/ServerDrawer/src/components/ReadAllTile.tsx	2026-10-14 18:54:46.905369700 -0400
+@@ -0,0 +1,36 @@
++import React from "react";
++import { Pressable, StyleSheet, Text, View } from "react-native";
++import { ICON, RADIUS } from "../utils/metrics";
++import { Themes, useTextColor, useTokenColor } from "../utils/theme";
++
++const WIDTH = 22;
++
++/** Read All's own action, when that plugin is on (it shares it as `globalThis.__readAllPress`). */
++const readAll = () => (globalThis as any).__readAllPress as (() => void) | undefined;
++
++/** A thin tile with "Read All" running sideways, for the drawer's row and grid. */
++export default function ReadAllTile() {
++    const press = readAll();
++    const background = useTokenColor(Themes?.colors?.MOBILE_GUILDBAR_ICON_BACKGROUND_DEFAULT);
++    const color = useTextColor();
++    if (!press) return null;
++    return (
++        <Pressable
++            accessibilityRole="button"
++            accessibilityLabel="Read All"
++            onPress={() => readAll()?.()}
++            onLongPress={() => ((globalThis as any).__readAllLongPress ?? readAll())?.()}
++            delayLongPress={450}
++        >
++            <View style={[st.tile, { backgroundColor: background }]}>
++                <Text numberOfLines={1} style={[st.label, { color }]}>Read All</Text>
++            </View>
++        </Pressable>
++    );
++}
++
++const st = StyleSheet.create({
++    tile: { width: WIDTH, height: ICON, borderRadius: Math.min(RADIUS, WIDTH / 2), alignItems: "center", justifyContent: "center" },
++    // Rotated text is laid out before turning, so it gets the tile's height (plus room) as its width.
++    label: { width: ICON + 24, textAlign: "center", fontSize: 8, fontWeight: "700", transform: [{ rotate: "-90deg" }] },
++});
+diff -ruN a/plugins/ServerDrawer/src/components/SelectionRing.tsx b/plugins/ServerDrawer/src/components/SelectionRing.tsx
+--- a/plugins/ServerDrawer/src/components/SelectionRing.tsx	1969-12-31 19:00:00.000000000 -0500
++++ b/plugins/ServerDrawer/src/components/SelectionRing.tsx	2026-10-14 18:28:29.197831000 -0400
+@@ -0,0 +1,30 @@
++import React from "react";
++import { StyleSheet, View } from "react-native";
++import { findByProps, findByStoreName } from "@vendetta/metro";
++import { ICON, RADIUS } from "../utils/metrics";
++import { useTextColor } from "../utils/theme";
++
++const Flux = findByProps("useStateFromStores");
++const SelectedGuildStore = findByStoreName("SelectedGuildStore");
++
++/** Scale of a selected tile's icon, leaving a gap inside the ring. */
++export const SELECTED_SCALE = 0.78;
++
++/** Whether the server you're in is `guildId` (or, for a folder, one of `guildIds`). */
++export function useIsSelected(guildIds: string[]): boolean {
++    return Flux?.useStateFromStores?.(
++        [SelectedGuildStore],
++        () => guildIds.includes(SelectedGuildStore?.getGuildId?.()),
++        [guildIds.join()],
++    ) ?? false;
++}
++
++/** The gapped outline around the selected server, in the theme's message text colour. */
++export default function SelectionRing() {
++    const color = useTextColor();
++    return <View pointerEvents="none" style={[st.ring, { borderColor: color }]} />;
++}
++
++const st = StyleSheet.create({
++    ring: { position: "absolute", top: 0, left: 0, width: ICON, height: ICON, borderRadius: RADIUS, borderWidth: 2 },
++});
 diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx
---- a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-14 17:27:29.887790968 -0400
-+++ b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-14 16:17:12.557492600 -0400
-@@ -7,6 +7,7 @@
+--- a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-14 18:55:01.898211466 -0400
++++ b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-14 18:49:34.611006400 -0400
+@@ -7,7 +7,9 @@
  import { getGestureContext } from "../utils/gestureContext";
  import GuildItem from "./GuildItem";
  import FolderItem from "./FolderItem";
-+import { useExpandedFolders } from "../utils/theme";
- import DmTile from "./DmTile";
+-import DmTile from "./DmTile";
++import DmTile, { UnreadDmTile, useUnreadDms } from "./DmTile";
++import Divider, { DividerKind } from "./Dividers";
++import ReadAllTile from "./ReadAllTile";
  
  const Flux = findByProps("useStateFromStores");
-@@ -64,6 +65,7 @@
- const ICON = 48;
- const GAP = 6;
- const PAD = 12;
-+const RAIL = ICON + 20;
+ const SortedGuildStore = findByStoreName("SortedGuildStore");
+@@ -61,9 +63,7 @@
+     );
+ }
+ 
+-const ICON = 48;
+-const GAP = 6;
+-const PAD = 12;
++import { GAP, ICON, PAD, RADIUS, TOP_PAD } from "../utils/metrics";
  
  const FallbackGestureContext = React.createContext(null);
  
-@@ -172,24 +174,42 @@
+@@ -89,7 +89,7 @@
+     );
+ }
  
-     const { width: winW } = Dimensions.get("window");
+-export default function ServerDrawerSheet({ gestureContext }: { gestureContext: any }) {
++export default function ServerDrawerSheet({ gestureContext, variant = "grid" }: { gestureContext: any; variant?: "row" | "grid" }) {
+     useProxy(storage);
  
+     const pick = React.useCallback((id: string) => {
+@@ -113,12 +113,6 @@
+     const ctx = React.useContext(gestureCtx ?? FallbackGestureContext) as any;
+     const minH = ctx?.minExpandedContentHeight;
+ 
+-    const onLayout = React.useCallback((e: any) => {
+-        if (!minH) return;
+-        const h = e.nativeEvent.layout.height;
+-        if (minH.get() !== h) minH.set(h);
+-    }, [minH]);
+-
+     const extCtx = ExternalContext ? React.useContext(ExternalContext) as any : null;
+     const setMode = extCtx?.setRestingQuestDockMode;
+ 
+@@ -170,28 +164,77 @@
+         return () => sub.remove();
+     }, [setMode, specs]);
+ 
+-    const { width: winW } = Dimensions.get("window");
+-
 -    const cols = Math.max(3, Math.floor((winW - PAD * 2 + GAP) / (ICON + GAP)));
-+    const sidebar = storage.folderLayout === "sidebar";
-+    const openFolders = useExpandedFolders(nodes);
-+    const showRail = sidebar && openFolders.length > 0;
-+    // The rail takes its room only while a folder is open.
-+    const gridW = winW - (showRail ? RAIL : 0);
-+
-+    const cols = Math.max(3, Math.floor((gridW - PAD * 2 + GAP) / (ICON + GAP)));
-     const totalW = cols * ICON + (cols - 1) * GAP;
+-    const totalW = cols * ICON + (cols - 1) * GAP;
 -    const padX = Math.max(0, (winW - totalW) / 2);
-+    const padX = Math.max(0, (gridW - totalW) / 2);
- 
++    // The dock mounts its closed and open content together and each normally fades itself out;
++    // ours don't, so follow the dock's mode (a shared value React can't subscribe to) by polling.
++    const activeMode = ctx?.activeQuestDockMode;
++    const [open, setOpen] = React.useState(false);
++    React.useEffect(() => {
++        if (!activeMode) return;
++        const read = () => {
++            try {
++                const mode = activeMode.value ?? activeMode.get?.();
++                setOpen(mode != null && mode !== (QuestDockMode?.COLLAPSED ?? "collapsed"));
++            } catch {
++                // keep the last known state
++            }
++        };
++        read();
++        const timer = setInterval(read, 100);
++        return () => clearInterval(timer);
++    }, [activeMode]);
++
 +    const separator = storage.folderSeparator !== false;
++    const showNames = !!storage.showGuildNames;
++    const unreadDms = useUnreadDms();
++    const row = variant === "row";
++    // Where DMs end and servers begin, and where an open folder's servers end: always marked, as a
++    // short line in the row, and a line (or, with the separator setting off, a gap) in the grid.
++    const groupEnd: DividerKind = row ? "vertical" : "line";
++    const folderEnd: DividerKind = row ? "vertical" : separator ? "line" : "spacer";
++    const hasDmGroup = !storage.hideDmTile || unreadDms.length > 0;
++    const tiles = (
++        <>
++            <ReadAllTile />
++            {!storage.hideDmTile && <DmTile />}
++            {unreadDms.map((id) => <UnreadDmTile key={id} channelId={id} />)}
++            {hasDmGroup && <Divider kind={groupEnd} />}
++            {nodes.map((node) =>
++                node.type === "folder"
++                    ? <FolderItem key={node.id} node={node} onPick={pick} showNames={showNames} divider={folderEnd} />
++                    : <GuildItem key={node.id} node={node} onPick={pick} showNames={showNames} />
++            )}
++            <CreateJoinButton onPress={openCreateJoin} />
++            {isDiscoveryEnabled() && <DiscoveryTile onPress={openDiscovery} />}
++        </>
++    );
+ 
++    // The dock mounts both its closed and open content at once and fades between them, so each
++    // variant is its own component: the closed one is a single row that swipes sideways.
++    if (variant === "row") {
++        return (
++            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={st.rowScroll} contentContainerStyle={[st.row, { gap: GAP, paddingHorizontal: PAD }]}>
++                {tiles}
++            </ScrollView>
++        );
++    }
++
++    // Open: the whole grid, as tall as its content up to a share of the screen so the dock can
++    // still be dragged shut and there's room to tap outside it.
++    const maxHeight = Math.round(Dimensions.get("window").height * 0.5);
++    const onGridLayout = (e: any) => {
++        if (!minH) return;
++        const h = Math.min(e.nativeEvent.layout.height, maxHeight);
++        if (minH.get() !== h) minH.set(h);
++    };
++    // Kept mounted while the dock is closed so the dock knows how tall to open.
      return (
-         <ScrollView style={st.alignTop} showsVerticalScrollIndicator={false}>
+-        <ScrollView style={st.alignTop} showsVerticalScrollIndicator={false}>
 -            <View
 -                style={[st.grid, { paddingHorizontal: padX, gap: GAP }]}
 -                onLayout={onLayout}
@@ -155,65 +827,180 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
 -                    node.type === "folder"
 -                        ? <FolderItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
 -                        : <GuildItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
-+            <View style={st.split} onLayout={onLayout}>
-+                <View style={[st.grid, { width: gridW, paddingHorizontal: padX, gap: GAP }]}>
-+                    {!storage.hideDmTile && <DmTile />}
-+                    {nodes.map((node) =>
-+                        node.type === "folder"
-+                            ? <FolderItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} sidebar={sidebar} separator={separator} />
-+                            : <GuildItem key={node.id} node={node} onPick={pick} showNames={!!storage.showGuildNames} />
-+                    )}
-+                    <CreateJoinButton onPress={openCreateJoin} />
-+                    {isDiscoveryEnabled() && <DiscoveryTile onPress={openDiscovery} />}
-+                </View>
-+                {showRail && (
-+                    <View style={st.rail}>
-+                        {openFolders.map((folder, i) => (
-+                            <View key={folder.id} style={st.railFolder}>
-+                                {i > 0 && separator && <View style={st.railLine} />}
-+                                {folder.children.map((child) => (
-+                                    <GuildItem key={child.id} node={child} onPick={pick} showNames={!!storage.showGuildNames} />
-+                                ))}
-+                            </View>
-+                        ))}
-+                    </View>
-                 )}
+-                )}
 -                <CreateJoinButton onPress={openCreateJoin} />
 -                {isDiscoveryEnabled() && <DiscoveryTile onPress={openDiscovery} />}
-             </View>
-         </ScrollView>
+-            </View>
+-        </ScrollView>
++        <View pointerEvents={open ? "auto" : "none"} collapsable={false}>
++            <ScrollView style={{ maxHeight, opacity: open ? 1 : 0 }} showsVerticalScrollIndicator={false}>
++                <View style={[st.grid, { paddingHorizontal: PAD, gap: GAP }]} onLayout={onGridLayout}>
++                    {tiles}
++                </View>
++            </ScrollView>
++        </View>
      );
-@@ -201,6 +221,28 @@
+ }
+ 
+@@ -201,16 +244,29 @@
          justifyContent: "flex-start",
          alignItems: "flex-start",
      },
-+    split: {
++    // The closed dock is a 56pt card that centres its content, so the row needs a size of its own.
++    gridHost: {
++        flex: 1,
++    },
++    rowScroll: {
++        width: "100%",
++        height: "100%",
++    },
++    row: {
 +        flexDirection: "row",
 +        alignItems: "flex-start",
-+    },
-+    rail: {
-+        width: RAIL,
-+        alignItems: "center",
-+        paddingTop: 4,
-+        paddingBottom: 16,
-+        borderLeftWidth: StyleSheet.hairlineWidth * 2,
-+        borderLeftColor: "rgba(255,255,255,0.18)",
-+    },
-+    railFolder: {
-+        gap: GAP,
-+        alignItems: "center",
-+    },
-+    railLine: {
-+        width: ICON - 12,
-+        height: StyleSheet.hairlineWidth * 2,
-+        marginVertical: 4,
-+        backgroundColor: "rgba(255,255,255,0.18)",
++        paddingTop: TOP_PAD,
 +    },
      grid: {
          flexDirection: "row",
          flexWrap: "wrap",
+-        paddingTop: 4,
++        paddingTop: TOP_PAD,
+         paddingBottom: 16,
+     },
+     createJoin: {
+         width: ICON,
+         height: ICON,
+-        borderRadius: 16,
++        borderRadius: RADIUS,
+         backgroundColor: createJoinBg,
+         alignItems: "center",
+         justifyContent: "center",
+@@ -218,7 +274,7 @@
+     discoveryTile: {
+         width: ICON,
+         height: ICON,
+-        borderRadius: 16,
++        borderRadius: RADIUS,
+         alignItems: "center",
+         justifyContent: "center",
+     },
+diff -ruN a/plugins/ServerDrawer/src/index.tsx b/plugins/ServerDrawer/src/index.tsx
+--- a/plugins/ServerDrawer/src/index.tsx	2026-10-14 18:55:01.898211466 -0400
++++ b/plugins/ServerDrawer/src/index.tsx	2026-10-14 18:31:43.193941300 -0400
+@@ -3,7 +3,7 @@
+ import { patchMobileQuestDock } from "./patches/mobileQuestDock";
+ import { patchQuestEligibility } from "./patches/questEligibility";
+ import { patchDockAssetPrefetch } from "./patches/dockAssetPrefetch";
+-import { patchExpanded, patchEmpty } from "./patches/contentPatch";
++import { patchExpanded, patchEmpty, patchCollapsed } from "./patches/contentPatch";
+ import { patchHideGuildsBar, isHidingComplete } from "./patches/hideGuildsBar";
+ import { patchTransparentBackground } from "./patches/transparentBackground";
+ import { patchCreateElement } from "./patches/createElementIntercept";
+@@ -17,6 +17,7 @@
+     onLoad() {
+         storage.hideDmTile ??= false;
+         storage.showGuildNames ??= false;
++        storage.hideOnScroll ??= false;
+ 
+         console.log(TAG, "onLoad");
+ 
+@@ -31,7 +32,7 @@
+         if (patchQuestEligibility(cleanups)) patched++;
+         if (patchDockAssetPrefetch(cleanups)) patched++;
+         if (patchExpanded(cleanups)) patched++;
+-        if (patchEmpty("QuestDockContentCollapsed", cleanups)) patched++;
++        if (patchCollapsed(cleanups)) patched++;
+         if (patchEmpty("QuestDockEnrolledHeader", cleanups)) patched++;
+         if (patchEmpty("QuestDockUnenrolledHeader", cleanups)) patched++;
+         if (patchEmpty("QuestDockEnrolledBody", cleanups)) patched++;
+diff -ruN a/plugins/ServerDrawer/src/patches/contentPatch.tsx b/plugins/ServerDrawer/src/patches/contentPatch.tsx
+--- a/plugins/ServerDrawer/src/patches/contentPatch.tsx	2026-10-14 18:55:01.898211466 -0400
++++ b/plugins/ServerDrawer/src/patches/contentPatch.tsx	2026-10-14 18:15:26.159207900 -0400
+@@ -1,6 +1,8 @@
+ import { find } from "@vendetta/metro";
+ import { React } from "@vendetta/metro/common";
+ import ServerDrawerSheet from "../components/ServerDrawerSheet";
++import CollapsedOverlay, { CollapsedCardTracker } from "../components/CollapsedOverlay";
++import { after } from "@vendetta/patcher";
+ import { registerIntercept, registerTypeDetector } from "./createElementIntercept";
+ import { getGestureContext } from "../utils/gestureContext";
+ 
+@@ -18,7 +20,7 @@
+     cleanups: (() => void)[]
+ ): boolean {
+     registerTypeDetector("ServerDrawer.Expanded", isNamed("QuestDockContentExpanded"), (real) => {
+-        registerIntercept(real, ServerDrawerSheet, { gestureContext: getGestureContext() });
++        registerIntercept(real, ServerDrawerSheet, { gestureContext: getGestureContext(), variant: "grid" });
+         console.log(TAG, "PATCH: QuestDockContentExpanded replaced (type detector)");
+     }, { persistent: true });
+ 
+@@ -29,10 +31,10 @@
+     }
+     const orig = mod.type;
+ 
+-    registerIntercept(orig, ServerDrawerSheet, { gestureContext: getGestureContext() });
++    registerIntercept(orig, ServerDrawerSheet, { gestureContext: getGestureContext(), variant: "grid" });
+ 
+     mod.type = function ServerDrawerPatch() {
+-        return <ServerDrawerSheet gestureContext={getGestureContext()} />;
++        return <ServerDrawerSheet gestureContext={getGestureContext()} variant="grid" />;
+     };
+     cleanups.push(() => { mod.type = orig; });
+     console.log(TAG, "PATCH: QuestDockContentExpanded replaced (module mutation)");
+@@ -41,10 +43,13 @@
+ 
+ export function patchEmpty(
+     name: string,
+-    cleanups: (() => void)[]
++    cleanups: (() => void)[],
++    /** What renders instead; nothing by default. */
++    Replacement: React.ComponentType<any> = function EmptyPatch() { return null; },
++    extraProps?: Record<string, any>,
+ ): boolean {
+     registerTypeDetector(`ServerDrawer.Empty.${name}`, isNamed(name), (real) => {
+-        registerIntercept(real, function EmptyPatch() { return null; });
++        registerIntercept(real, Replacement, extraProps);
+         console.log(TAG, `PATCH: ${name} replaced (type detector)`);
+     }, { persistent: true });
+ 
+@@ -56,9 +61,7 @@
+     const orig = mod.type;
+     const originalComponent = orig;
+ 
+-    mod.type = function EmptyPatch() {
+-        return null;
+-    };
++    mod.type = Replacement as any;
+ 
+     if (originalComponent) {
+         Object.defineProperties(mod.type, Object.getOwnPropertyDescriptors(originalComponent));
+@@ -68,3 +71,25 @@
+     cleanups.push(() => { mod.type = orig; });
+     return true;
+ }
++
++/**
++ * The closed dock shows a sideways-scrolling row of servers. The card itself only reports its
++ * position; the row is drawn over it from outside the dock's gesture detector (see CollapsedOverlay).
++ */
++export function patchCollapsed(cleanups: (() => void)[]): boolean {
++    patchEmpty("QuestDockContentCollapsed", cleanups, CollapsedCardTracker);
++
++    const mod = find((m) => m?.default?.type?.name === "QuestDockGestureDetector");
++    if (!mod?.default?.type) {
++        console.log(TAG, "WARN: QuestDockGestureDetector not found; the closed dock shows no servers");
++        return true;
++    }
++    cleanups.push(after("type", mod.default, (_args: any[], ret: any) => (
++        <>
++            {ret}
++            <CollapsedOverlay gestureContext={getGestureContext()} />
++        </>
++    )));
++    console.log(TAG, "PATCH: closed dock row drawn over the card");
++    return true;
++}
 diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx
---- a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-14 17:27:29.888194249 -0400
+--- a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-14 18:55:01.898429072 -0400
 +++ b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-14 17:27:15.902751300 -0400
 @@ -1,6 +1,7 @@
  import React from "react";
@@ -270,22 +1057,30 @@ diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerD
      rescanHiding(cleanups);
  
 diff -ruN a/plugins/ServerDrawer/src/ui/Settings.tsx b/plugins/ServerDrawer/src/ui/Settings.tsx
---- a/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-14 17:27:29.888194249 -0400
-+++ b/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-14 16:17:12.557053800 -0400
-@@ -22,6 +22,20 @@
+--- a/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-14 18:55:01.898429072 -0400
++++ b/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-14 18:54:46.907079300 -0400
+@@ -22,6 +22,28 @@
                          onValueChange={(v: boolean) => { storage.showGuildNames = v; }}
                      />
                  </TableRowGroup>
++                <TableRowGroup title="Dock">
++                    <TableSwitchRow
++                        label="Hide while scrolling"
++                        subLabel="Tuck the server row away when you scroll down a list and bring it back when you scroll up (Discord's behaviour for the quest dock)."
++                        value={!!storage.hideOnScroll}
++                        onValueChange={(v: boolean) => { storage.hideOnScroll = v; }}
++                    />
++                </TableRowGroup>
 +                <TableRowGroup title="Folders">
 +                    <TableSwitchRow
-+                        label="Open folders in a side list"
-+                        subLabel="An open folder's servers appear in their own list to the right of the grid instead of among the other servers. The list only takes room while a folder is open."
-+                        value={storage.folderLayout === "sidebar"}
-+                        onValueChange={(v: boolean) => { storage.folderLayout = v ? "sidebar" : "inline"; }}
++                        label="Folder animation"
++                        subLabel="An opening folder's servers slide out of it, and the rest glide to their new places."
++                        value={storage.folderAnimation !== false}
++                        onValueChange={(v: boolean) => { storage.folderAnimation = v; }}
 +                    />
 +                    <TableSwitchRow
 +                        label="Separator after open folders"
-+                        subLabel="Draw a line where an open folder's servers end and the rest of your servers continue."
++                        subLabel="Draw a line where an open folder's servers end and the rest of your servers continue (in the open drawer)."
 +                        value={storage.folderSeparator !== false}
 +                        onValueChange={(v: boolean) => { storage.folderSeparator = v; }}
 +                    />
@@ -293,24 +1088,52 @@ diff -ruN a/plugins/ServerDrawer/src/ui/Settings.tsx b/plugins/ServerDrawer/src/
                  <TableRowGroup title="About">
                      <TableRow
                          label="Server Drawer"
+diff -ruN a/plugins/ServerDrawer/src/utils/metrics.ts b/plugins/ServerDrawer/src/utils/metrics.ts
+--- a/plugins/ServerDrawer/src/utils/metrics.ts	1969-12-31 19:00:00.000000000 -0500
++++ b/plugins/ServerDrawer/src/utils/metrics.ts	2026-10-14 17:49:04.048234100 -0400
+@@ -0,0 +1,16 @@
++import { Dimensions } from "react-native";
++
++// Tile size for the drawer's grid. Sized so a whole number of tiles fills the width with a small
++// margin on each side (a fixed 48px tile left an uneven gap on the left and looked oversized).
++const TARGET = 40;
++export const GAP = 6;
++export const PAD = 10;
++
++const width = Dimensions.get("window").width;
++const columns = Math.max(4, Math.floor((width - PAD * 2 + GAP) / (TARGET + GAP)));
++
++export const ICON = Math.floor((width - PAD * 2 - (columns - 1) * GAP) / columns);
++export const RADIUS = Math.round(ICON / 3);
++/** Server icons inside a folder tile. */
++export const MINI = Math.round(ICON / 3);
++export const TOP_PAD = 11;
 diff -ruN a/plugins/ServerDrawer/src/utils/theme.ts b/plugins/ServerDrawer/src/utils/theme.ts
---- a/plugins/ServerDrawer/src/utils/theme.ts	2026-10-14 17:27:29.888489956 -0400
-+++ b/plugins/ServerDrawer/src/utils/theme.ts	2026-10-14 16:17:12.557757700 -0400
-@@ -31,3 +31,17 @@
+--- a/plugins/ServerDrawer/src/utils/theme.ts	2026-10-14 18:55:01.898723629 -0400
++++ b/plugins/ServerDrawer/src/utils/theme.ts	2026-10-14 18:27:55.774836300 -0400
+@@ -31,3 +31,25 @@
      expanded?: boolean;
      children: GuildNode[];
  }
 +
-+/** The expanded folders among `nodes`, in list order. */
-+export function useExpandedFolders(nodes: GuildNode[]): GuildNode[] {
-+    const ids: string[] = Flux?.useStateFromStores?.(
-+        [ExpandedGuildFolderStore],
-+        () => {
-+            const open = ExpandedGuildFolderStore?.getExpandedFolders?.();
-+            return open instanceof Set ? [...open].map(String) : [];
-+        },
-+        [],
-+        (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i]),
-+    ) ?? [];
-+    return nodes.filter((node) => node.type === "folder" && ids.includes(String(node.id)));
++const tokenRef: any = findByProps("SemanticColor");
++export const Themes: any = tokenRef?.default;
++const internalResolver: any = Themes?.meta ?? Themes?.internal;
++const UseThemeMod: any = findByProps("useThemeIndex", "getThemeIndex");
++
++/** A semantic colour token resolved for the current theme (light/dark), re-rendering on theme change. */
++export function useTokenColor(token: any): string | undefined {
++    const theme = UseThemeMod?.useTheme?.();
++    if (!internalResolver || !token || theme == null) return undefined;
++    return internalResolver.resolveSemanticColor(theme, token);
++}
++
++/** Colour of message text in the current theme: used for the selected-server ring. */
++export function useTextColor(): string {
++    return useTokenColor(Themes?.colors?.TEXT_DEFAULT ?? Themes?.colors?.TEXT_NORMAL) ?? "#dbdee1";
++}
++
++/** Colour for the thin dividers between groups of tiles. */
++export function useDividerColor(): string {
++    return useTokenColor(Themes?.colors?.BORDER_SUBTLE ?? Themes?.colors?.BACKGROUND_MODIFIER_ACCENT) ?? "rgba(255,255,255,0.18)";
 +}

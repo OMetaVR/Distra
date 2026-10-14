@@ -4,8 +4,9 @@ import { find, findByProps, findByStoreName } from "@vendetta/metro";
 import { GuildNode } from "../utils/theme";
 import GuildIcon from "./GuildIcon";
 import { ContextMenuModal, ContextMenuItem } from "./ContextMenuModal";
+import SelectionRing, { SELECTED_SCALE, useIsSelected } from "./SelectionRing";
 
-const ICON = 48;
+import { ICON, RADIUS } from "../utils/metrics";
 
 const Flux = findByProps("useStateFromStores");
 const GuildReadStateStore = findByStoreName("GuildReadStateStore");
@@ -57,9 +58,10 @@ export default function GuildItem({ node, onPick, showNames }: { node: GuildNode
         Animated.spring(scale, { toValue: v, useNativeDriver: true, damping: 14, stiffness: 220 }).start();
     }, [scale]);
 
+    const selected = useIsSelected([node.id as string]);
     React.useEffect(() => {
-        springTo(pressed ? 0.85 : 1);
-    }, [pressed, springTo]);
+        springTo(pressed ? 0.85 * (selected ? SELECTED_SCALE : 1) : selected ? SELECTED_SCALE : 1);
+    }, [pressed, selected, springTo]);
 
     const [menuState, setMenuState] = React.useState<{
         visible: boolean;
@@ -128,8 +130,9 @@ export default function GuildItem({ node, onPick, showNames }: { node: GuildNode
                 <View style={st.outer}>
                     <View ref={viewRef} style={st.iconWrap} collapsable={false}>
                         <Animated.View style={[st.icon, { transform: [{ scale }] }]}>
-                            <GuildIcon id={guildId} />
+                            <GuildIcon id={guildId} size={ICON} />
                         </Animated.View>
+                        {selected && <SelectionRing />}
                         <Badge guildId={guildId} />
                     </View>
                     {showNames && (
@@ -154,7 +157,7 @@ export default function GuildItem({ node, onPick, showNames }: { node: GuildNode
 const st = StyleSheet.create({
     outer: { width: ICON, alignItems: "center" },
     iconWrap: { width: ICON, height: ICON },
-    icon: { width: ICON, height: ICON, borderRadius: 16, overflow: "hidden" },
+    icon: { width: ICON, height: ICON, borderRadius: RADIUS, overflow: "hidden" },
     label: {
         marginTop: 4,
         width: ICON,

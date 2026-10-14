@@ -28,9 +28,19 @@ export function createBunnyObject() {
         fonts: { fonts: {}, installFont: () => Promise.reject(new Error("Fonts are not supported by Distra yet")), saveFont: () => Promise.reject(new Error("Fonts are not supported by Distra yet")) },
         metro: { ...metro, common: vd.metro.common },
         ui: {
-            components: { ...vd.ui.components, ...components },
+            components: {
+                ...vd.ui.components,
+                ...components,
+                // Bunny's `wrappers` held the design-system components plugins render in alerts.
+                wrappers: { AlertModal: components.AlertModal, AlertActionButton: components.AlertActionButton },
+            },
             toasts: { showToast },
-            alerts: vd.ui.alerts,
+            alerts: {
+                ...vd.ui.alerts,
+                // Discord's own alert host (AlertActionCreators), which Bunny exposed as these.
+                openAlert: (key: string, element: unknown) => metro.findByProps("openAlert", "dismissAlert")?.openAlert(key, element),
+                dismissAlert: (key: string) => metro.findByProps("openAlert", "dismissAlert")?.dismissAlert(key),
+            },
         },
         utils: vd.utils,
     };

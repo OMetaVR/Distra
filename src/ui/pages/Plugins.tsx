@@ -7,7 +7,7 @@ import { findAssetId } from "@/lib/assets";
 import { errorToString, isHttpUrl } from "@/lib/utils";
 import { clipboard, NavigationNative, url } from "@/metro/common";
 import {
-    builtins, disablePlugin, enablePlugin, flavors, getInstance, getRecord, installPlugin, isRunning, plugins, uninstallPlugin, updatePlugin,
+    builtins, disablePlugin, enablePlugin, setEnabledAndRestart, flavors, getInstance, getRecord, installPlugin, isRunning, plugins, uninstallPlugin, updatePlugin,
 } from "@/plugins/manager";
 import type { PluginFlavor, PluginRecord } from "@/plugins/types";
 import { confirm, prompt } from "@/ui/alerts";
@@ -106,7 +106,15 @@ export function PluginDetails({ id }: { id: string }) {
                         icon={<Icon name="PuzzlePieceIcon" />}
                         value={record.enabled}
                         disabled={busy}
-                        onValueChange={(value: boolean) => run(() => value ? enablePlugin(id) : disablePlugin(id))}
+                        onValueChange={(value: boolean) => run(async () => {
+                            if (!record.builtin?.requiresRestart) return value ? enablePlugin(id) : disablePlugin(id);
+                            const restart = await confirm({
+                                title: `Restart to ${value ? "enable" : "disable"} ${record.manifest.name}?`,
+                                message: "This plugin changes parts of Discord that are already on screen, so it can only be switched on or off with a restart.",
+                                confirmText: "Restart",
+                            });
+                            if (restart) await setEnabledAndRestart(id, value);
+                        })}
                     />
                     {!builtin && (
                         <TableSwitchRow

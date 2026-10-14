@@ -4,6 +4,7 @@
 
 import { callNative } from "@/core/bridge";
 import { isSafeMode, loader } from "@/core/loader";
+import { reloadApp } from "@/core/native";
 import { readFile, removeFile, writeFile } from "@/core/fs";
 import { createFileStorage, createProxy, type StorageEvent, subscribe } from "@/core/storage";
 import { Logger } from "@/lib/logger";
@@ -103,6 +104,16 @@ export async function startPlugin(id: string) {
     if (!record || running.has(id)) return;
     if (isSafeMode()) return;
 
+    // A plugin installed from its author that Distra also ships would patch the same things twice
+    // (two Server Drawers fighting over the dock), and turning the built-in one off would silently
+    // hand over to the installed copy. The built-in one always speaks for the plugin.
+    const twin = record.builtin ? undefined : Object.values(builtins).find(other =>
+        other.manifest.name.trim().toLowerCase() === record.manifest.name.trim().toLowerCase());
+    if (twin) {
+        logger.warn(`Not starting ${record.manifest.name} (${id}): Distra ships it built in${twin.enabled ? "" : " (turned off)"}`);
+        return;
+    }
+
     try {
         const core = record.builtin?.core ? getCorePlugin(id) : undefined;
         let instance: PluginInstance;
@@ -143,6 +154,19 @@ export async function enablePlugin(id: string) {
     if (!record) return;
     setEnabled(record, true);
     await startPlugin(id).catch(() => setEnabled(record, false));
+}
+
+/**
+ * For plugins that only switch cleanly on a fresh start: saves the new state without starting or
+ * stopping anything, then restarts Discord.
+ */
+export async function setEnabledAndRestart(id: string, enabled: boolean) {
+    const record = getRecord(id);
+    if (!record) return;
+    setEnabled(record, enabled);
+    // Storage writes are debounced (250ms); let this one land before the restart.
+    await new Promise(resolve => setTimeout(resolve, 600));
+    reloadApp();
 }
 
 export async function disablePlugin(id: string) {
@@ -234,7 +258,7 @@ async function loadBuiltins() {
             manifest: { ...entry.manifest, hash: entry.manifest.hash ?? entry.hash },
             enabled: builtinState[entry.id]?.enabled ?? false,
             autoUpdate: false,
-            builtin: { status: entry.status, warning: entry.warning, upstreamInstallUrl: entry.upstreamInstallUrl, source: entry.source },
+            builtin: { status: entry.status, warning: entry.warning, upstreamInstallUrl: entry.upstreamInstallUrl, source: entry.source, requiresRestart: entry.requiresRestart ?? false },
         };
     }
     logger.info(`${index.length} built-in plugins available, ${Object.values(builtins).filter(p => p.enabled).length} enabled`);

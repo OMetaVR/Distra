@@ -5,14 +5,14 @@ import { findByStoreName, findByProps } from "@vendetta/metro";
 const GuildStore = findByStoreName("GuildStore");
 const colors = findByProps("colors", "unsafe_rawColors")?.colors;
 
-export default function GuildIcon({ id, size = 48 }: { id: string; size?: number }) {
+export default function GuildIcon({ id, size = 40 }: { id: string; size?: number }) {
     const g = GuildStore?.getGuild(id);
     if (!g) return null;
-    const rad = size >= 40 ? 16 : 8;
+    const rad = size >= 30 ? Math.round(size / 3) : Math.round(size / 2);
     if (g.icon) {
         return (
             <Image
-                source={{ uri: `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=${size * 2}` }}
+                source={{ uri: `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=128` }}
                 style={{ width: size, height: size, borderRadius: rad }}
             />
         );

@@ -1,5 +1,5 @@
 diff -ruN a/plugins/MoreAlts/Settings.js b/plugins/MoreAlts/Settings.js
---- a/plugins/MoreAlts/Settings.js	2026-10-14 17:27:33.386005472 -0400
+--- a/plugins/MoreAlts/Settings.js	2026-10-14 18:55:05.311789075 -0400
 +++ b/plugins/MoreAlts/Settings.js	2026-10-14 15:56:59.448405800 -0400
 @@ -3,6 +3,7 @@
  import { useProxy } from "@vendetta/storage";
@@ -61,7 +61,7 @@ diff -ruN a/plugins/MoreAlts/Settings.js b/plugins/MoreAlts/Settings.js
  
      React.createElement(ReactNative.View, {
 diff -ruN a/plugins/MoreAlts/SidebarPatcher.js b/plugins/MoreAlts/SidebarPatcher.js
---- a/plugins/MoreAlts/SidebarPatcher.js	2026-10-14 17:27:33.386005472 -0400
+--- a/plugins/MoreAlts/SidebarPatcher.js	2026-10-14 18:55:05.311789075 -0400
 +++ b/plugins/MoreAlts/SidebarPatcher.js	2026-10-14 09:59:51.146198500 -0400
 @@ -156,7 +156,7 @@
                      const sections = config.sections;
@@ -82,7 +82,7 @@ diff -ruN a/plugins/MoreAlts/SidebarPatcher.js b/plugins/MoreAlts/SidebarPatcher
  
                      // If unable to find a section
 diff -ruN a/plugins/nsfwbypass/src/index.ts b/plugins/nsfwbypass/src/index.ts
---- a/plugins/nsfwbypass/src/index.ts	2026-10-14 17:27:33.386650218 -0400
+--- a/plugins/nsfwbypass/src/index.ts	2026-10-14 18:55:05.312931922 -0400
 +++ b/plugins/nsfwbypass/src/index.ts	2026-10-14 11:28:37.218303700 -0400
 @@ -9,6 +9,8 @@
  const { FormInput } = findByProps("FormSection");
@@ -107,7 +107,7 @@ diff -ruN a/plugins/nsfwbypass/src/index.ts b/plugins/nsfwbypass/src/index.ts
                  if (user?.hasOwnProperty("nsfwAllowed")) {
                      user.nsfwAllowed = true;
 diff -ruN a/plugins/nsfwbypass/src/Settings.ts b/plugins/nsfwbypass/src/Settings.ts
---- a/plugins/nsfwbypass/src/Settings.ts	2026-10-14 17:27:33.386602577 -0400
+--- a/plugins/nsfwbypass/src/Settings.ts	2026-10-14 18:55:05.312882911 -0400
 +++ b/plugins/nsfwbypass/src/Settings.ts	2026-10-14 11:13:40.428801400 -0400
 @@ -2,6 +2,8 @@
  import { useProxy } from "@vendetta/storage";
@@ -155,15 +155,70 @@ diff -ruN a/plugins/nsfwbypass/src/Settings.ts b/plugins/nsfwbypass/src/Settings
                  value: storage.lockNSFWChannels,
                  onValueChange: (value: boolean) => {
 diff -ruN a/plugins/ReadAll/src/index.ts b/plugins/ReadAll/src/index.ts
---- a/plugins/ReadAll/src/index.ts	2026-10-14 17:27:33.386412042 -0400
-+++ b/plugins/ReadAll/src/index.ts	2026-10-14 16:15:22.189137700 -0400
-@@ -41,7 +41,18 @@
+--- a/plugins/ReadAll/src/index.ts	2026-10-14 18:55:05.312698697 -0400
++++ b/plugins/ReadAll/src/index.ts	2026-10-14 18:54:33.855615400 -0400
+@@ -1,6 +1,6 @@
+ import { after } from "@vendetta/patcher";
+ import { React, ReactNative as RN } from "@vendetta/metro/common";
+-import ReadButton from "./ReadButton";
++import ReadButton, { longPressReadAll, pressReadAll } from "./ReadButton";
+ import Settings from "./Settings";
+ 
+ const { View } = RN;
+@@ -41,7 +41,65 @@
    patchedObjects.add(ldp);
  }
  
 +const GUILDS_BAR_PROPS = "modules/guilds_bar/native/hooks/useGuildsBarProps.tsx";
++// Distra: Discord 348's server rail has no list footer props any more; its bottom buttons
++// (create/join, discovery) sit in GuildsBarFooterWrapper, so the button joins them there.
++const GUILDS_BAR_FOOTER = "modules/guilds_bar/native/GuildsBarFooterWrapper.tsx";
++
++function patchFooterWrapper(): boolean {
++  const footer = (window as any).distra?.metro?.findByFilePath?.(GUILDS_BAR_FOOTER);
++  if (!footer || typeof footer.default !== "function" || patchedObjects.has(footer)) return !!footer && patchedObjects.has(footer);
++  patchedObjects.add(footer);
++  unpatchers.push(after("default", footer, (_args: any[], ret: any) => {
++    if (!ret?.props) return ret;
++    const children = ret.props.children;
++    ret.props.children = [...(Array.isArray(children) ? children : [children]), React.createElement(ReadButton, { key: "read-all" })];
++    return ret;
++  }));
++  return true;
++}
++
++// Distra: the button goes at the top of the server rail, as a list header above the DMs button.
++const HEADER_SIZE = TILE + 18 + 2 * MARGIN;
++
++function patchHeader(ret: any) {
++  const ldp = ret?.listDataProps;
++  if (!ldp || patchedObjects.has(ldp)) return;
++  patchedObjects.add(ldp);
++  // The rail's FastList takes its list header as `headerSize` + `renderHeader`.
++  const originalRender = ldp.renderHeader;
++  const originalSize = ldp.headerSize;
++  ldp.headerSize = typeof originalSize === "function"
++    ? (...args: any[]) => originalSize.apply(ldp, args) + HEADER_SIZE
++    : (typeof originalSize === "number" ? originalSize : 0) + HEADER_SIZE;
++  ldp.renderHeader = (...args: any[]) => React.createElement(
++    View,
++    { style: { alignSelf: "stretch" }, collapsable: false },
++    React.createElement(ReadButton),
++    typeof originalRender === "function" ? originalRender.apply(ldp, args) : null,
++  );
++}
++
++function patchRailHeader(): boolean {
++  const hook = (window as any).distra?.metro?.findByFilePath?.(GUILDS_BAR_PROPS);
++  if (!hook || typeof hook.default !== "function") return false;
++  if (patchedObjects.has(hook)) return true;
++  patchedObjects.add(hook);
++  unpatchers.push(after("default", hook, (_args: any[], ret: any) => patchHeader(ret)));
++  return true;
++}
 +
  function scanRegistry(): number {
++  if (patchRailHeader()) return 1;
 +  // Distra: function names are stripped in Discord's iOS bundle, so find the hook by its source path.
 +  const found = (window as any).distra?.metro?.findByFilePath?.(GUILDS_BAR_PROPS);
 +  if (found && typeof found.default === "function") {
@@ -176,3 +231,147 @@ diff -ruN a/plugins/ReadAll/src/index.ts b/plugins/ReadAll/src/index.ts
    const modules = (globalThis as any)?.modules;
    if (!modules) return 0;
  
+@@ -68,6 +126,9 @@
+ 
+ export default {
+   onLoad() {
++    // Distra: other plugins (Server Drawer) show their own Read All button through this.
++    (globalThis as any).__readAllPress = pressReadAll;
++    (globalThis as any).__readAllLongPress = longPressReadAll;
+     const count = scanRegistry();
+     if (count === 0) {
+       let ticks = 0;
+@@ -83,6 +144,8 @@
+   },
+ 
+   onUnload() {
++    delete (globalThis as any).__readAllPress;
++    delete (globalThis as any).__readAllLongPress;
+     if (retryTimer) clearInterval(retryTimer);
+     retryTimer = undefined;
+     unpatchers.forEach((u) => u());
+diff -ruN a/plugins/ReadAll/src/ReadButton.tsx b/plugins/ReadAll/src/ReadButton.tsx
+--- a/plugins/ReadAll/src/ReadButton.tsx	2026-10-14 18:55:05.312634205 -0400
++++ b/plugins/ReadAll/src/ReadButton.tsx	2026-10-14 18:54:33.854817000 -0400
+@@ -4,6 +4,7 @@
+ import { Forms, Button } from "@vendetta/ui/components";
+ import { getAssetIDByName } from "@vendetta/ui/assets";
+ import { isServerExcluded, isDMExcluded } from "./Settings";
++import { storage } from "@vendetta/plugin";
+ 
+ const { View, Pressable, StyleSheet, Image } = RN;
+ const Haptic = findByProps("triggerHapticFeedback", "HapticFeedbackTypes");
+@@ -108,8 +109,15 @@
+   showToast(`Cleared ${targetChannels.length} ${label}!`, getAssetIDByName("Check"));
+ };
+ 
+-export default function ReadButton() {
+-  const handlePress = () => {
++/** Asks what to mark read, then does it. Shared with other plugins through `globalThis.__readAllPress`. */
++export function pressReadAll() {
++  const action = storage.tapAction ?? "ask";
++  if (action !== "ask") {
++    Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
++    executeClear(action);
++    return;
++  }
++  {
+     Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
+ 
+     const bunny = (globalThis as any).bunny;
+@@ -166,19 +174,27 @@
+         )
+       })
+     );
+-  };
++  }
++}
++
++/** Press-and-hold: the "Press and hold" setting's action straight away, or a tap if it's off. */
++export function longPressReadAll() {
++  const action = storage.holdAction ?? "all";
++  if (action === "off") return pressReadAll();
++  Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.IMPACT_MEDIUM);
++  executeClear(action);
++}
+ 
++// Distra: the rail button is a server-style tile (Discord logo on blurple) labelled "Read All",
++// matching the rest of the rail rather than a dark eye icon.
++export default function ReadButton() {
+   return (
+     <View style={st.row}>
+-      <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel="Read All Options">
++      <Pressable onPress={pressReadAll} onLongPress={longPressReadAll} delayLongPress={450} accessibilityRole="button" accessibilityLabel="Read All">
+         <View style={st.tile}>
+-          <View style={st.circleBg}>
+-            <Image
+-              source={getAssetIDByName("ic_eye")}
+-              style={{ width: 24, height: 24, tintColor: "#DBDEE1" }}
+-            />
+-          </View>
++          <Image source={getAssetIDByName("Discord") ?? getAssetIDByName("ic_eye")} style={{ width: 26, height: 26, tintColor: "#fff" }} />
+         </View>
++        <RN.Text style={st.label}>Read All</RN.Text>
+       </Pressable>
+     </View>
+   );
+@@ -191,11 +207,20 @@
+     paddingTop: MARGIN,
+     paddingBottom: MARGIN,
+   },
++  label: {
++    marginTop: 4,
++    width: TILE + 12,
++    marginHorizontal: -6,
++    textAlign: "center",
++    fontSize: 11,
++    lineHeight: 13,
++    color: "#b5bac1",
++  },
+   tile: {
+     width: TILE,
+     height: TILE,
+     borderRadius: 16,
+-    backgroundColor: "#111214",
++    backgroundColor: "#5865f2",
+     alignItems: "center",
+     justifyContent: "center",
+     overflow: "hidden",
+diff -ruN a/plugins/ReadAll/src/Settings.ts b/plugins/ReadAll/src/Settings.ts
+--- a/plugins/ReadAll/src/Settings.ts	2026-10-14 18:55:05.312698697 -0400
++++ b/plugins/ReadAll/src/Settings.ts	2026-10-14 18:54:33.854471100 -0400
+@@ -16,6 +16,17 @@
+ 
+ storage.excludedServers ??= [];
+ storage.excludedDMs ??= [];
++// Distra: what a tap and a press-and-hold on the button do.
++storage.tapAction ??= "ask";
++storage.holdAction ??= "all";
++
++const { TableRadioGroup, TableRadioRow } = findByProps("TableRadioGroup", "TableRadioRow");
++
++const ACTIONS: Array<{ value: string; label: string; subLabel: string }> = [
++  { value: "all", label: "Mark everything read", subLabel: "Servers and DMs" },
++  { value: "servers", label: "Servers only", subLabel: "DMs keep their unread state" },
++  { value: "dms", label: "DMs only", subLabel: "Servers keep their unread state" },
++];
+ 
+ export const isServerExcluded = (serverId: string): boolean =>
+   storage.excludedServers?.includes(serverId);
+@@ -106,6 +117,16 @@
+           />
+         </TableRowGroup>
+ 
++        <TableRadioGroup title="Tap the button" value={storage.tapAction} onChange={(value: string) => (storage.tapAction = value)}>
++          <TableRadioRow label="Ask each time" subLabel="Choose servers, DMs or everything" value="ask" />
++          {ACTIONS.map((action) => <TableRadioRow key={action.value} {...action} />)}
++        </TableRadioGroup>
++
++        <TableRadioGroup title="Press and hold the button" value={storage.holdAction} onChange={(value: string) => (storage.holdAction = value)}>
++          <TableRadioRow label="Nothing" subLabel="Holding works like a tap" value="off" />
++          {ACTIONS.map((action) => <TableRadioRow key={action.value} {...action} />)}
++        </TableRadioGroup>
++
+         {/* SERVER EXCEPTIONS */}
+         <TableRowGroup title="Exclude Server">
+           <Stack spacing={4}>

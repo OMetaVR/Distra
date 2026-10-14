@@ -16,6 +16,17 @@ const { TableRowGroup, TableRow, Stack, TextInput } = findByProps(
 
 storage.excludedServers ??= [];
 storage.excludedDMs ??= [];
+// Distra: what a tap and a press-and-hold on the button do.
+storage.tapAction ??= "ask";
+storage.holdAction ??= "all";
+
+const { TableRadioGroup, TableRadioRow } = findByProps("TableRadioGroup", "TableRadioRow");
+
+const ACTIONS: Array<{ value: string; label: string; subLabel: string }> = [
+  { value: "all", label: "Mark everything read", subLabel: "Servers and DMs" },
+  { value: "servers", label: "Servers only", subLabel: "DMs keep their unread state" },
+  { value: "dms", label: "DMs only", subLabel: "Servers keep their unread state" },
+];
 
 export const isServerExcluded = (serverId: string): boolean =>
   storage.excludedServers?.includes(serverId);
@@ -105,6 +116,16 @@ export default function Settings() {
             subLabel="Mark all unread servers and DMs as read with one click, excluding listed IDs"
           />
         </TableRowGroup>
+
+        <TableRadioGroup title="Tap the button" value={storage.tapAction} onChange={(value: string) => (storage.tapAction = value)}>
+          <TableRadioRow label="Ask each time" subLabel="Choose servers, DMs or everything" value="ask" />
+          {ACTIONS.map((action) => <TableRadioRow key={action.value} {...action} />)}
+        </TableRadioGroup>
+
+        <TableRadioGroup title="Press and hold the button" value={storage.holdAction} onChange={(value: string) => (storage.holdAction = value)}>
+          <TableRadioRow label="Nothing" subLabel="Holding works like a tap" value="off" />
+          {ACTIONS.map((action) => <TableRadioRow key={action.value} {...action} />)}
+        </TableRadioGroup>
 
         {/* SERVER EXCEPTIONS */}
         <TableRowGroup title="Exclude Server">

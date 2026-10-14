@@ -71,7 +71,7 @@ Core changes: `src/core/errorGuard.ts` contains fatal JS errors whose stack has 
 | No typing | Extended | Chat bar keyboard button (slashed while hidden) and a settings page with a switch for it. |
 | Hide Chat Buttons (core) | Extended | "Swipe to collapse". Untested on device. |
 | Read All | Fixed (untested) | Looked the hook up by function name, which iOS strips; now by file path. The hook only runs where Discord mounts the guilds bar (in 348's dock layout). |
-| Server Drawer | Added | kmmiio99o's drawer. Options: side list for open folders, separator after open folders. It replaces the quest dock's expanded content, so check by dragging the dock up. |
+| Server Drawer | Added | kmmiio99o's drawer. Closed dock: one row of servers that swipes sideways (replaces QuestDockContentCollapsed). Open dock: grid, height capped at half the screen (it scrolls inside), optional separator after open folders. The messages panel is widened over the empty server rail. Tiles are sized from the screen width. Built-in wins over an externally installed copy of the same plugin (manager skips the duplicate). The dock mounts its closed and open content together and fades each itself; our replacements follow `activeQuestDockMode` (polled every 100ms) to show only the right one (row when closed, grid when open). Untested by eye: the sideways swipe may compete with the dock's own swipe-to-dismiss, and the open state. |
 | Silent Leave | Extended (untested) | "Leave silently" on the group DM leave confirmation (hooks the sheet's leave row, then `Alerts.show`), plus /leave silent. |
 | Silent Messages | Rebuilt settings | Table rows; page renders. |
 | SecretMessage | Fixed | Toggles re-render live; "Auto shorten" icon (`ic_dm_user` is mapped to UserIcon). |

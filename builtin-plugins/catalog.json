@@ -801,7 +801,8 @@
       "path": "plugins/ServerDrawer",
       "status": "working",
       "warning": null,
-      "upstreamInstallUrl": "https://kmmiio99o.github.io/vd-plugins/ServerDrawer"
+      "upstreamInstallUrl": "https://kmmiio99o.github.io/vd-plugins/ServerDrawer",
+      "requiresRestart": true
     },
     {
       "id": "vendetta:kmmiio99o/multi-scrobbler",

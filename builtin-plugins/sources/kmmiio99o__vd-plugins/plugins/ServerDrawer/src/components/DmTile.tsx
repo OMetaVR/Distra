@@ -1,9 +1,9 @@
 import React from "react";
-import { View, Pressable, Image, StyleSheet } from "react-native";
+import { View, Pressable, Image, StyleSheet, Text } from "react-native";
 import { getAssetIDByName } from "@vendetta/ui/assets";
-import { findByProps, findByName } from "@vendetta/metro";
+import { findByProps, findByName, findByStoreName } from "@vendetta/metro";
 
-const ICON = 48;
+import { ICON, RADIUS } from "../utils/metrics";
 
 const ChatIcon = getAssetIDByName("ChatIcon");
 const Haptic = findByProps("triggerHapticFeedback", "HapticFeedbackTypes");
@@ -12,16 +12,7 @@ const SelectedChannelStore = findByName("SelectedChannelStore");
 const Flux = findByProps("useStateFromStores");
 const NavContext = findByProps("getGuildId");
 
-const tokenRef: any = findByProps("SemanticColor");
-const Themes: any = tokenRef?.default;
-const internalResolver: any = Themes?.meta ?? Themes?.internal;
-const UseThemeMod: any = findByProps("useThemeIndex", "getThemeIndex");
-
-function useTokenColor(token: any): string | undefined {
-    const theme = UseThemeMod?.useTheme?.();
-    if (!internalResolver || !token || theme == null) return undefined;
-    return internalResolver.resolveSemanticColor(theme, token);
-}
+import { Themes, useTokenColor } from "../utils/theme";
 
 function openDms() {
     Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
@@ -77,10 +68,78 @@ export function RailDmTile() {
 
 const st = StyleSheet.create({
     outer: { width: ICON, height: ICON },
-    icon: { width: ICON, height: ICON, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+    icon: { width: ICON, height: ICON, borderRadius: RADIUS, alignItems: "center", justifyContent: "center" },
 });
 
 const railSt = StyleSheet.create({
     outer: { flex: 1, width: "100%", alignItems: "center", justifyContent: "center" },
-    icon: { width: ICON, height: ICON, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+    icon: { width: ICON, height: ICON, borderRadius: RADIUS, alignItems: "center", justifyContent: "center" },
+});
+
+const PrivateChannelReadStateStore = findByStoreName("PrivateChannelReadStateStore");
+const ReadStateStore = findByStoreName("ReadStateStore");
+const ChannelStore = findByStoreName("ChannelStore");
+const UserStore = findByStoreName("UserStore");
+const AvatarUtils = findByProps("getUserAvatarURL", "getChannelIconURL");
+
+const sameIds = (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i]);
+
+/** DMs and group DMs with unread messages, as Discord's own server rail lists them. */
+export function useUnreadDms(): string[] {
+    return Flux?.useStateFromStores?.(
+        [PrivateChannelReadStateStore],
+        () => PrivateChannelReadStateStore?.getUnreadPrivateChannelIds?.() ?? [],
+        [],
+        sameIds,
+    ) ?? [];
+}
+
+/** An image source: a CDN url, or a bundled asset id for default avatars and group icons. */
+function dmIcon(channel: any): string | number | undefined {
+    try {
+        if (channel?.type === 1) {
+            const user = UserStore?.getUser?.(channel.getRecipientId?.() ?? channel.recipients?.[0]);
+            return user ? AvatarUtils?.getUserAvatarURL?.(user, false, 128) : undefined;
+        }
+        return AvatarUtils?.getChannelIconURL?.({ id: channel.id, icon: channel.icon, applicationId: channel.application_id, size: 128 });
+    } catch {
+        return undefined;
+    }
+}
+
+/** One unread DM: the person's (or group's) avatar with its mention count. */
+export function UnreadDmTile({ channelId }: { channelId: string }) {
+    const channel = Flux?.useStateFromStores?.([ChannelStore], () => ChannelStore?.getChannel?.(channelId), [channelId]);
+    const mentions = Flux?.useStateFromStores?.([ReadStateStore], () => ReadStateStore?.getMentionCount?.(channelId) ?? 0, [channelId]) ?? 0;
+    const icon = channel ? dmIcon(channel) : undefined;
+    const source = typeof icon === "number" ? icon : icon ? { uri: icon } : undefined;
+
+    return (
+        <Pressable
+            onPress={() => {
+                Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
+                ChannelActions?.selectPrivateChannel?.(channelId);
+            }}
+            style={st.outer}
+        >
+            {source
+                ? <Image source={source} style={unreadSt.avatar} />
+                : <View style={[unreadSt.avatar, unreadSt.fallback]} />}
+            {mentions > 0 && (
+                <View style={unreadSt.outline}>
+                    <View style={unreadSt.badge}>
+                        <Text style={unreadSt.text}>{mentions > 99 ? "99+" : String(mentions)}</Text>
+                    </View>
+                </View>
+            )}
+        </Pressable>
+    );
+}
+
+const unreadSt = StyleSheet.create({
+    avatar: { width: ICON, height: ICON, borderRadius: ICON / 2 },
+    fallback: { backgroundColor: "#5865f2" },
+    outline: { position: "absolute", bottom: -3, right: -3, padding: 2, borderRadius: 999, backgroundColor: "#1a1a2e" },
+    badge: { minWidth: 17, height: 17, borderRadius: 999, backgroundColor: "#ed4245", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
+    text: { color: "#fff", fontSize: 10, fontWeight: "700", lineHeight: 17 },
 });

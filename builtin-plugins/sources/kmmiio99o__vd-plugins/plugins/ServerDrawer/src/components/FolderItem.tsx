@@ -1,11 +1,14 @@
 import React from "react";
-import { View, Text, Animated, Pressable, Image, ViewStyle, StyleSheet } from "react-native";
+import { View, Text, Animated, Pressable, Image, ViewStyle, StyleSheet, LayoutAnimation } from "react-native";
 import { find, findByProps, findByStoreName } from "@vendetta/metro";
 import { getAssetIDByName } from "@vendetta/ui/assets";
+import { storage } from "@vendetta/plugin";
 import { useFolderExpanded, GuildNode } from "../utils/theme";
 import GuildIcon from "./GuildIcon";
 import GuildItem from "./GuildItem";
 import { ContextMenuModal, ContextMenuItem } from "./ContextMenuModal";
+import SelectionRing, { SELECTED_SCALE, useIsSelected } from "./SelectionRing";
+import Divider, { DividerKind } from "./Dividers";
 
 const GuildActions = findByProps("toggleGuildFolderExpand");
 const Flux = findByProps("useStateFromStores");
@@ -14,14 +17,14 @@ const SortedGuildStore = findByStoreName("SortedGuildStore");
 const Haptic = findByProps("triggerHapticFeedback", "HapticFeedbackTypes");
 const colors = findByProps("colors", "unsafe_rawColors")?.colors;
 
-const ICON = 48;
-const MINI = 16;
+import { ICON, MINI, RADIUS } from "../utils/metrics";
 
+const INSET = Math.round((ICON - MINI * 2) / 3);
 const POS: ViewStyle[] = [
-    { top: 6, left: 6 },
-    { top: 6, right: 6 },
-    { bottom: 6, left: 6 },
-    { bottom: 6, right: 6 },
+    { top: INSET, left: INSET },
+    { top: INSET, right: INSET },
+    { bottom: INSET, left: INSET },
+    { bottom: INSET, right: INSET },
 ];
 
 const FOLDER_ASSET = getAssetIDByName("FolderIcon");
@@ -74,16 +77,33 @@ function FolderCover({ node }: { node: GuildNode }) {
 
 const fc = StyleSheet.create({
     outer: { width: ICON, height: ICON },
-    icon: { width: ICON, height: ICON, borderRadius: 16, overflow: "hidden" },
-    cell: { position: "absolute", width: MINI, height: MINI, borderRadius: 8, overflow: "hidden" },
+    icon: { width: ICON, height: ICON, borderRadius: RADIUS, overflow: "hidden" },
+    cell: { position: "absolute", width: MINI, height: MINI, borderRadius: Math.round(MINI / 2), overflow: "hidden" },
 });
 
-function FadeIn({ children }: { children: React.ReactNode }) {
-    const opacity = React.useRef(new Animated.Value(0)).current;
+/**
+ * An opened folder's server sliding out of the folder: each one starts tucked behind the folder
+ * (shifted back, shrunk, transparent) and springs into place, one after another.
+ */
+function SlideOut({ index, children }: { index: number; children: React.ReactNode }) {
+    const animate = storage.folderAnimation !== false;
+    const progress = React.useRef(new Animated.Value(animate ? 0 : 1)).current;
     React.useEffect(() => {
-        Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+        if (!animate) return;
+        Animated.spring(progress, { toValue: 1, delay: index * 30, damping: 16, stiffness: 200, mass: 0.8, useNativeDriver: true }).start();
     }, []);
-    return <Animated.View style={{ opacity }}>{children}</Animated.View>;
+    const shift = -(ICON + 6) * Math.min(index + 1, 3);
+    return (
+        <Animated.View style={{
+            opacity: progress.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 0.9, 1] }),
+            transform: [
+                { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [shift, 0] }) },
+                { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) },
+            ],
+        }}>
+            {children}
+        </Animated.View>
+    );
 }
 
 /** A line across the whole row of the wrapping grid, ending a run of servers. */
@@ -95,16 +115,18 @@ interface FolderItemProps {
     node: GuildNode;
     onPick: (id: string) => void;
     showNames?: boolean;
-    /** Open folders list their servers in a separate rail, not inline. */
-    sidebar?: boolean;
-    /** A line after an open folder's servers, before the next servers. */
-    separator?: boolean;
+    /** What marks the end of an open folder's servers. */
+    divider?: DividerKind;
 }
 
-export default function FolderItem({ node, onPick, showNames, sidebar, separator }: FolderItemProps) {
+export default function FolderItem({ node, onPick, showNames, divider }: FolderItemProps) {
     const open = useFolderExpanded(node.id);
 
     const toggle = () => {
+        // The rest of the tiles glide to their new places instead of jumping.
+        if (storage.folderAnimation !== false) {
+            LayoutAnimation.configureNext(LayoutAnimation.create(220, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
+        }
         GuildActions?.toggleGuildFolderExpand?.(node.id);
     };
 
@@ -116,13 +138,13 @@ export default function FolderItem({ node, onPick, showNames, sidebar, separator
         Animated.spring(scale, { toValue: v, useNativeDriver: true, damping: 14, stiffness: 220 }).start();
     }, [scale]);
 
+    // Opening swaps the button for its open form, whose Pressable never sees the press end.
+    React.useEffect(() => setPressed(false), [open]);
+    const holdsSelected = useIsSelected(node.children.map((child) => String(child.id)));
+    const ringed = holdsSelected && !open;
     React.useEffect(() => {
-        springTo(pressed ? 0.85 : 1);
-    }, [pressed, springTo]);
-
-    React.useEffect(() => {
-        springTo(1);
-    }, [open, springTo]);
+        springTo(pressed ? 0.85 : ringed ? SELECTED_SCALE : 1);
+    }, [pressed, ringed, springTo]);
 
     const [menuState, setMenuState] = React.useState<{
         visible: boolean;
@@ -191,6 +213,7 @@ export default function FolderItem({ node, onPick, showNames, sidebar, separator
         >
             <View ref={viewRef} collapsable={false}>
                 <Animated.View style={{ transform: [{ scale }] }}>{content}</Animated.View>
+                {ringed && <SelectionRing />}
             </View>
         </Pressable>
     );
@@ -206,12 +229,12 @@ export default function FolderItem({ node, onPick, showNames, sidebar, separator
                             </View>,
                         ),
                     )}
-                    {!sidebar && node.children.map((ch) => (
-                        <FadeIn key={ch.id}>
+                    {node.children.map((ch, i) => (
+                        <SlideOut key={ch.id} index={i}>
                             <GuildItem node={ch} onPick={onPick} showNames={showNames} />
-                        </FadeIn>
+                        </SlideOut>
                     ))}
-                    {!sidebar && separator && <RowSeparator />}
+                    {divider && <Divider kind={divider} />}
                 </>
             ) : (
                 folderButton(folderContent(<FolderCover node={node} />))
@@ -233,7 +256,7 @@ const fo = StyleSheet.create({
     openIcon: {
         width: ICON,
         height: ICON,
-        borderRadius: 16,
+        borderRadius: RADIUS,
         alignItems: "center",
         justifyContent: "center",
     },

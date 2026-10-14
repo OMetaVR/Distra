@@ -4,6 +4,7 @@ import { showToast } from "@vendetta/ui/toasts";
 import { Forms, Button } from "@vendetta/ui/components";
 import { getAssetIDByName } from "@vendetta/ui/assets";
 import { isServerExcluded, isDMExcluded } from "./Settings";
+import { storage } from "@vendetta/plugin";
 
 const { View, Pressable, StyleSheet, Image } = RN;
 const Haptic = findByProps("triggerHapticFeedback", "HapticFeedbackTypes");
@@ -108,8 +109,15 @@ const executeClear = (mode: "all" | "servers" | "dms") => {
   showToast(`Cleared ${targetChannels.length} ${label}!`, getAssetIDByName("Check"));
 };
 
-export default function ReadButton() {
-  const handlePress = () => {
+/** Asks what to mark read, then does it. Shared with other plugins through `globalThis.__readAllPress`. */
+export function pressReadAll() {
+  const action = storage.tapAction ?? "ask";
+  if (action !== "ask") {
+    Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
+    executeClear(action);
+    return;
+  }
+  {
     Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
 
     const bunny = (globalThis as any).bunny;
@@ -166,19 +174,27 @@ export default function ReadButton() {
         )
       })
     );
-  };
+  }
+}
 
+/** Press-and-hold: the "Press and hold" setting's action straight away, or a tap if it's off. */
+export function longPressReadAll() {
+  const action = storage.holdAction ?? "all";
+  if (action === "off") return pressReadAll();
+  Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.IMPACT_MEDIUM);
+  executeClear(action);
+}
+
+// Distra: the rail button is a server-style tile (Discord logo on blurple) labelled "Read All",
+// matching the rest of the rail rather than a dark eye icon.
+export default function ReadButton() {
   return (
     <View style={st.row}>
-      <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel="Read All Options">
+      <Pressable onPress={pressReadAll} onLongPress={longPressReadAll} delayLongPress={450} accessibilityRole="button" accessibilityLabel="Read All">
         <View style={st.tile}>
-          <View style={st.circleBg}>
-            <Image
-              source={getAssetIDByName("ic_eye")}
-              style={{ width: 24, height: 24, tintColor: "#DBDEE1" }}
-            />
-          </View>
+          <Image source={getAssetIDByName("Discord") ?? getAssetIDByName("ic_eye")} style={{ width: 26, height: 26, tintColor: "#fff" }} />
         </View>
+        <RN.Text style={st.label}>Read All</RN.Text>
       </Pressable>
     </View>
   );
@@ -191,11 +207,20 @@ const st = StyleSheet.create({
     paddingTop: MARGIN,
     paddingBottom: MARGIN,
   },
+  label: {
+    marginTop: 4,
+    width: TILE + 12,
+    marginHorizontal: -6,
+    textAlign: "center",
+    fontSize: 11,
+    lineHeight: 13,
+    color: "#b5bac1",
+  },
   tile: {
     width: TILE,
     height: TILE,
     borderRadius: 16,
-    backgroundColor: "#111214",
+    backgroundColor: "#5865f2",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",

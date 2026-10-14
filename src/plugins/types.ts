@@ -38,6 +38,8 @@ export interface BuiltinInfo {
     core?: boolean;
     warning: string | null;
     upstreamInstallUrl: string | null;
+    /** Changes things already on screen and can only be switched with a restart. */
+    requiresRestart?: boolean;
     source: { repository: string; commit: string; license: string; path: string; build: "source" | "upstream-prebuilt" | "distra" };
 }
 

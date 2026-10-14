@@ -1,6 +1,8 @@
 import { find } from "@vendetta/metro";
 import { React } from "@vendetta/metro/common";
 import ServerDrawerSheet from "../components/ServerDrawerSheet";
+import CollapsedOverlay, { CollapsedCardTracker } from "../components/CollapsedOverlay";
+import { after } from "@vendetta/patcher";
 import { registerIntercept, registerTypeDetector } from "./createElementIntercept";
 import { getGestureContext } from "../utils/gestureContext";
 
@@ -18,7 +20,7 @@ export function patchExpanded(
     cleanups: (() => void)[]
 ): boolean {
     registerTypeDetector("ServerDrawer.Expanded", isNamed("QuestDockContentExpanded"), (real) => {
-        registerIntercept(real, ServerDrawerSheet, { gestureContext: getGestureContext() });
+        registerIntercept(real, ServerDrawerSheet, { gestureContext: getGestureContext(), variant: "grid" });
         console.log(TAG, "PATCH: QuestDockContentExpanded replaced (type detector)");
     }, { persistent: true });
 
@@ -29,10 +31,10 @@ export function patchExpanded(
     }
     const orig = mod.type;
 
-    registerIntercept(orig, ServerDrawerSheet, { gestureContext: getGestureContext() });
+    registerIntercept(orig, ServerDrawerSheet, { gestureContext: getGestureContext(), variant: "grid" });
 
     mod.type = function ServerDrawerPatch() {
-        return <ServerDrawerSheet gestureContext={getGestureContext()} />;
+        return <ServerDrawerSheet gestureContext={getGestureContext()} variant="grid" />;
     };
     cleanups.push(() => { mod.type = orig; });
     console.log(TAG, "PATCH: QuestDockContentExpanded replaced (module mutation)");
@@ -41,10 +43,13 @@ export function patchExpanded(
 
 export function patchEmpty(
     name: string,
-    cleanups: (() => void)[]
+    cleanups: (() => void)[],
+    /** What renders instead; nothing by default. */
+    Replacement: React.ComponentType<any> = function EmptyPatch() { return null; },
+    extraProps?: Record<string, any>,
 ): boolean {
     registerTypeDetector(`ServerDrawer.Empty.${name}`, isNamed(name), (real) => {
-        registerIntercept(real, function EmptyPatch() { return null; });
+        registerIntercept(real, Replacement, extraProps);
         console.log(TAG, `PATCH: ${name} replaced (type detector)`);
     }, { persistent: true });
 
@@ -56,9 +61,7 @@ export function patchEmpty(
     const orig = mod.type;
     const originalComponent = orig;
 
-    mod.type = function EmptyPatch() {
-        return null;
-    };
+    mod.type = Replacement as any;
 
     if (originalComponent) {
         Object.defineProperties(mod.type, Object.getOwnPropertyDescriptors(originalComponent));
@@ -66,5 +69,27 @@ export function patchEmpty(
     }
 
     cleanups.push(() => { mod.type = orig; });
+    return true;
+}
+
+/**
+ * The closed dock shows a sideways-scrolling row of servers. The card itself only reports its
+ * position; the row is drawn over it from outside the dock's gesture detector (see CollapsedOverlay).
+ */
+export function patchCollapsed(cleanups: (() => void)[]): boolean {
+    patchEmpty("QuestDockContentCollapsed", cleanups, CollapsedCardTracker);
+
+    const mod = find((m) => m?.default?.type?.name === "QuestDockGestureDetector");
+    if (!mod?.default?.type) {
+        console.log(TAG, "WARN: QuestDockGestureDetector not found; the closed dock shows no servers");
+        return true;
+    }
+    cleanups.push(after("type", mod.default, (_args: any[], ret: any) => (
+        <>
+            {ret}
+            <CollapsedOverlay gestureContext={getGestureContext()} />
+        </>
+    )));
+    console.log(TAG, "PATCH: closed dock row drawn over the card");
     return true;
 }
