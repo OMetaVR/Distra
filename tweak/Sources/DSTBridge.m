@@ -189,6 +189,18 @@ static NSDictionary<NSString *, DSTHandler> *DSTHandlers(void) {
             @"builtins.index": ^(NSArray *args, DSTDone done) {
                 done(DSTBuiltinIndex(), nil);
             },
+            // Code for several plugins in one call (startup asks for every enabled one at once).
+            @"builtins.codes": ^(NSArray *args, DSTDone done) {
+                NSArray *ids = DSTArg(args, 0);
+                if (![ids isKindOfClass:NSArray.class]) return done(nil, @"Expected a list of plugin ids");
+                NSMutableDictionary *codes = [NSMutableDictionary dictionary];
+                for (NSString *pluginId in ids) {
+                    if (![pluginId isKindOfClass:NSString.class]) continue;
+                    NSString *code = DSTBuiltinCode(pluginId);
+                    if (code) codes[pluginId] = code;
+                }
+                done(codes, nil);
+            },
             @"builtins.code": ^(NSArray *args, DSTDone done) {
                 NSString *pluginId = DSTArg(args, 0);
                 NSString *code = [pluginId isKindOfClass:NSString.class] ? DSTBuiltinCode(pluginId) : nil;

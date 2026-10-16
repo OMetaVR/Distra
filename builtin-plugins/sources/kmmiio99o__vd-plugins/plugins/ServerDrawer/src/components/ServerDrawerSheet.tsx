@@ -10,6 +10,7 @@ import FolderItem from "./FolderItem";
 import DmTile, { UnreadDmTile, useUnreadDms } from "./DmTile";
 import Divider, { DividerKind } from "./Dividers";
 import ReadAllTile from "./ReadAllTile";
+import { useDockMode } from "../utils/dockMode";
 
 const Flux = findByProps("useStateFromStores");
 const SortedGuildStore = findByStoreName("SortedGuildStore");
@@ -166,22 +167,8 @@ export default function ServerDrawerSheet({ gestureContext, variant = "grid" }: 
 
     // The dock mounts its closed and open content together and each normally fades itself out;
     // ours don't, so follow the dock's mode (a shared value React can't subscribe to) by polling.
-    const activeMode = ctx?.activeQuestDockMode;
-    const [open, setOpen] = React.useState(false);
-    React.useEffect(() => {
-        if (!activeMode) return;
-        const read = () => {
-            try {
-                const mode = activeMode.value ?? activeMode.get?.();
-                setOpen(mode != null && mode !== (QuestDockMode?.COLLAPSED ?? "collapsed"));
-            } catch {
-                // keep the last known state
-            }
-        };
-        read();
-        const timer = setInterval(read, 100);
-        return () => clearInterval(timer);
-    }, [activeMode]);
+    const dockMode = useDockMode(ctx?.activeQuestDockMode);
+    const open = dockMode != null && dockMode !== (QuestDockMode?.COLLAPSED ?? "collapsed");
 
     const separator = storage.folderSeparator !== false;
     const showNames = !!storage.showGuildNames;

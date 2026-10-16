@@ -26,6 +26,12 @@ function match(filter: Filter, id: ModuleID, exports: any, raw: boolean): { valu
     return undefined;
 }
 
+let trustKnownMisses = true;
+/** Called once startup is over: from then on, lookups cached as misses are searched again. */
+export function endStartupLookups() {
+    trustKnownMisses = false;
+}
+
 const cacheKey = (filter: Filter, raw: boolean, all = false) =>
     `${filter.key}${raw ? ":raw" : ""}${all ? ":all" : ""}`;
 
@@ -33,8 +39,14 @@ const cacheKey = (filter: Filter, raw: boolean, all = false) =>
 export function find(filter: Filter, { raw = false }: FindOptions = {}): any {
     // Filters with an empty key (ad-hoc predicates) are never cached.
     const key = filter.key ? cacheKey(filter, raw) : null;
+    const cached = key ? getCachedIds(key) : undefined;
 
-    for (const id of (key && getCachedIds(key)) || []) {
+    // A full scan that found nothing is recorded as an empty list: it looked at every module of this
+    // Discord build. Startup lookups run in the same order every launch, so during startup that
+    // answer is trusted; later lookups (user actions, after other patches ran) still scan.
+    if (cached?.length === 0 && trustKnownMisses) return undefined;
+
+    for (const id of cached ?? []) {
         const exports = requireModule(id);
         const hit = exports !== undefined && match(filter, id, exports, raw);
         if (hit) return hit.value;
@@ -48,6 +60,7 @@ export function find(filter: Filter, { raw = false }: FindOptions = {}): any {
         }
     }
 
+    if (key) setCachedIds(key, []);
     return undefined;
 }
 
@@ -153,7 +166,9 @@ function findFile(name: string, expDefault: boolean) {
     if (!/^(?:[A-Z]|use[A-Z])/.test(name)) return undefined;
     const filter = filters.byFileName(name);
     const key = `${filter.key}${expDefault ? "" : ":raw"}`;
-    const cached = getCachedIds(key)?.[0];
+    const cachedIds = getCachedIds(key);
+    if (cachedIds?.length === 0 && trustKnownMisses) return undefined; // known miss for this build (see `find`)
+    const cached = cachedIds?.[0];
     if (cached !== undefined) {
         const exports = requireModule(cached);
         if (exports !== undefined) return expDefault ? exports.default ?? exports : exports;
@@ -166,7 +181,10 @@ function findFile(name: string, expDefault: boolean) {
         if (!best || (native && !best.native)) best = { id, exports, native };
         if (native) break;
     }
-    if (!best) return undefined;
+    if (!best) {
+        setCachedIds(key, []);
+        return undefined;
+    }
     setCachedIds(key, [best.id]);
     return expDefault ? best.exports.default ?? best.exports : best.exports;
 }

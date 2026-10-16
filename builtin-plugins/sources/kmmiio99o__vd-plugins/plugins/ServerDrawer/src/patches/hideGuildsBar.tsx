@@ -5,7 +5,7 @@ import { before } from "@vendetta/patcher";
 import { useProxy } from "@vendetta/storage";
 import { storage } from "@vendetta/plugin";
 import { RailDmTile } from "../components/DmTile";
-import { registerIntercept, registerTypeDetector, registerPropsTransform } from "./createElementIntercept";
+import { registerIntercept, registerTypeDetector } from "./createElementIntercept";
 
 const TAG = "[ServerDrawer]";
 const DM_WIDTH = 72;
@@ -36,36 +36,6 @@ function hasName(type: any, name: string): boolean {
     const t = type.type;
     if (t && (t.name === name || t.displayName === name)) return true;
     return unwrapComponent(type)?.name === name;
-}
-
-// Check if props belong to the messages panel
-function isMessagesPanel(props: any): boolean {
-    return props?.nativeID === "messages-parent-view";
-}
-
-// Transform function for messages panel - adjust left based on setting
-function transformMessagesPanelProps(props: any): any {
-    const style = props?.style;
-    const list = Array.isArray(style) ? style : [style];
-
-    let newStyleArray: any[] | undefined;
-    let changed = false;
-
-    list.forEach((s: any, i: number) => {
-        if (!s || typeof s !== "object") return;
-        // The sideContainer lives in the style array: position absolute with all four offsets.
-        if (s?.position !== "absolute" || typeof s?.left !== "number" ||
-            typeof s?.top !== "number" || typeof s?.bottom !== "number" || typeof s?.right !== "number") return;
-        const newLeft = storage.hideDmTile ? DM_WIDTH : 0;
-        if (s.left === newLeft) return;
-        newStyleArray = newStyleArray ?? [...list];
-        newStyleArray[i] = { ...s, left: newLeft };
-        changed = true;
-        console.log(TAG, `messages sideContainer left -> ${newLeft}`);
-    });
-
-    if (!changed) return props;
-    return { ...props, style: Array.isArray(style) ? newStyleArray : newStyleArray![0] };
 }
 
 // Patch for HomePanelContent: conditionally render rail content
@@ -226,15 +196,10 @@ function patchMessagesPanelWidth(cleanups: (() => void)[]) {
 export function patchHideGuildsBar(cleanups: (() => void)[]): boolean {
     let applied = false;
 
-    // 1. Register props transform for messages panel (works via createElementIntercept)
-    // This is the PRIMARY mechanism - transforms the messages panel's style at creation time
-    registerPropsTransform(
-        isMessagesPanel,
-        transformMessagesPanelProps
-    );
-    applied = true;
-
+    // Distra: the messages panel is widened by a View.render patch; the old per-element props
+    // transform did the same work on every element Discord created.
     patchMessagesPanelWidth(cleanups);
+    applied = true;
 
     // 2+3. Persistent module mutation.
     rescanHiding(cleanups);

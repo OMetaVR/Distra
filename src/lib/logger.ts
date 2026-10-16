@@ -87,3 +87,30 @@ export function onLogEntry(listener: (entry: LogEntry) => void) {
     entryListeners.add(listener);
     return () => void entryListeners.delete(listener);
 }
+
+/**
+ * Release builds: plugins' `console.log` / `info` / `debug` go to the Developer > Logs list instead
+ * of React Native's console, which formats every argument into the system log on every call. The
+ * text is only built if someone looks at it. Warnings and errors still go to the console as well.
+ */
+export function captureConsoleLogs() {
+    const console = (globalThis as any).console;
+    if (!console) return;
+    for (const level of ["log", "info", "debug"] as const) {
+        const original = console[level];
+        if (typeof original !== "function") continue;
+        console[level] = (...args: unknown[]) => {
+            // Distra's own Logger already recorded this entry before echoing it here.
+            if (writingToConsole) return;
+            let message: string | undefined;
+            const entry = { time: Date.now(), level, tag: "console" } as LogEntry;
+            Object.defineProperty(entry, "message", {
+                enumerable: true,
+                get: () => message ??= args.map(stringify).join(" "),
+            });
+            entries.push(entry);
+            if (entries.length > MAX_ENTRIES) entries.splice(0, entries.length - MAX_ENTRIES);
+            listeners.forEach(listener => listener());
+        };
+    }
+}

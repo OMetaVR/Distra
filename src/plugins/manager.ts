@@ -114,6 +114,7 @@ export async function startPlugin(id: string) {
         return;
     }
 
+    const started = Date.now();
     try {
         const core = record.builtin?.core ? getCorePlugin(id) : undefined;
         let instance: PluginInstance;
@@ -126,6 +127,7 @@ export async function startPlugin(id: string) {
         }
         running.set(id, instance);
         delete record.error;
+        logger.debug(`Started ${record.manifest.name} in ${Date.now() - started}ms`);
     } catch (e) {
         record.error = errorToString(e);
         logger.error(`Failed to start ${record.manifest.name}`, e);
@@ -215,7 +217,22 @@ function devBuiltins() {
         });
 }
 
+/** Code fetched ahead of time for the plugins enabled at launch (one bridge call instead of one each). */
+const prefetchedCode = new Map<string, string>();
+
+async function prefetchBuiltinCode(ids: string[]) {
+    if (!ids.length || await devBuiltins()) return;
+    // Tweaks older than this call don't know it; each plugin then asks for its own code as before.
+    const codes = await callNative<Record<string, string>>("builtins.codes", ids).catch(() => null);
+    for (const [id, code] of Object.entries(codes ?? {})) prefetchedCode.set(id, code);
+}
+
 async function builtinCode(id: string) {
+    const prefetched = prefetchedCode.get(id);
+    if (prefetched !== undefined) {
+        prefetchedCode.delete(id);
+        return prefetched;
+    }
     const code = (await devBuiltins())?.get(id)?.code;
     return code ?? callNative<string>("builtins.code", id);
 }
@@ -279,6 +296,7 @@ export async function initPlugins() {
     }
 
     const enabled = [...Object.values(plugins), ...Object.values(builtins)].filter(p => p.enabled);
+    await prefetchBuiltinCode(enabled.filter(record => record.builtin && !record.builtin.core).map(record => record.id));
     await Promise.allSettled(enabled.map(record => startPlugin(record.id)));
 }
 

@@ -214,18 +214,40 @@ export function requireModule(id: ModuleID): any {
     }
 }
 
+/**
+ * Module ids, listed once. Metro defines every module before Discord's entry runs, so the list rarely
+ * changes; walking an array is much cheaper than `for...in` over the registry on every find.
+ */
+let moduleIds: ModuleID[] | undefined;
+function moduleIdList(): ModuleID[] {
+    const registry = getRegistry() ?? {};
+    // Metro numbers modules consecutively: a module past the last known id means more were defined.
+    if (!moduleIds || moduleIds.length === 0 || registry[moduleIds[moduleIds.length - 1] + 1] !== undefined) {
+        moduleIds = Object.keys(registry).map(Number);
+    }
+    return moduleIds;
+}
+
+/** Exports that already passed `isBadExports`; its property probes are the costly part of a scan. */
+const goodExports = new WeakSet<object>();
+function isGoodExports(id: ModuleID, exports: any): boolean {
+    if (exports != null && (typeof exports === "object" || typeof exports === "function") && goodExports.has(exports)) return true;
+    if (isBadExports(exports)) {
+        blacklistModule(id);
+        return false;
+    }
+    goodExports.add(exports);
+    return true;
+}
+
 /** Already-initialized modules only; never runs a factory. */
 export function* initializedModules(): Generator<[ModuleID, any, ModuleRecord]> {
     const registry = getRegistry();
-    for (const key in registry) {
-        const id = Number(key);
+    for (const id of moduleIdList()) {
         const record = registry[id];
         if (!record?.isInitialized || record.hasError || blacklist.has(id)) continue;
         const exports = record.publicModule.exports;
-        if (isBadExports(exports)) {
-            blacklistModule(id);
-            continue;
-        }
+        if (!isGoodExports(id, exports)) continue;
         yield [id, exports, record];
     }
 }
@@ -235,22 +257,29 @@ export function* initializedModules(): Generator<[ModuleID, any, ModuleRecord]> 
  * so common lookups rarely have to run new factories.
  */
 export function* allModules(): Generator<[ModuleID, any, ModuleRecord]> {
-    const visited = new Set<ModuleID>();
-    for (const entry of initializedModules()) {
-        visited.add(entry[0]);
-        yield entry;
+    const registry = getRegistry();
+    const pending: ModuleID[] = [];
+    for (const id of moduleIdList()) {
+        const record = registry[id];
+        if (!record || blacklist.has(id)) continue;
+        if (!record.isInitialized) {
+            pending.push(id);
+            continue;
+        }
+        if (record.hasError) continue;
+        const exports = record.publicModule.exports;
+        if (isGoodExports(id, exports)) yield [id, exports, record];
     }
+    if (pending.length === 0) return;
 
     // Initialize Discord's entry module before anything else so remaining modules
     // see the same global state they would during a normal startup.
-    const registry = getRegistry();
     if (registry[0] && !registry[0].isInitialized) requireModule(0);
 
-    for (const key in registry) {
-        const id = Number(key);
+    for (const id of pending) {
         const record = registry[id];
-        if (!record || visited.has(id) || blacklist.has(id)) continue;
+        if (!record || blacklist.has(id)) continue;
         const exports = requireModule(id);
-        if (exports !== undefined) yield [id, exports, record];
+        if (exports !== undefined && isGoodExports(id, exports)) yield [id, exports, record];
     }
 }

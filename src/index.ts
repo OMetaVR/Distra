@@ -3,7 +3,7 @@
 
 import { callNative, isBridgeAvailable } from "@/core/bridge";
 import { exposeNativeModuleAliases, reloadApp } from "@/core/native";
-import { startRemoteDebugger } from "@/core/devtools";
+import { isRemoteDebuggerEnabled, startRemoteDebugger } from "@/core/devtools";
 import { installErrorGuard } from "@/core/errorGuard";
 import { isForeignLoader, isSafeMode, loader } from "@/core/loader";
 import { initSettings, loaderConfig, settings } from "@/core/settings";
@@ -11,7 +11,7 @@ import { patchCommands, registerCommand } from "@/lib/commands";
 import { initIconPack } from "@/lib/iconpacks";
 import { unwrapLazy } from "@/lib/lazy";
 import { installChatBar, registerChatBarButton, updateChatBar } from "@/lib/chatBar";
-import { getLogEntries, logger } from "@/lib/logger";
+import { captureConsoleLogs, getLogEntries, logger } from "@/lib/logger";
 import { corePatcher, createPatcher } from "@/lib/patcher";
 import * as metro from "@/metro";
 import { loadMetroCache } from "@/metro/cache";
@@ -56,6 +56,8 @@ export async function init() {
     } catch (e) {
         logger.error("Remote debugger failed to start", e);
     }
+    // The remote debugger streams console output itself; otherwise keep plugin logging cheap.
+    if (!__DEV__ && !isRemoteDebuggerEnabled()) captureConsoleLogs();
 
     if (isForeignLoader) logger.warn("Not loaded by the Distra tweak; native features are unavailable");
     else if (!isBridgeAvailable()) logger.error("Native bridge module missing; settings will not persist");
@@ -94,7 +96,11 @@ export async function init() {
     }
 }
 
+/** How long after Discord starts rendering lookups may still answer from recorded misses (first screens' lazy finds). */
+const STARTUP_LOOKUPS_MS = 10_000;
+
 export async function start() {
+    setTimeout(metro.endStartupLookups, STARTUP_LOOKUPS_MS);
     await step("plugin updates", pluginManager.updatePlugins);
 
     if (isSafeMode()) {

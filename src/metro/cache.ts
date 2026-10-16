@@ -6,7 +6,8 @@ import { debounce } from "@/lib/utils";
 
 import type { ModuleID } from "./types";
 
-const CACHE_VERSION = 2;
+// 3: an empty list records a lookup that found nothing.
+const CACHE_VERSION = 3;
 const CACHE_PATH = "cache/metro.json";
 
 interface CacheData {

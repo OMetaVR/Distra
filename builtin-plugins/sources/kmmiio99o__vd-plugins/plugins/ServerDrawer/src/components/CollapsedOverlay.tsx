@@ -3,6 +3,7 @@ import { PanResponder, StyleSheet, View } from "react-native";
 import { find, findByProps } from "@vendetta/metro";
 import { storage } from "@vendetta/plugin";
 import ServerDrawerSheet from "./ServerDrawerSheet";
+import { subscribeDockMode } from "../utils/dockMode";
 
 // The closed dock is wrapped in the dock's own gesture detector, which takes every touch on it:
 // a tap opens the dock and any movement drags it, so a row of servers inside it can't scroll or be
@@ -17,8 +18,8 @@ const Dispatcher = findByProps("dispatch", "subscribe", "unsubscribe");
 interface Frame { x: number; y: number; width: number; height: number }
 
 let cardFrame: Frame | null = null;
-/** When the card last moved; the row waits for it to settle so it isn't drawn mid-animation. */
-let cardMovedAt = 0;
+/** Measures the card again (set by the mounted tracker). */
+let remeasureCard: (() => void) | undefined;
 const frameListeners = new Set<() => void>();
 const sameFrame = (a: Frame | null, b: Frame) => !!a && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
@@ -42,19 +43,32 @@ function findCard(instance: any): any {
 /** Sits in the dock card's closed content and reports where the card is on screen. */
 export function CollapsedCardTracker() {
     const ref = React.useRef<View>(null);
+    const card = React.useRef<any>(null);
     React.useEffect(() => {
-        const measure = () => findCard(ref.current)?.measureInWindow?.((x: number, y: number, width: number, height: number) => {
-            const next = { x, y, width, height };
-            if (sameFrame(cardFrame, next)) return;
-            cardFrame = next;
-            cardMovedAt = Date.now();
-            frameListeners.forEach((listener) => listener());
-        });
-        measure();
-        const timer = setInterval(measure, 100);
-        return () => clearInterval(timer);
+        const measure = () => {
+            card.current ??= findCard(ref.current);
+            card.current?.measureInWindow?.((x: number, y: number, width: number, height: number) => {
+                const next = { x, y, width, height };
+                if (sameFrame(cardFrame, next)) return;
+                cardFrame = next;
+                frameListeners.forEach((listener) => listener());
+            });
+        };
+        // The card only moves when the dock changes mode (and on rotation, which re-lays this out):
+        // measure then, a few times while it animates, instead of on a timer.
+        let timers: ReturnType<typeof setTimeout>[] = [];
+        const burst = () => {
+            timers.forEach(clearTimeout);
+            timers = [0, 120, 300, 550, 900, 1400].map((delay) => setTimeout(measure, delay));
+        };
+        remeasureCard = burst;
+        burst();
+        return () => {
+            timers.forEach(clearTimeout);
+            if (remeasureCard === burst) remeasureCard = undefined;
+        };
     }, []);
-    return <View ref={ref} collapsable={false} pointerEvents="none" style={st.tracker} />;
+    return <View ref={ref} collapsable={false} pointerEvents="none" style={st.tracker} onLayout={() => remeasureCard?.()} />;
 }
 
 function useCardFrame() {
@@ -77,32 +91,23 @@ let closedByUser = 0;
  * Whether the dock is resting closed-but-visible (the single row state) with its card settled.
  * Unless "Hide while scrolling" is on, also undoes Discord tucking the dock away when a list scrolls.
  */
-function useIsCollapsed(gestureContext: React.Context<any> | null, setMode: (mode: string) => void) {
+function useIsCollapsed(gestureContext: React.Context<any> | null, setMode: (mode: string) => void, frame: Frame | null) {
     const ctx = gestureContext ? React.useContext(gestureContext) as any : null;
-    const mode = ctx?.activeQuestDockMode;
-    const [collapsed, setCollapsed] = React.useState(false);
+    const shared = ctx?.activeQuestDockMode;
+    const [mode, setCurrent] = React.useState<string | undefined>(undefined);
     React.useEffect(() => {
-        if (!mode) return;
         let last: string | undefined;
-        const read = () => {
-            try {
-                const current = mode.value ?? mode.get?.();
-                if (current === CLOSED && last === COLLAPSED && !storage.hideOnScroll && Date.now() - closedByUser > 1500) {
-                    setMode(COLLAPSED);
-                }
-                last = current;
-                const settled = cardFrame != null && Date.now() - cardMovedAt > 150
-                    && Math.abs(cardFrame.height - COLLAPSED_HEIGHT) < 3;
-                setCollapsed(current === COLLAPSED && settled);
-            } catch {
-                // keep the last known state
+        return subscribeDockMode(shared, (current) => {
+            if (current === CLOSED && last === COLLAPSED && !storage.hideOnScroll && Date.now() - closedByUser > 1500) {
+                setMode(COLLAPSED);
             }
-        };
-        read();
-        const timer = setInterval(read, 100);
-        return () => clearInterval(timer);
-    }, [mode]);
-    return collapsed;
+            last = current;
+            setCurrent(current);
+            remeasureCard?.();
+        });
+    }, [shared]);
+    // Drawn once the card has settled at its closed size, not while it animates there.
+    return mode === COLLAPSED && frame != null && Math.abs(frame.height - COLLAPSED_HEIGHT) < 3;
 }
 
 export default function CollapsedOverlay({ gestureContext }: { gestureContext: React.Context<any> | null }) {
@@ -125,7 +130,7 @@ export default function CollapsedOverlay({ gestureContext }: { gestureContext: R
             // dock coordination unavailable
         }
     };
-    const collapsed = useIsCollapsed(gestureContext, setMode);
+    const collapsed = useIsCollapsed(gestureContext, setMode, frame);
 
     // Opening a channel or DM from anywhere (an unread DM, a notification) closes the open dock.
     React.useEffect(() => {

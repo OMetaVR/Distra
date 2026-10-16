@@ -299,30 +299,20 @@ export function patchCreateElement(cleanups: (() => void)[]) {
         return added;
     }
 
-    scanAndPatchJsxRuntimes();
-
-    let ticks = 0;
-    let idleStreak = 0;
-    let timer: ReturnType<typeof setInterval> | undefined = setInterval(() => {
+    // Distra: the runtime is loaded long before plugins start, so one scan normally finds it. The
+    // original rescanned all ~18k modules every 100ms for seconds; now it retries only on a miss.
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const scan = () => {
+        timer = undefined;
         const added = scanAndPatchJsxRuntimes();
-        if (added === 0) idleStreak++;
-        else idleStreak = 0;
-        ticks++;
-        if (timer && ((ticks >= 50) || (ticks > 10 && idleStreak >= 3))) {
-            clearInterval(timer);
-            if (ticks < 50) { timer = undefined; return; }
-            const slowTimer: ReturnType<typeof setInterval> = setInterval(() => {
-                const a = scanAndPatchJsxRuntimes();
-                if (a === 0) idleStreak++;
-                else idleStreak = 0;
-                if (idleStreak >= 3) { clearInterval(slowTimer); timer = undefined; }
-            }, 2000);
-            timer = slowTimer;
-        }
-    }, 100);
+        if (added > 0 || ++attempts >= 10) return;
+        timer = setTimeout(scan, 1000);
+    };
+    scan();
 
     cleanups.push(() => {
-        if (timer) clearInterval(timer);
+        if (timer) clearTimeout(timer);
         timer = undefined;
         isPatched = false;
         intercepts.clear();

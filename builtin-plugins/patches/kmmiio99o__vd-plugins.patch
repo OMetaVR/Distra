@@ -1,5 +1,5 @@
 diff -ruN a/plugins/Commands/settings/components/Header.tsx b/plugins/Commands/settings/components/Header.tsx
---- a/plugins/Commands/settings/components/Header.tsx	2026-10-14 18:55:01.896170828 -0400
+--- a/plugins/Commands/settings/components/Header.tsx	2026-10-16 11:02:27.704159168 -0400
 +++ b/plugins/Commands/settings/components/Header.tsx	2026-10-14 15:56:24.190619200 -0400
 @@ -280,7 +280,8 @@
                  </RN.Pressable>
@@ -12,7 +12,7 @@ diff -ruN a/plugins/Commands/settings/components/Header.tsx b/plugins/Commands/s
                      </RN.Text>
                      <RN.Text style={[TextStyleSheet["text-md/bold"], { color: resolveSemanticColor(semanticColors["TEXT_MUTED"]) }]}>
 diff -ruN a/plugins/Commands/sidebar.tsx b/plugins/Commands/sidebar.tsx
---- a/plugins/Commands/sidebar.tsx	2026-10-14 18:55:01.896330792 -0400
+--- a/plugins/Commands/sidebar.tsx	2026-10-16 11:02:27.704324922 -0400
 +++ b/plugins/Commands/sidebar.tsx	2026-10-14 11:14:50.156461300 -0400
 @@ -154,7 +154,7 @@
                      const sections = config.sections;
@@ -33,7 +33,7 @@ diff -ruN a/plugins/Commands/sidebar.tsx b/plugins/Commands/sidebar.tsx
                          ),
                      );
 diff -ruN a/plugins/Moyai/src/index.ts b/plugins/Moyai/src/index.ts
---- a/plugins/Moyai/src/index.ts	2026-10-14 18:55:01.898059993 -0400
+--- a/plugins/Moyai/src/index.ts	2026-10-16 11:02:27.706436504 -0400
 +++ b/plugins/Moyai/src/index.ts	2026-10-14 11:00:26.678652200 -0400
 @@ -6,8 +6,9 @@
  const { DCDSoundManager } = ReactNative.NativeModules;
@@ -47,7 +47,7 @@ diff -ruN a/plugins/Moyai/src/index.ts b/plugins/Moyai/src/index.ts
  let SOUND_DURATION = -1;
  
 diff -ruN a/plugins/multi-scrobbler/src/sidebar.tsx b/plugins/multi-scrobbler/src/sidebar.tsx
---- a/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-14 18:55:01.899009945 -0400
+--- a/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-16 11:02:27.707756436 -0400
 +++ b/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-14 11:14:50.164672300 -0400
 @@ -153,7 +153,7 @@
                      const sections = config.sections;
@@ -69,13 +69,14 @@ diff -ruN a/plugins/multi-scrobbler/src/sidebar.tsx b/plugins/multi-scrobbler/sr
                      );
 diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx
 --- a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx	1969-12-31 19:00:00.000000000 -0500
-+++ b/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx	2026-10-14 18:43:12.475252000 -0400
-@@ -0,0 +1,184 @@
++++ b/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx	2026-10-16 11:00:15.191341600 -0400
+@@ -0,0 +1,189 @@
 +import React from "react";
 +import { PanResponder, StyleSheet, View } from "react-native";
 +import { find, findByProps } from "@vendetta/metro";
 +import { storage } from "@vendetta/plugin";
 +import ServerDrawerSheet from "./ServerDrawerSheet";
++import { subscribeDockMode } from "../utils/dockMode";
 +
 +// The closed dock is wrapped in the dock's own gesture detector, which takes every touch on it:
 +// a tap opens the dock and any movement drags it, so a row of servers inside it can't scroll or be
@@ -90,8 +91,8 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +interface Frame { x: number; y: number; width: number; height: number }
 +
 +let cardFrame: Frame | null = null;
-+/** When the card last moved; the row waits for it to settle so it isn't drawn mid-animation. */
-+let cardMovedAt = 0;
++/** Measures the card again (set by the mounted tracker). */
++let remeasureCard: (() => void) | undefined;
 +const frameListeners = new Set<() => void>();
 +const sameFrame = (a: Frame | null, b: Frame) => !!a && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 +
@@ -115,19 +116,32 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +/** Sits in the dock card's closed content and reports where the card is on screen. */
 +export function CollapsedCardTracker() {
 +    const ref = React.useRef<View>(null);
++    const card = React.useRef<any>(null);
 +    React.useEffect(() => {
-+        const measure = () => findCard(ref.current)?.measureInWindow?.((x: number, y: number, width: number, height: number) => {
-+            const next = { x, y, width, height };
-+            if (sameFrame(cardFrame, next)) return;
-+            cardFrame = next;
-+            cardMovedAt = Date.now();
-+            frameListeners.forEach((listener) => listener());
-+        });
-+        measure();
-+        const timer = setInterval(measure, 100);
-+        return () => clearInterval(timer);
++        const measure = () => {
++            card.current ??= findCard(ref.current);
++            card.current?.measureInWindow?.((x: number, y: number, width: number, height: number) => {
++                const next = { x, y, width, height };
++                if (sameFrame(cardFrame, next)) return;
++                cardFrame = next;
++                frameListeners.forEach((listener) => listener());
++            });
++        };
++        // The card only moves when the dock changes mode (and on rotation, which re-lays this out):
++        // measure then, a few times while it animates, instead of on a timer.
++        let timers: ReturnType<typeof setTimeout>[] = [];
++        const burst = () => {
++            timers.forEach(clearTimeout);
++            timers = [0, 120, 300, 550, 900, 1400].map((delay) => setTimeout(measure, delay));
++        };
++        remeasureCard = burst;
++        burst();
++        return () => {
++            timers.forEach(clearTimeout);
++            if (remeasureCard === burst) remeasureCard = undefined;
++        };
 +    }, []);
-+    return <View ref={ref} collapsable={false} pointerEvents="none" style={st.tracker} />;
++    return <View ref={ref} collapsable={false} pointerEvents="none" style={st.tracker} onLayout={() => remeasureCard?.()} />;
 +}
 +
 +function useCardFrame() {
@@ -150,32 +164,23 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 + * Whether the dock is resting closed-but-visible (the single row state) with its card settled.
 + * Unless "Hide while scrolling" is on, also undoes Discord tucking the dock away when a list scrolls.
 + */
-+function useIsCollapsed(gestureContext: React.Context<any> | null, setMode: (mode: string) => void) {
++function useIsCollapsed(gestureContext: React.Context<any> | null, setMode: (mode: string) => void, frame: Frame | null) {
 +    const ctx = gestureContext ? React.useContext(gestureContext) as any : null;
-+    const mode = ctx?.activeQuestDockMode;
-+    const [collapsed, setCollapsed] = React.useState(false);
++    const shared = ctx?.activeQuestDockMode;
++    const [mode, setCurrent] = React.useState<string | undefined>(undefined);
 +    React.useEffect(() => {
-+        if (!mode) return;
 +        let last: string | undefined;
-+        const read = () => {
-+            try {
-+                const current = mode.value ?? mode.get?.();
-+                if (current === CLOSED && last === COLLAPSED && !storage.hideOnScroll && Date.now() - closedByUser > 1500) {
-+                    setMode(COLLAPSED);
-+                }
-+                last = current;
-+                const settled = cardFrame != null && Date.now() - cardMovedAt > 150
-+                    && Math.abs(cardFrame.height - COLLAPSED_HEIGHT) < 3;
-+                setCollapsed(current === COLLAPSED && settled);
-+            } catch {
-+                // keep the last known state
++        return subscribeDockMode(shared, (current) => {
++            if (current === CLOSED && last === COLLAPSED && !storage.hideOnScroll && Date.now() - closedByUser > 1500) {
++                setMode(COLLAPSED);
 +            }
-+        };
-+        read();
-+        const timer = setInterval(read, 100);
-+        return () => clearInterval(timer);
-+    }, [mode]);
-+    return collapsed;
++            last = current;
++            setCurrent(current);
++            remeasureCard?.();
++        });
++    }, [shared]);
++    // Drawn once the card has settled at its closed size, not while it animates there.
++    return mode === COLLAPSED && frame != null && Math.abs(frame.height - COLLAPSED_HEIGHT) < 3;
 +}
 +
 +export default function CollapsedOverlay({ gestureContext }: { gestureContext: React.Context<any> | null }) {
@@ -198,7 +203,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +            // dock coordination unavailable
 +        }
 +    };
-+    const collapsed = useIsCollapsed(gestureContext, setMode);
++    const collapsed = useIsCollapsed(gestureContext, setMode, frame);
 +
 +    // Opening a channel or DM from anywhere (an unread DM, a notification) closes the open dock.
 +    React.useEffect(() => {
@@ -284,7 +289,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/Dividers.tsx b/plugins/ServerDra
 +    line: { width: "100%", height: StyleSheet.hairlineWidth * 2, marginVertical: 4, borderRadius: 1 },
 +});
 diff -ruN a/plugins/ServerDrawer/src/components/DmTile.tsx b/plugins/ServerDrawer/src/components/DmTile.tsx
---- a/plugins/ServerDrawer/src/components/DmTile.tsx	2026-10-14 18:55:01.898211466 -0400
+--- a/plugins/ServerDrawer/src/components/DmTile.tsx	2026-10-16 11:02:27.706651839 -0400
 +++ b/plugins/ServerDrawer/src/components/DmTile.tsx	2026-10-14 18:33:44.377352000 -0400
 @@ -1,9 +1,9 @@
  import React from "react";
@@ -399,7 +404,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/DmTile.tsx b/plugins/ServerDrawe
 +    text: { color: "#fff", fontSize: 10, fontWeight: "700", lineHeight: 17 },
  });
 diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerDrawer/src/components/FolderItem.tsx
---- a/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-14 18:55:01.898211466 -0400
+--- a/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-16 11:02:27.706651839 -0400
 +++ b/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-14 18:54:46.906792800 -0400
 @@ -1,11 +1,14 @@
  import React from "react";
@@ -556,7 +561,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
          justifyContent: "center",
      },
 diff -ruN a/plugins/ServerDrawer/src/components/GuildIcon.tsx b/plugins/ServerDrawer/src/components/GuildIcon.tsx
---- a/plugins/ServerDrawer/src/components/GuildIcon.tsx	2026-10-14 18:55:01.898211466 -0400
+--- a/plugins/ServerDrawer/src/components/GuildIcon.tsx	2026-10-16 11:02:27.706651839 -0400
 +++ b/plugins/ServerDrawer/src/components/GuildIcon.tsx	2026-10-14 18:31:36.836335600 -0400
 @@ -5,14 +5,14 @@
  const GuildStore = findByStoreName("GuildStore");
@@ -577,7 +582,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/GuildIcon.tsx b/plugins/ServerDr
              />
          );
 diff -ruN a/plugins/ServerDrawer/src/components/GuildItem.tsx b/plugins/ServerDrawer/src/components/GuildItem.tsx
---- a/plugins/ServerDrawer/src/components/GuildItem.tsx	2026-10-14 18:55:01.898211466 -0400
+--- a/plugins/ServerDrawer/src/components/GuildItem.tsx	2026-10-16 11:02:27.706651839 -0400
 +++ b/plugins/ServerDrawer/src/components/GuildItem.tsx	2026-10-14 18:28:29.198806300 -0400
 @@ -4,8 +4,9 @@
  import { GuildNode } from "../utils/theme";
@@ -698,9 +703,9 @@ diff -ruN a/plugins/ServerDrawer/src/components/SelectionRing.tsx b/plugins/Serv
 +    ring: { position: "absolute", top: 0, left: 0, width: ICON, height: ICON, borderRadius: RADIUS, borderWidth: 2 },
 +});
 diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx
---- a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-14 18:55:01.898211466 -0400
-+++ b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-14 18:49:34.611006400 -0400
-@@ -7,7 +7,9 @@
+--- a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-16 11:02:27.706651839 -0400
++++ b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-16 11:00:15.191807200 -0400
+@@ -7,7 +7,10 @@
  import { getGestureContext } from "../utils/gestureContext";
  import GuildItem from "./GuildItem";
  import FolderItem from "./FolderItem";
@@ -708,10 +713,11 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
 +import DmTile, { UnreadDmTile, useUnreadDms } from "./DmTile";
 +import Divider, { DividerKind } from "./Dividers";
 +import ReadAllTile from "./ReadAllTile";
++import { useDockMode } from "../utils/dockMode";
  
  const Flux = findByProps("useStateFromStores");
  const SortedGuildStore = findByStoreName("SortedGuildStore");
-@@ -61,9 +63,7 @@
+@@ -61,9 +64,7 @@
      );
  }
  
@@ -722,7 +728,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
  
  const FallbackGestureContext = React.createContext(null);
  
-@@ -89,7 +89,7 @@
+@@ -89,7 +90,7 @@
      );
  }
  
@@ -731,7 +737,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
      useProxy(storage);
  
      const pick = React.useCallback((id: string) => {
-@@ -113,12 +113,6 @@
+@@ -113,12 +114,6 @@
      const ctx = React.useContext(gestureCtx ?? FallbackGestureContext) as any;
      const minH = ctx?.minExpandedContentHeight;
  
@@ -744,7 +750,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
      const extCtx = ExternalContext ? React.useContext(ExternalContext) as any : null;
      const setMode = extCtx?.setRestingQuestDockMode;
  
-@@ -170,28 +164,77 @@
+@@ -170,28 +165,63 @@
          return () => sub.remove();
      }, [setMode, specs]);
  
@@ -755,22 +761,8 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
 -    const padX = Math.max(0, (winW - totalW) / 2);
 +    // The dock mounts its closed and open content together and each normally fades itself out;
 +    // ours don't, so follow the dock's mode (a shared value React can't subscribe to) by polling.
-+    const activeMode = ctx?.activeQuestDockMode;
-+    const [open, setOpen] = React.useState(false);
-+    React.useEffect(() => {
-+        if (!activeMode) return;
-+        const read = () => {
-+            try {
-+                const mode = activeMode.value ?? activeMode.get?.();
-+                setOpen(mode != null && mode !== (QuestDockMode?.COLLAPSED ?? "collapsed"));
-+            } catch {
-+                // keep the last known state
-+            }
-+        };
-+        read();
-+        const timer = setInterval(read, 100);
-+        return () => clearInterval(timer);
-+    }, [activeMode]);
++    const dockMode = useDockMode(ctx?.activeQuestDockMode);
++    const open = dockMode != null && dockMode !== (QuestDockMode?.COLLAPSED ?? "collapsed");
 +
 +    const separator = storage.folderSeparator !== false;
 +    const showNames = !!storage.showGuildNames;
@@ -842,7 +834,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
      );
  }
  
-@@ -201,16 +244,29 @@
+@@ -201,16 +231,29 @@
          justifyContent: "flex-start",
          alignItems: "flex-start",
      },
@@ -874,7 +866,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
          backgroundColor: createJoinBg,
          alignItems: "center",
          justifyContent: "center",
-@@ -218,7 +274,7 @@
+@@ -218,7 +261,7 @@
      discoveryTile: {
          width: ICON,
          height: ICON,
@@ -884,7 +876,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
          justifyContent: "center",
      },
 diff -ruN a/plugins/ServerDrawer/src/index.tsx b/plugins/ServerDrawer/src/index.tsx
---- a/plugins/ServerDrawer/src/index.tsx	2026-10-14 18:55:01.898211466 -0400
+--- a/plugins/ServerDrawer/src/index.tsx	2026-10-16 11:02:27.706651839 -0400
 +++ b/plugins/ServerDrawer/src/index.tsx	2026-10-14 18:31:43.193941300 -0400
 @@ -3,7 +3,7 @@
  import { patchMobileQuestDock } from "./patches/mobileQuestDock";
@@ -913,7 +905,7 @@ diff -ruN a/plugins/ServerDrawer/src/index.tsx b/plugins/ServerDrawer/src/index.
          if (patchEmpty("QuestDockUnenrolledHeader", cleanups)) patched++;
          if (patchEmpty("QuestDockEnrolledBody", cleanups)) patched++;
 diff -ruN a/plugins/ServerDrawer/src/patches/contentPatch.tsx b/plugins/ServerDrawer/src/patches/contentPatch.tsx
---- a/plugins/ServerDrawer/src/patches/contentPatch.tsx	2026-10-14 18:55:01.898211466 -0400
+--- a/plugins/ServerDrawer/src/patches/contentPatch.tsx	2026-10-16 11:02:27.706651839 -0400
 +++ b/plugins/ServerDrawer/src/patches/contentPatch.tsx	2026-10-14 18:15:26.159207900 -0400
 @@ -1,6 +1,8 @@
  import { find } from "@vendetta/metro";
@@ -999,10 +991,55 @@ diff -ruN a/plugins/ServerDrawer/src/patches/contentPatch.tsx b/plugins/ServerDr
 +    console.log(TAG, "PATCH: closed dock row drawn over the card");
 +    return true;
 +}
+diff -ruN a/plugins/ServerDrawer/src/patches/createElementIntercept.ts b/plugins/ServerDrawer/src/patches/createElementIntercept.ts
+--- a/plugins/ServerDrawer/src/patches/createElementIntercept.ts	2026-10-16 11:02:27.706937046 -0400
++++ b/plugins/ServerDrawer/src/patches/createElementIntercept.ts	2026-10-16 10:59:33.392232200 -0400
+@@ -299,30 +299,20 @@
+         return added;
+     }
+ 
+-    scanAndPatchJsxRuntimes();
+-
+-    let ticks = 0;
+-    let idleStreak = 0;
+-    let timer: ReturnType<typeof setInterval> | undefined = setInterval(() => {
++    // Distra: the runtime is loaded long before plugins start, so one scan normally finds it. The
++    // original rescanned all ~18k modules every 100ms for seconds; now it retries only on a miss.
++    let attempts = 0;
++    let timer: ReturnType<typeof setTimeout> | undefined;
++    const scan = () => {
++        timer = undefined;
+         const added = scanAndPatchJsxRuntimes();
+-        if (added === 0) idleStreak++;
+-        else idleStreak = 0;
+-        ticks++;
+-        if (timer && ((ticks >= 50) || (ticks > 10 && idleStreak >= 3))) {
+-            clearInterval(timer);
+-            if (ticks < 50) { timer = undefined; return; }
+-            const slowTimer: ReturnType<typeof setInterval> = setInterval(() => {
+-                const a = scanAndPatchJsxRuntimes();
+-                if (a === 0) idleStreak++;
+-                else idleStreak = 0;
+-                if (idleStreak >= 3) { clearInterval(slowTimer); timer = undefined; }
+-            }, 2000);
+-            timer = slowTimer;
+-        }
+-    }, 100);
++        if (added > 0 || ++attempts >= 10) return;
++        timer = setTimeout(scan, 1000);
++    };
++    scan();
+ 
+     cleanups.push(() => {
+-        if (timer) clearInterval(timer);
++        if (timer) clearTimeout(timer);
+         timer = undefined;
+         isPatched = false;
+         intercepts.clear();
 diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx
---- a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-14 18:55:01.898429072 -0400
-+++ b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-14 17:27:15.902751300 -0400
-@@ -1,6 +1,7 @@
+--- a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-16 11:02:27.706937046 -0400
++++ b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-16 10:59:40.924279200 -0400
+@@ -1,10 +1,11 @@
  import React from "react";
  import { View } from "react-native";
  import { findAll } from "@vendetta/metro";
@@ -1010,7 +1047,49 @@ diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerD
  import { useProxy } from "@vendetta/storage";
  import { storage } from "@vendetta/plugin";
  import { RailDmTile } from "../components/DmTile";
-@@ -192,6 +193,36 @@
+-import { registerIntercept, registerTypeDetector, registerPropsTransform } from "./createElementIntercept";
++import { registerIntercept, registerTypeDetector } from "./createElementIntercept";
+ 
+ const TAG = "[ServerDrawer]";
+ const DM_WIDTH = 72;
+@@ -37,36 +38,6 @@
+     return unwrapComponent(type)?.name === name;
+ }
+ 
+-// Check if props belong to the messages panel
+-function isMessagesPanel(props: any): boolean {
+-    return props?.nativeID === "messages-parent-view";
+-}
+-
+-// Transform function for messages panel - adjust left based on setting
+-function transformMessagesPanelProps(props: any): any {
+-    const style = props?.style;
+-    const list = Array.isArray(style) ? style : [style];
+-
+-    let newStyleArray: any[] | undefined;
+-    let changed = false;
+-
+-    list.forEach((s: any, i: number) => {
+-        if (!s || typeof s !== "object") return;
+-        // The sideContainer lives in the style array: position absolute with all four offsets.
+-        if (s?.position !== "absolute" || typeof s?.left !== "number" ||
+-            typeof s?.top !== "number" || typeof s?.bottom !== "number" || typeof s?.right !== "number") return;
+-        const newLeft = storage.hideDmTile ? DM_WIDTH : 0;
+-        if (s.left === newLeft) return;
+-        newStyleArray = newStyleArray ?? [...list];
+-        newStyleArray[i] = { ...s, left: newLeft };
+-        changed = true;
+-        console.log(TAG, `messages sideContainer left -> ${newLeft}`);
+-    });
+-
+-    if (!changed) return props;
+-    return { ...props, style: Array.isArray(style) ? newStyleArray : newStyleArray![0] };
+-}
+-
+ // Patch for HomePanelContent: conditionally render rail content
+ function HomePanelContentPatch() {
+     useProxy(storage);
+@@ -192,15 +163,42 @@
      hidingComplete = found > 0 && applied === 0;
  }
  
@@ -1047,17 +1126,64 @@ diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerD
  export function patchHideGuildsBar(cleanups: (() => void)[]): boolean {
      let applied = false;
  
-@@ -203,6 +234,8 @@
-     );
+-    // 1. Register props transform for messages panel (works via createElementIntercept)
+-    // This is the PRIMARY mechanism - transforms the messages panel's style at creation time
+-    registerPropsTransform(
+-        isMessagesPanel,
+-        transformMessagesPanelProps
+-    );
++    // Distra: the messages panel is widened by a View.render patch; the old per-element props
++    // transform did the same work on every element Discord created.
++    patchMessagesPanelWidth(cleanups);
      applied = true;
  
-+    patchMessagesPanelWidth(cleanups);
-+
      // 2+3. Persistent module mutation.
-     rescanHiding(cleanups);
+diff -ruN a/plugins/ServerDrawer/src/patches/transparentBackground.ts b/plugins/ServerDrawer/src/patches/transparentBackground.ts
+--- a/plugins/ServerDrawer/src/patches/transparentBackground.ts	2026-10-16 11:02:27.706937046 -0400
++++ b/plugins/ServerDrawer/src/patches/transparentBackground.ts	2026-10-16 10:59:33.391632800 -0400
+@@ -6,18 +6,35 @@
+ // useAnimatedStyle - no component reference to intercept, so match on the computed style instead.
+ // The color itself varies in format (rgba vs hex), so borderRadius + "has a background color" is
+ // the stable signal, not the color string.
++// Distra: this runs for every element Discord creates, so it reads the style without building
++// merged copies (later entries win, as when React Native flattens a style).
++interface CardProbe { borderRadius?: unknown; backgroundColor?: unknown; position?: unknown; left?: unknown; zIndex?: unknown }
++function readStyle(style: any, into: CardProbe, depth: number) {
++    if (!style || typeof style !== "object" || depth > 2) return;
++    if (Array.isArray(style)) {
++        for (let i = 0; i < style.length; i++) readStyle(style[i], into, depth + 1);
++        return;
++    }
++    if ("borderRadius" in style) into.borderRadius = style.borderRadius;
++    if ("backgroundColor" in style) into.backgroundColor = style.backgroundColor;
++    if ("position" in style) into.position = style.position;
++    if ("left" in style) into.left = style.left;
++    if ("zIndex" in style) into.zIndex = style.zIndex;
++}
++
++const probe: CardProbe = {};
+ function isQuestDockCard(props: any): boolean {
+     const root = props?.style;
+-    if (!root) return false;
++    if (!root || typeof root !== "object") return false;
  
+     const styles = Array.isArray(root) ? root : [root];
+     for (let i = 0; i < styles.length; i++) {
+         const entry = styles[i];
+         if (!entry || typeof entry !== "object") continue;
+-        const s = Array.isArray(entry) ? Object.assign({}, ...entry.map((e: any) =>
+-            Array.isArray(e) ? Object.assign({}, ...e.map((f: any) => f ?? {})) : (e ?? {}))) : entry;
+-        if (s.borderRadius === 24 && typeof s.backgroundColor === "string" &&
+-            s.position === "absolute" && s.left === "50%" && s.zIndex === 1) {
++        probe.borderRadius = probe.backgroundColor = probe.position = probe.left = probe.zIndex = undefined;
++        readStyle(entry, probe, 0);
++        if (probe.borderRadius === 24 && typeof probe.backgroundColor === "string" &&
++            probe.position === "absolute" && probe.left === "50%" && probe.zIndex === 1) {
+             return true;
+         }
+     }
 diff -ruN a/plugins/ServerDrawer/src/ui/Settings.tsx b/plugins/ServerDrawer/src/ui/Settings.tsx
---- a/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-14 18:55:01.898429072 -0400
+--- a/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-16 11:02:27.706937046 -0400
 +++ b/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-14 18:54:46.907079300 -0400
 @@ -22,6 +22,28 @@
                          onValueChange={(v: boolean) => { storage.showGuildNames = v; }}
@@ -1088,6 +1214,60 @@ diff -ruN a/plugins/ServerDrawer/src/ui/Settings.tsx b/plugins/ServerDrawer/src/
                  <TableRowGroup title="About">
                      <TableRow
                          label="Server Drawer"
+diff -ruN a/plugins/ServerDrawer/src/utils/dockMode.ts b/plugins/ServerDrawer/src/utils/dockMode.ts
+--- a/plugins/ServerDrawer/src/utils/dockMode.ts	1969-12-31 19:00:00.000000000 -0500
++++ b/plugins/ServerDrawer/src/utils/dockMode.ts	2026-10-16 11:00:15.177120600 -0400
+@@ -0,0 +1,50 @@
++import React from "react";
++
++// The dock keeps its mode in a Reanimated shared value, which React can't subscribe to. One timer
++// per shared value reads it for every component that cares, and only calls them when it changes.
++const POLL_MS = 150;
++
++type Listener = (mode: string | undefined) => void;
++interface Poller { listeners: Set<Listener>; last?: string; timer?: ReturnType<typeof setInterval> }
++const pollers = new Map<any, Poller>();
++
++function read(shared: any): string | undefined {
++    try {
++        return shared.value ?? shared.get?.();
++    } catch {
++        return undefined;
++    }
++}
++
++/** Calls `listener` with the dock mode now and whenever it changes. Returns an unsubscribe. */
++export function subscribeDockMode(shared: any, listener: Listener): () => void {
++    if (!shared) return () => { };
++    let poller = pollers.get(shared);
++    if (!poller) {
++        const created: Poller = { listeners: new Set(), last: read(shared) };
++        created.timer = setInterval(() => {
++            const mode = read(shared);
++            if (mode === created.last) return;
++            created.last = mode;
++            created.listeners.forEach((fn) => fn(mode));
++        }, POLL_MS);
++        pollers.set(shared, created);
++        poller = created;
++    }
++    poller.listeners.add(listener);
++    listener(poller.last);
++    return () => {
++        poller!.listeners.delete(listener);
++        if (poller!.listeners.size === 0) {
++            clearInterval(poller!.timer);
++            pollers.delete(shared);
++        }
++    };
++}
++
++/** The dock's current mode ("collapsed", "expanded", "closed", ...). */
++export function useDockMode(shared: any): string | undefined {
++    const [mode, setMode] = React.useState<string | undefined>(() => read(shared));
++    React.useEffect(() => subscribeDockMode(shared, setMode), [shared]);
++    return mode;
++}
 diff -ruN a/plugins/ServerDrawer/src/utils/metrics.ts b/plugins/ServerDrawer/src/utils/metrics.ts
 --- a/plugins/ServerDrawer/src/utils/metrics.ts	1969-12-31 19:00:00.000000000 -0500
 +++ b/plugins/ServerDrawer/src/utils/metrics.ts	2026-10-14 17:49:04.048234100 -0400
@@ -1109,7 +1289,7 @@ diff -ruN a/plugins/ServerDrawer/src/utils/metrics.ts b/plugins/ServerDrawer/src
 +export const MINI = Math.round(ICON / 3);
 +export const TOP_PAD = 11;
 diff -ruN a/plugins/ServerDrawer/src/utils/theme.ts b/plugins/ServerDrawer/src/utils/theme.ts
---- a/plugins/ServerDrawer/src/utils/theme.ts	2026-10-14 18:55:01.898723629 -0400
+--- a/plugins/ServerDrawer/src/utils/theme.ts	2026-10-16 11:02:27.707336956 -0400
 +++ b/plugins/ServerDrawer/src/utils/theme.ts	2026-10-14 18:27:55.774836300 -0400
 @@ -31,3 +31,25 @@
      expanded?: boolean;

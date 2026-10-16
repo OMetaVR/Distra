@@ -6,18 +6,35 @@ const TAG = "[ServerDrawer]";
 // useAnimatedStyle - no component reference to intercept, so match on the computed style instead.
 // The color itself varies in format (rgba vs hex), so borderRadius + "has a background color" is
 // the stable signal, not the color string.
+// Distra: this runs for every element Discord creates, so it reads the style without building
+// merged copies (later entries win, as when React Native flattens a style).
+interface CardProbe { borderRadius?: unknown; backgroundColor?: unknown; position?: unknown; left?: unknown; zIndex?: unknown }
+function readStyle(style: any, into: CardProbe, depth: number) {
+    if (!style || typeof style !== "object" || depth > 2) return;
+    if (Array.isArray(style)) {
+        for (let i = 0; i < style.length; i++) readStyle(style[i], into, depth + 1);
+        return;
+    }
+    if ("borderRadius" in style) into.borderRadius = style.borderRadius;
+    if ("backgroundColor" in style) into.backgroundColor = style.backgroundColor;
+    if ("position" in style) into.position = style.position;
+    if ("left" in style) into.left = style.left;
+    if ("zIndex" in style) into.zIndex = style.zIndex;
+}
+
+const probe: CardProbe = {};
 function isQuestDockCard(props: any): boolean {
     const root = props?.style;
-    if (!root) return false;
+    if (!root || typeof root !== "object") return false;
 
     const styles = Array.isArray(root) ? root : [root];
     for (let i = 0; i < styles.length; i++) {
         const entry = styles[i];
         if (!entry || typeof entry !== "object") continue;
-        const s = Array.isArray(entry) ? Object.assign({}, ...entry.map((e: any) =>
-            Array.isArray(e) ? Object.assign({}, ...e.map((f: any) => f ?? {})) : (e ?? {}))) : entry;
-        if (s.borderRadius === 24 && typeof s.backgroundColor === "string" &&
-            s.position === "absolute" && s.left === "50%" && s.zIndex === 1) {
+        probe.borderRadius = probe.backgroundColor = probe.position = probe.left = probe.zIndex = undefined;
+        readStyle(entry, probe, 0);
+        if (probe.borderRadius === 24 && typeof probe.backgroundColor === "string" &&
+            probe.position === "absolute" && probe.left === "50%" && probe.zIndex === 1) {
             return true;
         }
     }
