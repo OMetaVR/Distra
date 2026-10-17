@@ -171,4 +171,5 @@ Ideas and approaches are drawn from [Vendetta](https://github.com/vendetta-mod),
 [rain](https://codeberg.org/raincord/rain), [Enmity](https://github.com/enmity-mod),
 [Aliucord iOS](https://github.com/Aliucord/Aliucord-iOS) and
 [rosiecord](https://github.com/acquitelol/rosiecord). Icon packs are not part of
-this repository; rosiecord's packs are GPL-3.0 licensed and fetched at build time.
+this repository; rosiecord's Plumpy and Iconsax packs (GPL-3.0) are bundled into release IPAs
+and can be downloaded in the app (Settings > Distra > Icon Packs) on other installs.

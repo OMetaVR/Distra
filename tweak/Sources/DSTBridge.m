@@ -116,6 +116,26 @@ static NSDictionary<NSString *, DSTHandler> *DSTHandlers(void) {
                 if (url && [NSFileManager.defaultManager fileExistsAtPath:url.path]) [NSFileManager.defaultManager removeItemAtURL:url error:&error];
                 done(NSNull.null, url && !error ? nil : error.localizedDescription);
             },
+            // Downloads `url` straight to a file (icon packs: thousands of small images, no text round trip).
+            @"fs.download": ^(NSArray *args, DSTDone done) {
+                NSError *error;
+                NSString *source = DSTArg(args, 0);
+                NSURL *remote = [source isKindOfClass:NSString.class] ? [NSURL URLWithString:source] : nil;
+                NSURL *url = DSTResolvePath(DSTArg(args, 1), &error);
+                if (!url) return done(nil, error.localizedDescription);
+                if (!remote || !([remote.scheme isEqualToString:@"https"] || [remote.scheme isEqualToString:@"http"])) return done(nil, @"Expected an http(s) URL");
+                [[NSURLSession.sharedSession downloadTaskWithURL:remote completionHandler:^(NSURL *location, NSURLResponse *response, NSError *downloadError) {
+                    NSInteger status = [response isKindOfClass:NSHTTPURLResponse.class] ? ((NSHTTPURLResponse *)response).statusCode : 0;
+                    if (downloadError || !location) return done(nil, downloadError.localizedDescription ?: @"Download failed");
+                    if (status >= 400) return done(nil, [NSString stringWithFormat:@"HTTP %ld", (long)status]);
+                    NSError *moveError;
+                    NSFileManager *files = NSFileManager.defaultManager;
+                    [files createDirectoryAtURL:url.URLByDeletingLastPathComponent withIntermediateDirectories:YES attributes:nil error:nil];
+                    [files removeItemAtURL:url error:nil];
+                    BOOL ok = [files moveItemAtURL:location toURL:url error:&moveError];
+                    done(NSNull.null, ok ? nil : moveError.localizedDescription);
+                }] resume];
+            },
             @"fs.list": ^(NSArray *args, DSTDone done) {
                 NSError *error;
                 NSURL *url = DSTResolvePath(DSTArg(args, 0), &error);

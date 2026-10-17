@@ -4,6 +4,8 @@ import Settings from "./Settings";
 import { storage } from "@vendetta/plugin";
 import { GlobalBadges, applyBadgeLimit, badgeUtils, DISCORD_MAX_BADGES, loadBadges } from "./utils";
 import { BadgeProps } from "./types";
+import { React } from "@vendetta/metro/common";
+import AnimatedBadge, { canAnimate } from "./AnimatedBadge";
 
 const bunny = (window as any).bunny.api.react.jsx;
 const REFRESH_INTERVAL = 1000 * 60 * 30;
@@ -53,6 +55,14 @@ export default {
     bunny.onJsxCreate("ProfileBadge", (component: any, ret: any) => {
       if (ret.props.id?.startsWith("gb-")) {
         const badgePropsCache = badgeProps[ret.props.id];
+        if (badgePropsCache && canAnimate()) {
+          return React.createElement(AnimatedBadge, {
+            key: ret.key ?? badgePropsCache.id,
+            uri: badgePropsCache.source.uri,
+            label: badgePropsCache.label,
+            size: ret.props.badgeSize,
+          });
+        }
         if (badgePropsCache) {
           ret.props.source = badgePropsCache.source;
           ret.props.label = badgePropsCache.label;
