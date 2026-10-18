@@ -52,6 +52,10 @@ def add_icon_packs(app: Path, packs: list[Path]) -> None:
         shutil.rmtree(destination, ignore_errors=True)
         # Assets.car only matches the Discord version a pack was made for; JS-side packs use the PNGs.
         shutil.copytree(pack, destination, ignore=shutil.ignore_patterns("Assets.car", ".*"))
+        # Distra's own additions to the pack (iconpacks/<name>) go on top.
+        additions = Path(__file__).resolve().parent.parent / "iconpacks" / pack.name
+        if additions.is_dir():
+            shutil.copytree(additions, destination, dirs_exist_ok=True)
         print(f"added icon pack {pack.name} ({sum(1 for p in destination.rglob('*') if p.is_file())} files)")
 
 

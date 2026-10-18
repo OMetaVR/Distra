@@ -80,8 +80,9 @@ function DownloadRow({ pack, installed, bundled, onChange }: { pack: Downloadabl
         ? `Downloading… ${current!.done} of ${current!.total || "?"} files`
         : current?.error ? `Failed: ${current.error}`
             : state === "installed" ? `Downloaded · tap to remove · ${pack.credit}`
-                : state === "partial" ? `Partly downloaded · tap to finish · ${pack.credit}`
-                    : `${pack.description} · ${pack.credit}`;
+                : state === "outdated" ? `Update available · tap to update · ${pack.credit}`
+                    : state === "partial" ? `Partly downloaded · tap to finish · ${pack.credit}`
+                        : `${pack.description} · ${pack.credit}`;
 
     return (
         <TableRow
