@@ -228,6 +228,14 @@ static NSDictionary<NSString *, DSTHandler> *DSTHandlers(void) {
             },
 
             // Icon packs
+            @"theme.setNative": ^(NSArray *args, DSTDone done) {
+                NSError *error;
+                BOOL ok = DSTThemeSetNative(DSTArg(args, 0), &error);
+                done(NSNull.null, ok ? nil : error.localizedDescription);
+            },
+            @"theme.nativeInfo": ^(NSArray *args, DSTDone done) {
+                done(DSTThemeNativeInfo(), nil);
+            },
             @"iconpacks.list": ^(NSArray *args, DSTDone done) {
                 done(DSTListIconPacks(), nil);
             },

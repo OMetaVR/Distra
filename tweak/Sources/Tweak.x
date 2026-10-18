@@ -128,5 +128,6 @@ static BOOL DSTShouldInject(id owner, NSURL *url) {
             DSTLogNative(@"Class %@: %@", name, NSClassFromString(name) ? @"found" : @"MISSING");
         }
         %init;
+        DSTThemeLoadSaved();
     }
 }

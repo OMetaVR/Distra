@@ -1,0 +1,88 @@
+{
+  "name": "Moss",
+  "description": "Forest greens, written in Enmity's format.",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "Distra"
+    }
+  ],
+  "theme_color_map": {
+    "BACKGROUND_PRIMARY": [
+      "#253129",
+      "#eaf2e9"
+    ],
+    "BACKGROUND_SECONDARY": [
+      "#1e2922",
+      "#dfe9dd"
+    ],
+    "BACKGROUND_TERTIARY": [
+      "#18211b",
+      "#d4e0d1"
+    ],
+    "BACKGROUND_FLOATING": [
+      "#1a231d",
+      "#f3f7f2"
+    ],
+    "BACKGROUND_MOBILE_PRIMARY": [
+      "#253129",
+      "#eaf2e9"
+    ],
+    "BACKGROUND_MOBILE_SECONDARY": [
+      "#1e2922",
+      "#dfe9dd"
+    ],
+    "CHANNELTEXTAREA_BACKGROUND": [
+      "#2e3d33",
+      "#d7e2d4"
+    ],
+    "HEADER_PRIMARY": [
+      "#eef5ec",
+      "#1d2a1f"
+    ],
+    "HEADER_SECONDARY": [
+      "#a9bfa9",
+      "#4f6450"
+    ],
+    "TEXT_NORMAL": [
+      "#dde8db",
+      "#26332a"
+    ],
+    "TEXT_MUTED": [
+      "#8ea58f",
+      "#5f7461"
+    ],
+    "TEXT_LINK": [
+      "#9fd99a",
+      "#2f7a3a"
+    ],
+    "INTERACTIVE_NORMAL": [
+      "#bcd0bb",
+      "#445a47"
+    ],
+    "INTERACTIVE_ACTIVE": [
+      "#ffffff",
+      "#0f1a11"
+    ],
+    "CHANNEL_ICON": [
+      "#8ea58f",
+      "#5f7461"
+    ]
+  },
+  "colours": {
+    "PRIMARY_DARK_100": "#f3f6f4",
+    "PRIMARY_DARK_300": "#becfc4",
+    "PRIMARY_DARK_360": "#8aa894",
+    "PRIMARY_DARK_400": "#6c9379",
+    "PRIMARY_DARK_500": "#455e4e",
+    "PRIMARY_DARK_600": "#253229",
+    "PRIMARY_DARK_630": "#1e2922",
+    "PRIMARY_DARK_700": "#18201b",
+    "PRIMARY_DARK_800": "#0f1511",
+    "PRIMARY_DARK_900": "#040605"
+  },
+  "unsafe_colors": {
+    "BRAND_500": "#4c9e57",
+    "BRAND_360": "#79c482"
+  }
+}

@@ -120,3 +120,13 @@ void DSTImageCache(NSString *url, NSString *relativePath, NSDictionary *options,
 
 /** Explains why safe mode / disabled mode kicked in, once the UI is up. */
 void DSTShowRecoveryAlertIfNeeded(void);
+
+#pragma mark - Themes (DSTTheme.m)
+
+/** Applies the native colours saved by the last selected theme. Call at launch. */
+void DSTThemeLoadSaved(void);
+/** Installs and saves `{ name, colors: { camelCaseToken: "#rrggbbaa" } }`; no colours restores Discord's. */
+BOOL DSTThemeSetNative(NSDictionary *payload, NSError **error);
+/** DCDThemeColor's colour getters and how many are themed, for diagnostics. */
+NSDictionary *DSTThemeNativeInfo(void);
+

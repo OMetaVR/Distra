@@ -26,6 +26,18 @@ export function registerDistraSection() {
             render: () => import("@/ui/pages/PluginLibrary"),
         },
         {
+            key: "DISTRA_THEMES",
+            title: () => "Themes",
+            icon: "PaintbrushThinIcon",
+            render: () => import("@/ui/pages/Themes"),
+        },
+        {
+            key: "DISTRA_THEME_LIBRARY",
+            title: () => "Theme Library",
+            icon: "GridSquareIcon",
+            render: () => import("@/ui/pages/ThemeLibrary"),
+        },
+        {
             key: "DISTRA_ICON_PACKS",
             title: () => "Icon Packs",
             icon: "PaintPaletteIcon",

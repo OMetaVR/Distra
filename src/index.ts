@@ -9,6 +9,7 @@ import { isForeignLoader, isSafeMode, loader } from "@/core/loader";
 import { initSettings, loaderConfig, settings } from "@/core/settings";
 import { patchCommands, registerCommand } from "@/lib/commands";
 import { initIconPack } from "@/lib/iconpacks";
+import * as themes from "@/lib/themes";
 import { unwrapLazy } from "@/lib/lazy";
 import { installChatBar, registerChatBarButton, updateChatBar } from "@/lib/chatBar";
 import { captureConsoleLogs, getLogEntries, logger } from "@/lib/logger";
@@ -82,6 +83,7 @@ export async function init() {
     });
     await step("commands", patchCommands);
     await step("icon pack", initIconPack);
+    await step("themes", themes.initThemes);
     await step("chat bar", installChatBar);
     // Before plugins start: some use the API (e.g. the chat bar) while loading.
     globalThis.distra = createGlobalApi();
@@ -126,6 +128,7 @@ function createGlobalApi() {
         plugins: pluginManager,
         commands: { registerCommand },
         chatBar: { register: registerChatBarButton, update: updateChatBar },
+        themes,
         settingsUI: { registerSection },
         native: { call: callNative },
         reload: reloadApp,

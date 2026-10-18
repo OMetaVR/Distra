@@ -7,7 +7,8 @@
 
 A Discord client mod for iOS. Distra runs plugins written for **Vendetta**,
 **Bunny**, **Enmity** and **Aliucord**, plus its own format, and supports
-swappable **icon packs** and extra **app icons**. It is managed from a
+**themes** (Vendetta, Bunny and Enmity theme files), swappable **icon packs** and extra
+**app icons**. It is managed from a
 Distra section in Discord's own settings.
 
 > Early development. Built and tested against Discord 348.0 (113691). See [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -65,6 +66,18 @@ Duplicates, plugins for features Discord now has itself, and Android-only plugin
 removed (44, each listed with the reason). The library also offers 17 more plugins that are
 installed from their authors because their code can't be redistributed. Full list and credits:
 [builtin-plugins/README.md](builtin-plugins/README.md).
+
+## Themes
+
+Distra applies Vendetta (spec 2), Bunny (spec 3) and Enmity theme files, installed from a link,
+pasted, or picked from the **Theme Library** in Settings > Distra. Themes change how Discord looks
+on the device only; Discord's own appearance setting is never touched. Themes made for older
+Discord versions are mapped onto the current design (renamed colour tokens, and the old grey
+palette onto the new one), and the tweak applies the colours to Discord's natively drawn UI too.
+
+The library has 4 themes made for Distra and 17 community themes (Catppuccin, Nord, Dracula,
+Tokyo Night, Gruvbox and more) redistributed under their authors' MIT and BSD licences; see
+[builtin-themes/LICENSES.md](builtin-themes/LICENSES.md).
 
 ## Building
 
@@ -146,12 +159,13 @@ src/
   index.ts          startup sequence
   core/             loader payload, native bridge, file access, storage, settings
   metro/            module registry, filters, finders, persistent find cache
-  lib/              patcher, assets, commands, icon packs, app icons, logging
+  lib/              patcher, assets, commands, themes, icon packs, app icons, logging
   compat/           window.vendetta / window.bunny / window.enmity + window.aliucord
   plugins/          plugin manager and one adapter per plugin flavor
   ui/               settings injection, pages, Discord component lookups
 shims/              maps `react`/`react-native` imports onto Discord's own copies
 builtin-plugins/    vendored plugin sources, catalog (pinned commits/licenses), credits
+builtin-themes/     Theme Library themes and their licences
 tweak/              Theos project (Tweak.x hooks, loader, bridge, boot guard)
 scripts/            build, plugin sync/build, dev server, IPA builder
 tests/              Node harness emulating Metro + the native bridge

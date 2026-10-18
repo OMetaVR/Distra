@@ -22,6 +22,7 @@ import { Codeblock, Search } from "@/ui/CompatComponents";
 import * as components from "@/ui/components";
 import { ErrorBoundary } from "@/ui/ErrorBoundary";
 import { createThemedStyleSheet } from "@/ui/styles";
+import { createThemesApi } from "./themes";
 import { showToast } from "@/ui/toasts";
 
 // Vendetta's find() takes bare predicates. They can close over arbitrary state,
@@ -210,16 +211,7 @@ export function createVendettaObject() {
             unregisterAllCommands: () => console.warn("[Distra] unregisterAllCommands: commands are removed when their plugin stops"),
         },
         plugins: createPluginsApi(),
-        // Distra has no theme support yet; these keep theme-aware plugins from crashing.
-        themes: {
-            themes: liveView(() => ({}), () => { }),
-            installTheme: () => Promise.reject(new Error("Themes are not supported by Distra yet")),
-            removeTheme: () => Promise.resolve(false),
-            selectTheme: () => Promise.resolve(),
-            applyTheme: () => { },
-            fetchTheme: () => Promise.reject(new Error("Themes are not supported by Distra yet")),
-            getCurrentTheme: () => null,
-        },
+        themes: createThemesApi(),
         storage: {
             createProxy: storage.createProxy,
             useProxy: storage.useProxy,

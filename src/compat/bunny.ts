@@ -23,8 +23,8 @@ export function createBunnyObject() {
             settings: { settings: vd.settings, loaderConfig: vd.loader.config },
             react: { jsx: { onJsxCreate, deleteJsxCreate } },
         },
-        // Not supported by Distra yet; present so theme/font-aware plugins degrade gracefully.
-        themes: { themes: {}, selectTheme: vd.themes.selectTheme, applyTheme: vd.themes.applyTheme, getCurrentTheme: () => null, getThemeFromLoader: () => null },
+        themes: vd.themes,
+        // Not supported by Distra yet; present so font-aware plugins degrade gracefully.
         fonts: { fonts: {}, installFont: () => Promise.reject(new Error("Fonts are not supported by Distra yet")), saveFont: () => Promise.reject(new Error("Fonts are not supported by Distra yet")) },
         metro: { ...metro, common: vd.metro.common },
         ui: {
