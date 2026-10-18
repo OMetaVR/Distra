@@ -2,7 +2,9 @@
 // don't have them bundled (the dylib, jailbreak packages). They come from rosiecord's repository
 // (GPL-3.0) through jsDelivr, which also lists the files, and are saved file by file into
 // Documents/Distra/IconPacks/<name>/. Distra's own additions to a pack (iconpacks/<name> in this
-// repository: icons the pack lacks, fixes) are downloaded after it and replace its files.
+// repository: icons the pack lacks, fixes) are downloaded after it and replace its files. They come
+// straight from GitHub, which picks up new commits within minutes (jsDelivr's branch listing can lag
+// by hours).
 
 import { callNative } from "@/core/bridge";
 import { fileExists, readFile, removeFile, writeFile } from "@/core/fs";
@@ -64,6 +66,13 @@ function listRepo(repo: string, ref: string): Promise<string[]> {
     return listing;
 }
 
+async function listAdditions(id: string): Promise<string[]> {
+    const response = await fetch(`https://api.github.com/repos/${ADDITIONS_REPO}/git/trees/${ADDITIONS_REF}?recursive=1`);
+    if (!response.ok) throw new Error(`Couldn't list Distra's additions (HTTP ${response.status})`);
+    const data: { tree?: { path: string; type: string }[] } = await response.json();
+    return (data.tree ?? []).filter(entry => entry.type === "blob" && entry.path.startsWith(`iconpacks/${id}/`)).map(entry => entry.path);
+}
+
 const encodePath = (path: string) => path.split("/").map(encodeURIComponent).join("/");
 
 interface Download { url: string; target: string; replace: boolean }
@@ -85,12 +94,10 @@ export async function downloadPack(id: string, onProgress: (done: number, total:
         replace: false,
     }));
     if (pack?.additionsVersion) {
-        const additionsPrefix = `/iconpacks/${id}/`;
-        for (const name of await listRepo(ADDITIONS_REPO, ADDITIONS_REF)) {
-            if (!name.startsWith(additionsPrefix)) continue;
+        for (const name of await listAdditions(id)) {
             downloads.push({
-                url: `https://cdn.jsdelivr.net/gh/${ADDITIONS_REPO}@${ADDITIONS_REF}${encodePath(name)}`,
-                target: `${packDir(id)}/${name.slice(additionsPrefix.length)}`,
+                url: `https://raw.githubusercontent.com/${ADDITIONS_REPO}/${ADDITIONS_REF}/${encodePath(name)}`,
+                target: `${packDir(id)}/${name.slice(`iconpacks/${id}/`.length)}`,
                 replace: true,
             });
         }
