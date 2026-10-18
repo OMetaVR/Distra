@@ -1,6 +1,6 @@
 # Roadmap
 
-## Status (0.1.0)
+## Status (0.1.1)
 
 Done and verified on a host machine:
 
@@ -30,19 +30,19 @@ Checklist against Discord 348:
 - [ ] Discord component lookups resolve (TableRow, TableSwitchRow, TextInput, Stack, Text, …)
 - [ ] Crash loop: 3 forced failures -> safe mode alert; 5 -> stock Discord
 - [ ] Install a known Vendetta plugin from the vd-proxy and an Enmity plugin
-- [ ] Icon pack applies after reload (rosiecord Plumpy: partial coverage expected)
+- [x] Icon pack applies after reload (Plumpy and Iconsax, with Distra's additions for the redesign icons)
 - [ ] App icon switching
 - [ ] Login, messaging, media, voice unaffected; side-by-side install with a custom bundle id
 
 ## 2. Near term
 
 - Plugin browser (Vendetta/Bunny proxy repos)
-- Themes: Vendetta/Bunny theme JSON (`semanticColors`/`rawColors`). Needs a native
-  `DCDThemeColor` swizzle like VendettaTweak's `Themes.x.swift`, plus JS-side color patching
+- [x] Themes: Vendetta, Bunny and Enmity theme files, a Theme Library, and native colours
+  through `DCDThemeColor` (0.1.1). Native coverage still to be measured on a device
 - Fonts (Bunny font manifests)
-- In-app icon pack install (download + unzip natively)
+- [x] In-app icon pack downloads (0.1.1)
 - Native `Assets.car` icon overrides (`UIImage imageNamed:` hook backed by a pack's CUICatalog)
-- Update icon packs for the redesign icon set (`design/components/Icon/native/redesign/generated/images`)
+- [x] Icon pack additions for the redesign icon set (`iconpacks/`, 0.1.1)
 - React DevTools / remote debugger connection
 - Wider Enmity/Aliucord API coverage (themer, clyde, toasts)
 

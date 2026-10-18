@@ -1,8 +1,8 @@
 Package: dev.distra.tweak
 Name: Distra
-Version: 0.1.0
+Version: 0.1.1
 Architecture: iphoneos-arm
-Description: Discord client mod with Vendetta, Bunny, Enmity and Aliucord plugin support, icon packs and more.
+Description: Discord client mod with Vendetta, Bunny, Enmity and Aliucord plugin support, themes, icon packs and more.
 Maintainer: Distra
 Author: Distra
 Section: Tweaks
