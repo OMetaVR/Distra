@@ -279,7 +279,9 @@ function defineDiscordModules(global, events) {
     d(12, (g, r, _i, _a, module) => {
         class AssetSourceResolver {
             constructor(serverUrl, jsbundleUrl, asset) { this.asset = asset; }
-            defaultAsset() { return { uri: `bundle://${this.asset.name}`, scale: 1 }; }
+            // Every path, including custom source transformers, ends in fromSource.
+            fromSource(source) { return { uri: source, scale: 1 }; }
+            defaultAsset() { return this.fromSource(`bundle://${this.asset.name}`); }
             scaledAssetPath() { return this.defaultAsset(); }
         }
         module.exports = { __esModule: true, default: AssetSourceResolver };
