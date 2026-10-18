@@ -19,3 +19,16 @@ QuestsIcon, ClipsIcon, QrCodeIcon, PaintPaletteIcon, ChatCheckIcon, ShopIcon, Bo
 CircleQuestionIcon, CircleInformationIcon, FileWarningIcon, MobilePhoneSettingsIcon.
 
 Replaced: ChevronSmallRightIcon (the pack's version has a flat, notched tip at settings-row size).
+
+## Iconsax
+
+rosiecord's Iconsax pack only covers Discord's old `ic_*` assets, none of the redesign icons
+Discord 348 shows. These additions cover the same 128 redesign icons as Plumpy (126 here;
+ClydeIcon and NitroWheelIcon stay Discord's, as brand marks).
+
+Most are Iconsax's own artwork from [iconsax-react](https://github.com/rendinjast/iconsax-react)
+(MIT): Bold where Discord's icon is filled, Linear where it's a line icon. Lock, warning and
+settings variants are an Iconsax base with a small Iconsax badge cut in; slashed variants have a
+cut-through slash. Where Iconsax has no matching glyph (megaphone, accessibility, @, backspace,
+eyedropper, keyboard, robot, puzzle piece, wrench, and similar) the icon is drawn on Iconsax's grid
+with its rounding and 1.5-unit weight, starting from Discord's shape.
