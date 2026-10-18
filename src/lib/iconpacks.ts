@@ -88,15 +88,16 @@ export async function initIconPack() {
         return;
     }
 
-    // Every image source goes through AssetSourceResolver#defaultAsset unless a
-    // custom transformer claims it first, so patch that first.
+    // Every resolved image source is built by AssetSourceResolver#fromSource,
+    // including the ones from Discord's custom source transformer, which skips
+    // defaultAsset, so patch that.
     const AssetSourceResolver = find(fromPredicate(
-        m => typeof m === "function" && typeof m.prototype?.defaultAsset === "function" && typeof m.prototype?.scaledAssetPath === "function",
+        m => typeof m === "function" && typeof m.prototype?.fromSource === "function" && typeof m.prototype?.scaledAssetPath === "function",
         "distra.AssetSourceResolver",
     ));
 
     if (AssetSourceResolver) {
-        corePatcher.instead("defaultAsset", AssetSourceResolver.prototype, function (this: { asset: ResolverAsset }, args, original) {
+        corePatcher.instead("fromSource", AssetSourceResolver.prototype, function (this: { asset: ResolverAsset }, args, original) {
             return resolveFromPack(this.asset) ?? original.apply(this, args);
         });
     } else if (typeof resolveAssetSource.addCustomSourceTransformer === "function") {

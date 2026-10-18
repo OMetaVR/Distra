@@ -112,10 +112,10 @@ export default function Developer() {
                     />
                     <TableSwitchRow
                         label="Startup banner"
-                        subLabel="Briefly shows whether Distra started, after each launch."
+                        subLabel="Also show the banner when Distra started without problems. Problems always show one."
                         icon={<Icon name="CircleInformationIcon" />}
-                        value={loaderConfig.showStartupBanner ?? true}
-                        onValueChange={(value: boolean) => void (loaderConfig.showStartupBanner = value)}
+                        value={loaderConfig.showSuccessBanner ?? false}
+                        onValueChange={(value: boolean) => void (loaderConfig.showSuccessBanner = value)}
                     />
                     <TableRow
                         label="Copy loader info"

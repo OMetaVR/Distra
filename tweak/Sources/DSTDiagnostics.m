@@ -129,7 +129,7 @@ static const NSUInteger kMaxBufferedLines = 2000;
 }
 
 - (void)showBanner {
-    if (self.bannerShown || ![DSTLoaderConfig()[@"showStartupBanner"] boolValue]) return;
+    if (self.bannerShown) return;
     UIWindow *window = [self keyWindow];
     if (!window) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ [self showBanner]; });
@@ -148,6 +148,11 @@ static const NSUInteger kMaxBufferedLines = 2000;
     } else {
         text = [NSString stringWithFormat:@"Distra %@ is running.", self.jsStatus[@"version"] ?: DSTLoaderVersion];
         problem = NO;
+    }
+    // Problems always show; the "running" banner is opt-in.
+    if (!problem && ![DSTLoaderConfig()[@"showSuccessBanner"] boolValue]) {
+        self.bannerShown = YES;
+        return;
     }
     text = [text stringByAppendingString:@"\nTap here, or hold three fingers anywhere, for logs."];
 

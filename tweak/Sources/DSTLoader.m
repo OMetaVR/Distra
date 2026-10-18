@@ -20,7 +20,7 @@ static NSDictionary *DSTDefaultLoaderConfig(void) {
     return @{
         @"customLoadUrl": @{ @"enabled": @NO, @"url": @"http://localhost:4040/distra.js" },
         @"safeMode": @NO,
-        @"showStartupBanner": @YES,
+        @"showSuccessBanner": @NO,
     };
 }
 

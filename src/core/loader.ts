@@ -19,8 +19,8 @@ export interface LoaderPayload {
 export interface LoaderConfig {
     customLoadUrl: { enabled: boolean; url: string };
     safeMode: boolean;
-    /** Native banner a few seconds after launch saying whether Distra started. */
-    showStartupBanner: boolean;
+    /** Native banner after a launch that went fine (problems always show one). */
+    showSuccessBanner: boolean;
     /** Connects to `pnpm devtools` on a development machine (src/core/devtools.ts). */
     remoteDebugger?: { enabled: boolean; url: string };
 }
@@ -38,7 +38,7 @@ const fallback: LoaderPayload = {
     bridge: { module: "FileReaderModule", method: "readAsDataURL", key: "distra" },
     discord: { version: "unknown", build: "unknown", bundleId: "unknown" },
     safeMode: { enabled: false, reason: null, failedBoots: 0 },
-    config: { customLoadUrl: { enabled: false, url: "" }, safeMode: false, showStartupBanner: false },
+    config: { customLoadUrl: { enabled: false, url: "" }, safeMode: false, showSuccessBanner: false },
     bundle: { source: "embedded", version: "unknown" },
 };
 
