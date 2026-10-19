@@ -27,7 +27,7 @@ export interface DownloadablePack {
 }
 
 export const DOWNLOADABLE_PACKS: DownloadablePack[] = [
-    { id: "Plumpy", name: "Plumpy", description: "Rounded, filled icons", credit: "rosiecord (GPL-3.0)", additionsVersion: 1 },
+    { id: "Plumpy", name: "Plumpy", description: "Rounded, filled icons", credit: "rosiecord (GPL-3.0)", additionsVersion: 2 },
     { id: "Iconsax", name: "Iconsax", description: "Bold Iconsax icons", credit: "rosiecord (GPL-3.0), Iconsax (MIT)", additionsVersion: 1 },
 ];
 

@@ -18,7 +18,9 @@ Missing from rosiecord's Plumpy pack for Discord 348: UserCircleIcon, ShieldLock
 QuestsIcon, ClipsIcon, QrCodeIcon, PaintPaletteIcon, ChatCheckIcon, ShopIcon, BoostGemIcon,
 CircleQuestionIcon, CircleInformationIcon, FileWarningIcon, MobilePhoneSettingsIcon.
 
-Replaced: ChevronSmallRightIcon (the pack's version has a flat, notched tip at settings-row size).
+Replaced: ChevronSmallRightIcon (the pack's version has a flat, notched tip at settings-row size) and
+NitroWheelIcon (the pack's gear didn't read as Nitro; this is Discord's own wheel with Plumpy's
+rounded corners).
 
 ## Iconsax
 
