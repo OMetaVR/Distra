@@ -6,6 +6,10 @@
 // fonts by name. So the files are downloaded here and the tweak (tweak/Sources/DSTFonts.m) registers
 // them and answers Discord's font names (ggsans-Medium, ggmono-Normal, ...) with the replacements.
 // The tweak saves the choice and applies it at launch, before anything is drawn.
+//
+// Each font can be resized (by hand, or matched to gg sans's letter size), shifted to a lighter or
+// heavier installed weight, and spaced out. Sizes and chat line spacing are applied by the tweak
+// (newer than 0.1.1); React Native text gets its line spacing from Discord's text styles (fonts.ts).
 
 import { Logger } from "@/lib/logger";
 import { getRecord } from "@/plugins/manager";
@@ -23,9 +27,9 @@ export default definePlugin({
     id: ID,
     manifest: {
         name: "Font Loader",
-        description: "Use any Google Font, or a .ttf/.otf from a link, for Discord's text, headings and code.",
+        description: "Use any Google Font, or a .ttf/.otf from a link, for Discord's text, headings and code, with its own size, weight and line spacing.",
         authors: [{ name: "Distra" }, { name: "vmohammad (Equicord FontLoader)" }],
-        version: "1.0.0",
+        version: "1.1.0",
     },
     async start() {
         await loadSettings();

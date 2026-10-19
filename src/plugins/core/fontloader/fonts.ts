@@ -3,10 +3,14 @@
 import { callNative } from "@/core/bridge";
 import { removeFile } from "@/core/fs";
 import { Logger } from "@/lib/logger";
+import { findByProps } from "@/metro";
 
-import { type FontFace, type InstalledFont, settings } from "./settings";
+import { type FontAdjust, type FontFace, type FontGroup, type InstalledFont, settings } from "./settings";
 
 const logger = new Logger("FontLoader");
+
+/** The plugin's settings (live), for other plugins and diagnostics. */
+export { settings };
 
 /** Discord's font names (PostScript names of the bundled fonts) and the weight/style each stands for. */
 const TEXT_FONTS: Record<string, [number, boolean]> = {
@@ -59,15 +63,40 @@ export interface FontsInfo {
     map: Record<string, string>;
     helpers: string[];
     registered: string[];
-    hits: { name: number; descriptor: number; helper: number };
+    hits: { name: number; descriptor: number; helper: number; spacing?: number; sizeOverride?: number };
+    // Tweaks from after 0.1.1:
+    version?: number;
+    features?: NativeFeature[];
+    scale?: Record<string, number>;
+    spacing?: Record<string, number>;
+    textHooks?: { yytext: boolean; swift: boolean; sizeOverride: boolean };
 }
+
+/** Metrics of a font (UIFont's, in points) and the width of a sample sentence. */
+export interface FontMetrics {
+    fontName: string;
+    pointSize: number;
+    ascender: number;
+    descender: number;
+    leading: number;
+    lineHeight: number;
+    capHeight: number;
+    xHeight: number;
+    width: number;
+}
+
+type NativeFeature = "scale" | "spacing" | "metrics";
 
 /** "unknown" until checked; "missing" when the installed tweak predates font support. */
 export let nativeSupport: "unknown" | "ok" | "missing" = "unknown";
+/** What the tweak can do beyond replacing fonts: resize them, space chat lines, measure fonts. */
+export let nativeFeatures: NativeFeature[] = [];
+export const supports = (feature: NativeFeature) => nativeFeatures.includes(feature);
 
 export async function checkNativeSupport() {
     try {
-        await callNative<FontsInfo>("fonts.info");
+        const info = await callNative<FontsInfo>("fonts.info");
+        nativeFeatures = Array.isArray(info?.features) ? info.features : [];
         nativeSupport = "ok";
     } catch (e) {
         nativeSupport = "missing";
@@ -77,6 +106,10 @@ export async function checkNativeSupport() {
 }
 
 export const nativeInfo = () => callNative<FontsInfo>("fonts.info");
+
+/** Metrics at `size` points: Discord's own fonts, or with `resolved` what Discord gets for the names. */
+export const fontMetrics = (names: string[], size = 100, resolved = false) =>
+    callNative<Record<string, FontMetrics>>("fonts.metrics", names, size, resolved);
 
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "font";
 export const googleFontId = (family: string) => `google-${slug(family)}`;
@@ -93,39 +126,166 @@ function closest(faces: FontFace[], weight: number, italic: boolean) {
     });
 }
 
-function mapFonts(names: Record<string, [number, boolean]>, font: InstalledFont | undefined, map: Record<string, string>, files: Set<string>) {
-    if (!font?.faces.length) return;
+/** The installed font `group` uses, if any. */
+export function groupFont(group: FontGroup) {
+    const text = settings.text ? settings.fonts[settings.text] : undefined;
+    if (group === "text") return text;
+    return settings.code === "text" ? text : settings.code ? settings.fonts[settings.code] : undefined;
+}
+
+/** The face used for Discord's `weight` with the weight offset of `adjust`. */
+export const faceFor = (font: InstalledFont, weight: number, adjust: FontAdjust, italic = false) =>
+    closest(font.faces, weight + adjust.weight, italic);
+
+/** Distinct upright weights of a font (italic only fonts: all weights). */
+export function weightsOf(font: InstalledFont) {
+    const upright = font.faces.filter(face => !face.italic);
+    return [...new Set((upright.length ? upright : font.faces).map(face => face.weight))].sort((a, b) => a - b);
+}
+
+function mapFonts(names: Record<string, [number, boolean]>, font: InstalledFont | undefined, adjust: FontAdjust, map: Record<string, string>, files: Set<string>) {
+    if (!font?.faces.length) return [];
     for (const [name, [weight, italic]] of Object.entries(names)) {
-        const face = closest(font.faces, weight, italic);
+        const face = faceFor(font, weight, adjust, italic);
         map[name] = face.postScriptName;
         files.add(face.path);
     }
+    return Object.keys(names);
 }
 
-/** What the tweak gets: which of Discord's fonts become which, and the files they come from. */
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+/** Discord's fonts the auto-match compares with. */
+const REFERENCE: Record<FontGroup, string> = { text: "ggsans-Normal", code: "ggmono-Normal" };
+
+export interface AutoMatch {
+    /** Size factor that brings letters to Discord's size: x-height and width (of a sample sentence) averaged. */
+    scale: number;
+    /** Line height factor that then gives the natural line height of Discord's font (natively drawn text). */
+    line: number;
+}
+
+export function computeMatch(reference?: FontMetrics, own?: FontMetrics): AutoMatch | null {
+    if (!reference || !own) return null;
+    const ratios: number[] = [];
+    if (reference.xHeight > 0 && own.xHeight > 0) ratios.push(reference.xHeight / own.xHeight);
+    else if (reference.capHeight > 0 && own.capHeight > 0) ratios.push(reference.capHeight / own.capHeight);
+    if (reference.width > 0 && own.width > 0) ratios.push(reference.width / own.width);
+    if (!ratios.length) return null;
+    // Geometric mean: a wide font gets a little shorter and a little narrower rather than tiny.
+    const scale = clamp(ratios.reduce((product, ratio) => product * ratio, 1) ** (1 / ratios.length), 0.6, 1.4);
+    const line = reference.lineHeight > 0 && own.lineHeight > 0 ? clamp(reference.lineHeight / (own.lineHeight * scale), 0.6, 1.6) : 1;
+    return { scale, line };
+}
+
+const matchCache = new Map<string, AutoMatch | null>();
+/** Auto-match results of the fonts in use, by group (null until measured, or if the tweak can't measure). */
+export const autoMatch: Record<FontGroup, AutoMatch | null> = { text: null, code: null };
+
+/** Measures the fonts in use against Discord's (once per face). */
+export async function refreshAutoMatch() {
+    for (const group of ["text", "code"] as const) {
+        const font = groupFont(group);
+        if (!font || !supports("metrics")) {
+            autoMatch[group] = null;
+            continue;
+        }
+        const face = faceFor(font, 400, settings.adjust[group]).postScriptName;
+        const key = `${face}|${REFERENCE[group]}`;
+        if (!matchCache.has(key)) {
+            try {
+                const metrics = await fontMetrics([REFERENCE[group], face]);
+                matchCache.set(key, computeMatch(metrics[REFERENCE[group]], metrics[face]));
+            } catch (e) {
+                logger.warn(`Couldn't measure ${face}`, e);
+                matchCache.set(key, null);
+            }
+        }
+        autoMatch[group] = matchCache.get(key) ?? null;
+    }
+}
+
+export interface Adjustment {
+    /** Point size factor. */
+    scale: number;
+    /** Line height factor for natively drawn text (the chat), whose lines are as tall as the font's. */
+    chatSpacing: number;
+    /** Line height factor for React Native text, whose line heights are set per text style. */
+    lineHeight: number;
+}
+
+/** What a group's settings come to. Sizes only change with a tweak that can scale fonts. */
+export function adjustment(group: FontGroup, adjust: FontAdjust = settings.adjust[group]): Adjustment {
+    const matched = adjust.match ? autoMatch[group] : null;
+    const scale = supports("scale") ? (matched?.scale ?? 1) * adjust.size / 100 : 1;
+    const spacing = adjust.spacing / 100;
+    return { scale, chatSpacing: spacing * (matched?.line ?? 1), lineHeight: spacing * scale };
+}
+
+/** What the tweak gets: which of Discord's fonts become which, the files they come from, sizes and line spacing. */
 export function buildTable() {
     const map: Record<string, string> = {};
     const files = new Set<string>();
-    const text = settings.text ? settings.fonts[settings.text] : undefined;
-    mapFonts(TEXT_FONTS, text, map, files);
-    if (settings.headings) mapFonts(HEADING_FONTS, text, map, files);
-    const code = settings.code === "text" ? text : settings.code ? settings.fonts[settings.code] : undefined;
-    mapFonts(CODE_FONTS, code, map, files);
+    const scale: Record<string, number> = {};
+    const spacing: Record<string, number> = {};
+    const text = adjustment("text"), code = adjustment("code");
+
+    const codeNames = mapFonts(CODE_FONTS, groupFont("code"), settings.adjust.code, map, files);
+    const textNames = [
+        ...mapFonts(TEXT_FONTS, groupFont("text"), settings.adjust.text, map, files),
+        ...settings.headings ? mapFonts(HEADING_FONTS, groupFont("text"), settings.adjust.text, map, files) : [],
+    ];
+    // Spacing goes by the replacement's name: with the text font used for code too, text spacing wins.
+    for (const [names, { scale: factor, chatSpacing }] of [[codeNames, code], [textNames, text]] as const) {
+        for (const name of names) {
+            if (factor !== 1) scale[name] = factor;
+            if (chatSpacing !== 1) spacing[map[name]] = chatSpacing;
+            else delete spacing[map[name]];
+        }
+    }
     // Every installed font is registered, so the settings page can preview them.
     for (const font of Object.values(settings.fonts)) font.faces.forEach(face => files.add(face.path));
-    return { scope: settings.scope, files: [...files], map };
+    return { scope: settings.scope, files: [...files], map, scale, spacing };
+}
+
+/** Discord's text styles (Text and Heading variants) and their own line heights. */
+const baseLineHeights = new Map<Record<string, any>, number>();
+
+/**
+ * React Native text: line heights come from Discord's text styles (TextStyleSheet, read by its Text
+ * component on every render), so they're scaled there, for the styles in a replaced font.
+ */
+function applyTextStyles(active: boolean) {
+    const sheet: Record<string, Record<string, any>> | undefined = findByProps("TextStyleSheet")?.TextStyleSheet;
+    if (!sheet) return;
+    const text = adjustment("text").lineHeight, code = adjustment("code").lineHeight;
+    for (const style of Object.values(sheet)) {
+        if (!style || typeof style.lineHeight !== "number") continue;
+        if (!baseLineHeights.has(style)) baseLineHeights.set(style, style.lineHeight);
+        const base = baseLineHeights.get(style)!;
+        const name = String(style.fontFamily ?? "").split(",")[0].trim();
+        let factor = 1;
+        if (active && settings.scope === "app") {
+            if (groupFont("text") && (name in TEXT_FONTS || (settings.headings && name in HEADING_FONTS))) factor = text;
+            else if (groupFont("code") && name in CODE_FONTS) factor = code;
+        }
+        style.lineHeight = factor === 1 ? base : Math.round(base * factor * 2) / 2;
+    }
 }
 
 /** Sends the current choice to the tweak. Returns problems it reported (missing files, unloadable fonts). */
 export async function applyFonts(): Promise<string[]> {
     if (nativeSupport !== "ok") return [];
+    await refreshAutoMatch();
     const result = await callNative<{ active: number; problems: string[] }>("fonts.apply", buildTable());
+    applyTextStyles(true);
     if (result.problems?.length) logger.warn(`Font problems: ${result.problems.join("; ")}`);
     return result.problems ?? [];
 }
 
 /** Restores Discord's fonts (from the next launch on, and for text drawn from now on). */
 export async function clearFonts() {
+    applyTextStyles(false);
     if (nativeSupport !== "ok") return;
     await callNative("fonts.apply", { scope: settings.scope, files: [], map: {} });
 }
@@ -235,6 +395,6 @@ export function describeFaces(font: InstalledFont) {
 }
 
 /** PostScript name of the font's regular face, for previews (registered once applied). */
-export function previewName(font: InstalledFont) {
-    return closest(font.faces, 400, false).postScriptName;
+export function previewName(font: InstalledFont, adjust?: FontAdjust) {
+    return closest(font.faces, 400 + (adjust?.weight ?? 0), false).postScriptName;
 }

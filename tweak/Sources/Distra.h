@@ -138,6 +138,8 @@ void DSTFontsLoadSaved(void);
 NSDictionary *DSTFontsApply(NSDictionary *table, NSError **error);
 /** The fonts in a font file (PostScript name, family, weight, italic, monospace), without registering it. */
 NSArray<NSDictionary *> *DSTFontsInspect(NSString *relativePath, NSError **error);
+/** Metrics of fonts by PostScript name at `size` (default 100): Discord's own, or with `resolved` what Discord gets. */
+NSDictionary *DSTFontsMetrics(NSArray *names, NSNumber *size, BOOL resolved);
 /** Hooks, active replacements and how often they were used, for diagnostics. */
 NSDictionary *DSTFontsInfo(void);
 

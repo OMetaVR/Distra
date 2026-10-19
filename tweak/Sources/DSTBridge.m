@@ -250,6 +250,12 @@ static NSDictionary<NSString *, DSTHandler> *DSTHandlers(void) {
             @"fonts.info": ^(NSArray *args, DSTDone done) {
                 done(DSTFontsInfo(), nil);
             },
+            @"fonts.metrics": ^(NSArray *args, DSTDone done) {
+                NSArray *names = DSTArg(args, 0);
+                NSNumber *size = DSTArg(args, 1);
+                BOOL resolved = [DSTArg(args, 2) isEqual:@YES];
+                dispatch_async(dispatch_get_main_queue(), ^{ done(DSTFontsMetrics(names, size, resolved), nil); });
+            },
             // Reactor avatars (WhoReacted)
             @"reactions.enable": ^(NSArray *args, DSTDone done) {
                 dispatch_async(dispatch_get_main_queue(), ^{ done(DSTReactionsEnable(), nil); });
