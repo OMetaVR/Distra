@@ -35,7 +35,7 @@ export default function SettingsPage() {
                         icon={<Icon name="FriendsIcon" />}
                         trailing={<TableRowTrailingText text={String(settings.maxAvatars)} />}
                         disabled={!avatars}
-                        onPress={() => editNumber("Avatars per reaction", settings.maxAvatars, 1, 5, v => settings.maxAvatars = v)}
+                        onPress={() => editNumber("Avatars per reaction", settings.maxAvatars, 1, 8, v => settings.maxAvatars = v)}
                     />
                     <TableRow
                         label="Skip messages with more than"

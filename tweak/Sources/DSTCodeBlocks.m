@@ -80,6 +80,15 @@ static UIColor *DSTBlend(UIColor *base, UIColor *tint, CGFloat amount) {
                            alpha:alpha];
 }
 
+/** `color` composited over the chat background, so it's fully opaque. */
+static UIColor *DSTOpaque(UIColor *color) {
+    UIColor *background = DSTThemeColor(@"backgroundBaseLower") ?: DSTThemeColor(@"backgroundBaseLow") ?: UIColor.systemBackgroundColor;
+    CGFloat r = 0, g = 0, b = 0, a = 0;
+    UIColor *base = [background getRed:&r green:&g blue:&b alpha:&a] ? [UIColor colorWithRed:r green:g blue:b alpha:1] : UIColor.blackColor;
+    if (![color getRed:&r green:&g blue:&b alpha:&a]) return base;
+    return DSTBlend(base, [UIColor colorWithRed:r green:g blue:b alpha:1], a);
+}
+
 static void DSTSetColor(NSMutableAttributedString *text, UIColor *color, NSRange range) {
     [text addAttribute:NSForegroundColorAttributeName value:color range:range];
     // YYText draws with CoreText, which reads its own key.
@@ -186,7 +195,7 @@ static void DSTInsertHeader(NSMutableAttributedString *text, NSString *label) {
         id strip = [border copy];
         UIColor *fill = DSTSend(border, NSSelectorFromString(@"fillColor"));
         UIColor *tint = DSTThemeColor(@"textDefault") ?: muted;
-        if ([fill isKindOfClass:UIColor.class]) ((void (*)(id, SEL, UIColor *))objc_msgSend)(strip, setFill, DSTBlend(fill, tint, 0.06));
+        if ([fill isKindOfClass:UIColor.class]) ((void (*)(id, SEL, UIColor *))objc_msgSend)(strip, setFill, DSTBlend(DSTOpaque(fill), tint, 0.06));
         attributes[DSTBlockBorderKey] = strip;
         style.paragraphSpacing = -insets.top;
     } else {

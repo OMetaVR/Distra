@@ -74,15 +74,16 @@ function scheduleRedraw(channelId: string, messageId: string) {
     const ids = dirty.get(channelId) ?? new Set<string>();
     ids.add(messageId);
     dirty.set(channelId, ids);
-    clearTimeout(flushTimer);
-    flushTimer = setTimeout(() => {
+    // At most one redraw per interval, however steadily reactors keep arriving.
+    flushTimer ??= setTimeout(() => {
+        flushTimer = undefined;
         for (const [channel, list] of dirty) redrawMessages(channel, list);
         dirty.clear();
-    }, 250);
+    }, 200);
 }
 
 /** Known reactors of one kind of reaction (normal or burst), you first; fetches missing ones. */
-function usersFor(message: any, reaction: any, type: number, wanted: number, me: string | undefined) {
+function usersFor(message: any, reaction: any, type: number, wanted: number, me: string | undefined, order = 0) {
     const details = reaction.count_details ?? {};
     const count = Number(type === BURST ? details.burst ?? reaction.burst_count : details.normal ?? reaction.count) || 0;
     if (count <= 0) return [];
@@ -92,7 +93,7 @@ function usersFor(message: any, reaction: any, type: number, wanted: number, me:
     if (currentUser) users.set(currentUser.id, currentUser);
     for (const user of reactorsOf(message.channel_id, message.id, reaction.emoji, type)) if (user?.id) users.set(user.id, user);
     if (users.size < Math.min(count, wanted) && settings.fetchReactors) {
-        requestReactors(message.channel_id, message.id, reaction.emoji, type, () => scheduleRedraw(message.channel_id, message.id));
+        requestReactors(message.channel_id, message.id, reaction.emoji, type, wanted, order, () => scheduleRedraw(message.channel_id, message.id));
     }
     return [...users.values()];
 }
@@ -103,9 +104,9 @@ const sameEmoji = (a: any, b: any) => (a?.id ? a.id === b?.id : !b?.id && a?.nam
 function reactorPayload(message: any, rowReactions: any[], guildId: string | undefined, me: string | undefined) {
     const max = Math.max(1, settings.maxAvatars);
     let any = false;
-    const entries = rowReactions.map(drawn => {
+    const entries = rowReactions.map((drawn, order) => {
         const reaction = message.reactions.find((r: any) => sameEmoji(r.emoji, drawn.emoji));
-        const urls = (type: number) => reaction ? usersFor(message, reaction, type, max, me).slice(0, max).map(user => avatarUrl(user, guildId)) : [];
+        const urls = (type: number) => reaction ? usersFor(message, reaction, type, max, me, order).slice(0, max).map(user => avatarUrl(user, guildId)) : [];
         const entry = { c: drawn.count, n: urls(NORMAL), b: urls(BURST) };
         any ||= entry.n.length > 0 || entry.b.length > 0;
         return entry;
@@ -225,6 +226,7 @@ export default definePlugin({
     stop() {
         patcher.unpatchAll();
         clearTimeout(flushTimer);
+        flushTimer = undefined;
         dirty.clear();
         resetReactors();
         redrawOpenChannel();

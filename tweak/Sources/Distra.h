@@ -152,6 +152,7 @@ NSDictionary *DSTCodeBlocksInfo(void);
 
 /** Installs the reactor avatar hooks (once) and returns what was found plus counters, for WhoReacted. */
 NSDictionary *DSTReactionsEnable(void);
+NSDictionary *DSTReactionsInspect(void);
 
 #pragma mark - Header badges (DSTHeaderBadges.m)
 

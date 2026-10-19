@@ -254,6 +254,9 @@ static NSDictionary<NSString *, DSTHandler> *DSTHandlers(void) {
             @"reactions.enable": ^(NSArray *args, DSTDone done) {
                 dispatch_async(dispatch_get_main_queue(), ^{ done(DSTReactionsEnable(), nil); });
             },
+            @"reactions.inspect": ^(NSArray *args, DSTDone done) {
+                dispatch_async(dispatch_get_main_queue(), ^{ done(DSTReactionsInspect(), nil); });
+            },
 
             // Code blocks
             @"codeblocks.info": ^(NSArray *args, DSTDone done) {
