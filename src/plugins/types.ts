@@ -47,6 +47,8 @@ export interface BuiltinInfo {
 export interface PluginInstance {
     stop(): void | Promise<void>;
     SettingsComponent?: React.ComponentType<any>;
+    /** A core plugin's public functions (see CorePlugin.api). */
+    api?: Record<string, unknown>;
 }
 
 export interface FetchedPlugin {

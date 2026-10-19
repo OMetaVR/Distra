@@ -1,5 +1,5 @@
 diff -ruN a/plugins/freemoji/src/msgProcessor.ts b/plugins/freemoji/src/msgProcessor.ts
---- a/plugins/freemoji/src/msgProcessor.ts	2026-10-14 17:27:26.738461358 -0400
+--- a/plugins/freemoji/src/msgProcessor.ts	2026-10-19 08:52:59.951306479 -0400
 +++ b/plugins/freemoji/src/msgProcessor.ts	2026-10-14 10:10:16.130879500 -0400
 @@ -15,7 +15,9 @@
  		const emoji = getCustomEmojiById(emojiString[2]);
@@ -30,3 +30,26 @@ diff -ruN a/plugins/freemoji/src/msgProcessor.ts b/plugins/freemoji/src/msgProce
  	if (!storage.forceMoji) { if (storage.haveNitro) return; }
  
  	// Find all emojis from the captured message string and return object with ~~emojiURLS and~~ content
+diff -ruN a/plugins/userbg/src/index.tsx b/plugins/userbg/src/index.tsx
+--- a/plugins/userbg/src/index.tsx	2026-10-19 08:52:59.952073308 -0400
++++ b/plugins/userbg/src/index.tsx	2026-10-18 21:15:00.010559300 -0400
+@@ -30,12 +30,14 @@
+ export const onLoad = async () => {
+     await fetchData()
+     if (!data) return showToast("Failed to load DB")
+-    const { endpoint, bucket, prefix, users } = data;
++    // Distra: look the user up directly (the database lists ~200k users; scanning it cost ~60 ms on every
++    // banner Discord built), read `data` each time so "Reload DB" applies, and treat a null banner (Discord 348's
++    // user records) like a missing one. A Nitro banner still wins.
+     unpatch = after("getUserBannerURL", getUserBannerURL, ([user]) => {
+-        const customBanner = Object.entries(users).find(([userId, etag]) => userId === user?.id)
+-        if (user?.banner === undefined && customBanner) {
+-            const [userId, etag] = customBanner;
+-            return `${endpoint}/${bucket}/${prefix}${userId}?${etag}`
++        const etag = user?.id ? data?.users[user.id] : undefined
++        if (!user?.banner && etag != null) {
++            const { endpoint, bucket, prefix } = data;
++            return `${endpoint}/${bucket}/${prefix}${user.id}?${etag}`
+         }
+     })
+ }

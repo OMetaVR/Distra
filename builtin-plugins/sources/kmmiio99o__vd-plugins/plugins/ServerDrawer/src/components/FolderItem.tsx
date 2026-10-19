@@ -11,6 +11,7 @@ import SelectionRing, { SELECTED_SCALE, useIsSelected } from "./SelectionRing";
 import Divider, { DividerKind } from "./Dividers";
 
 const GuildActions = findByProps("toggleGuildFolderExpand");
+const ExpandedGuildFolderStore = findByStoreName("ExpandedGuildFolderStore");
 const Flux = findByProps("useStateFromStores");
 const GuildReadStateStore = findByStoreName("GuildReadStateStore");
 const SortedGuildStore = findByStoreName("SortedGuildStore");
@@ -59,17 +60,26 @@ function FolderBadge({ node }: { node: GuildNode }) {
     return null;
 }
 
+// Distra: Custom Folder Icons (distra:custom-folder-icons), while it's on, draws a folder's custom image
+// instead of the server grid (and the grid when the folder has none).
+const customFolderIcon = (): React.ComponentType<any> | undefined =>
+    (window as any).distra?.plugins?.getInstance?.("distra:custom-folder-icons")?.api?.FolderIcon;
+
 function FolderCover({ node }: { node: GuildNode }) {
     const col = folderColor(node.color);
+    const grid = (
+        <View style={[fc.icon, { backgroundColor: col }]}>
+            {node.children.slice(0, 4).map((ch, i) => (
+                <View key={ch.id} style={[fc.cell, POS[i]]}>
+                    <GuildIcon id={ch.id as string} size={MINI} />
+                </View>
+            ))}
+        </View>
+    );
+    const CustomIcon = customFolderIcon();
     return (
         <View style={fc.outer}>
-            <View style={[fc.icon, { backgroundColor: col }]}>
-                {node.children.slice(0, 4).map((ch, i) => (
-                    <View key={ch.id} style={[fc.cell, POS[i]]}>
-                        <GuildIcon id={ch.id as string} size={MINI} />
-                    </View>
-                ))}
-            </View>
+            {CustomIcon ? <CustomIcon folderId={node.id} color={node.color} size={ICON} radius={RADIUS}>{grid}</CustomIcon> : grid}
             <FolderBadge node={node} />
         </View>
     );
@@ -126,6 +136,13 @@ export default function FolderItem({ node, onPick, showNames, divider }: FolderI
         // The rest of the tiles glide to their new places instead of jumping.
         if (storage.folderAnimation !== false) {
             LayoutAnimation.configureNext(LayoutAnimation.create(220, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
+        }
+        // "Close other folders": opening one folds the rest away.
+        if (!open && storage.collapseOtherFolders) {
+            const expanded = ExpandedGuildFolderStore?.getExpandedFolders?.();
+            for (const id of expanded instanceof Set ? [...expanded] : []) {
+                if (id !== node.id) GuildActions?.toggleGuildFolderExpand?.(id);
+            }
         }
         GuildActions?.toggleGuildFolderExpand?.(node.id);
     };

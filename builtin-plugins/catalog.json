@@ -823,6 +823,15 @@
       "upstreamInstallUrl": "https://revenge.bwlok.dev/GifCategories/"
     },
     {
+      "id": "vendetta:bwlok/letitsnow",
+      "flavor": "vendetta",
+      "repo": "bwlok/revenge-plugins",
+      "path": "plugins/LetItSnow",
+      "status": "working",
+      "warning": null,
+      "upstreamInstallUrl": "https://revenge.bwlok.dev/LetItSnow/"
+    },
+    {
       "id": "vendetta:cristiandis/clipboardgifsend",
       "flavor": "vendetta",
       "repo": "Cristiandis/clipboardgifsend",

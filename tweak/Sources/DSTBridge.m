@@ -236,6 +236,40 @@ static NSDictionary<NSString *, DSTHandler> *DSTHandlers(void) {
             @"theme.nativeInfo": ^(NSArray *args, DSTDone done) {
                 done(DSTThemeNativeInfo(), nil);
             },
+            // Fonts
+            @"fonts.inspect": ^(NSArray *args, DSTDone done) {
+                NSError *error;
+                NSArray *fonts = DSTFontsInspect(DSTArg(args, 0), &error);
+                done(fonts, fonts ? nil : error.localizedDescription);
+            },
+            @"fonts.apply": ^(NSArray *args, DSTDone done) {
+                NSError *error;
+                NSDictionary *result = DSTFontsApply(DSTArg(args, 0), &error);
+                done(result, result ? nil : error.localizedDescription);
+            },
+            @"fonts.info": ^(NSArray *args, DSTDone done) {
+                done(DSTFontsInfo(), nil);
+            },
+            // Reactor avatars (WhoReacted)
+            @"reactions.enable": ^(NSArray *args, DSTDone done) {
+                dispatch_async(dispatch_get_main_queue(), ^{ done(DSTReactionsEnable(), nil); });
+            },
+
+            // Code blocks
+            @"codeblocks.info": ^(NSArray *args, DSTDone done) {
+                done(DSTCodeBlocksInfo(), nil);
+            },
+
+            // Header badges (Show Badges In Chat)
+            @"headerBadges.enable": ^(NSArray *args, DSTDone done) {
+                dispatch_async(dispatch_get_main_queue(), ^{ done(DSTHeaderBadgesEnable(), nil); });
+            },
+            @"headerBadges.clear": ^(NSArray *args, DSTDone done) {
+                DSTHeaderBadgesClear();
+                done(NSNull.null, nil);
+            },
+
+            // Icon packs
             @"iconpacks.list": ^(NSArray *args, DSTDone done) {
                 done(DSTListIconPacks(), nil);
             },

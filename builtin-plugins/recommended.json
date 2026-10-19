@@ -50,18 +50,6 @@
       "reason": "No license, so its code is not redistributed with Distra"
     },
     {
-      "name": "Let it Snow",
-      "description": "Render Snowflakes on the screen",
-      "authors": [
-        "Bwlok"
-      ],
-      "status": "working",
-      "warning": null,
-      "installUrl": "https://revenge.bwlok.dev/LetItSnow",
-      "sourceUrl": "https://revenge.bwlok.dev/LetItSnow",
-      "reason": "Not hosted on GitHub"
-    },
-    {
       "name": "NoTrack",
       "description": "Disable Discord's tracking.",
       "authors": [

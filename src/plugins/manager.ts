@@ -120,7 +120,7 @@ export async function startPlugin(id: string) {
         let instance: PluginInstance;
         if (core) {
             await core.start();
-            instance = { stop: () => core.stop(), SettingsComponent: core.SettingsComponent };
+            instance = { stop: () => core.stop(), SettingsComponent: core.SettingsComponent, api: core.api };
         } else {
             const code = record.builtin ? await builtinCode(id) : await readFile(codePath(id));
             instance = await flavors[record.flavor].start(record, code);

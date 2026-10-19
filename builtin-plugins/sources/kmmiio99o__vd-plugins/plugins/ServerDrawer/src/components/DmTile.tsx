@@ -8,6 +8,7 @@ import { ICON, RADIUS } from "../utils/metrics";
 const ChatIcon = getAssetIDByName("ChatIcon");
 const Haptic = findByProps("triggerHapticFeedback", "HapticFeedbackTypes");
 const ChannelActions = findByProps("selectPrivateChannel");
+const Routing = findByProps("transitionToGuild", "transitionTo");
 const SelectedChannelStore = findByName("SelectedChannelStore");
 const Flux = findByProps("useStateFromStores");
 const NavContext = findByProps("getGuildId");
@@ -16,7 +17,10 @@ import { Themes, useTokenColor } from "../utils/theme";
 
 function openDms() {
     Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
-    if (ChannelActions?.selectPrivateChannel) {
+    // The DM list itself (like a server tile shows its channel list), not the last conversation.
+    if (Routing?.transitionToGuild) {
+        Routing.transitionToGuild("@me", null);
+    } else if (ChannelActions?.selectPrivateChannel) {
         const lastChannelId = SelectedChannelStore?.getLastSelectedChannelId?.();
         ChannelActions.selectPrivateChannel(lastChannelId);
     }

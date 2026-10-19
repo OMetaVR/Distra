@@ -168,7 +168,9 @@ export default function ServerDrawerSheet({ gestureContext, variant = "grid" }: 
     // The dock mounts its closed and open content together and each normally fades itself out;
     // ours don't, so follow the dock's mode (a shared value React can't subscribe to) by polling.
     const dockMode = useDockMode(ctx?.activeQuestDockMode);
-    const open = dockMode != null && dockMode !== (QuestDockMode?.COLLAPSED ?? "collapsed");
+    // Only while expanded: in the closed (tucked) state, and while the card animates back from it,
+    // the grid would otherwise show through as an extra row.
+    const open = dockMode === (QuestDockMode?.EXPANDED ?? "expanded");
 
     const separator = storage.folderSeparator !== false;
     const showNames = !!storage.showGuildNames;

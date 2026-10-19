@@ -32,6 +32,12 @@ export default function Settings() {
                 </TableRowGroup>
                 <TableRowGroup title="Folders">
                     <TableSwitchRow
+                        label="Close other folders"
+                        subLabel="Opening a folder closes any other open folder, so only one is open at a time."
+                        value={!!storage.collapseOtherFolders}
+                        onValueChange={(v: boolean) => { storage.collapseOtherFolders = v; }}
+                    />
+                    <TableSwitchRow
                         label="Folder animation"
                         subLabel="An opening folder's servers slide out of it, and the rest glide to their new places."
                         value={storage.folderAnimation !== false}

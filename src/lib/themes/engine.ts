@@ -19,7 +19,7 @@ import { corePatcher } from "@/lib/patcher";
 import { findByProps, findByStoreName } from "@/metro";
 
 import { withOpacity } from "./color";
-import type { BaseTheme, ThemeDefinition } from "./parser";
+import { type BaseTheme, deriveIconColors, type ThemeDefinition } from "./parser";
 
 const KEY_PREFIX = "distra-theme-";
 const isOurs = (theme: unknown) => typeof theme === "string" && theme.startsWith(KEY_PREFIX);
@@ -30,6 +30,8 @@ interface Current {
     definition: ThemeDefinition;
     /** Raw colours with old palette names carried over. */
     raw: Record<string, string>;
+    /** Icon colours the theme doesn't set, from its text colours (see deriveIconColors). */
+    icons: Record<string, string>;
 }
 
 let current: Current | null = null;
@@ -130,7 +132,7 @@ function tokenName(colorObject: any): string | undefined {
 
 function resolve(name: string): string | undefined {
     if (!current) return undefined;
-    const themed = current.definition.semantic[name];
+    const themed = current.definition.semantic[name] ?? current.icons[name];
     if (themed) return themed;
     const stock = tokens()?.SemanticColor?.[name]?.[current.definition.reference];
     const raw = stock?.raw && current.raw[stock.raw];
@@ -164,7 +166,11 @@ function installPatches() {
     }
 
     corePatcher.instead("resolveSemanticColor", resolverHost(), (args, original) => {
-        if (!current || args[0] !== current.key) return original(...args);
+        if (!current || args[0] !== current.key) {
+            // A screen can still hold an earlier theme's name after a switch; Discord rejects those.
+            if (isOurs(args[0])) return original(references.get(args[0] as string) ?? current?.definition.reference ?? lastDiscordTheme ?? "dark", ...args.slice(1));
+            return original(...args);
+        }
         const name = tokenName(args[1]);
         const themed = name ? resolve(name) : undefined;
         return themed ?? original(current.definition.reference, ...args.slice(1));
@@ -214,8 +220,12 @@ function findOwner(object: any, property: string) {
     return null;
 }
 
+/** Base theme of every key registered this session, for stale keys still held by mounted screens. */
+const references = new Map<string, BaseTheme>();
+
 /** Registers `key` as a Discord theme with the base theme's colours, shadows and dividers. */
 function register(key: string, reference: BaseTheme) {
+    references.set(key, reference);
     const ref = tokens();
     ref.Theme[key.toUpperCase().replace(/-/g, "_")] = key;
     for (const token of Object.keys(ref.SemanticColor)) {
@@ -243,7 +253,8 @@ export function applyDefinition(name: string | null, definition: ThemeDefinition
     if (definition) {
         const key = `${KEY_PREFIX}${++counter}`;
         register(key, definition.reference);
-        current = { key, name: name ?? "Theme", definition, raw: expandRaw(definition.raw) };
+        const icons = deriveIconColors(definition.semantic, tokens()?.SemanticColor ?? {});
+        current = { key, name: name ?? "Theme", definition, raw: expandRaw(definition.raw), icons };
     } else {
         current = null;
     }

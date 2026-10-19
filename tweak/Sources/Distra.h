@@ -130,3 +130,32 @@ BOOL DSTThemeSetNative(NSDictionary *payload, NSError **error);
 /** DCDThemeColor's colour getters and how many are themed, for diagnostics. */
 NSDictionary *DSTThemeNativeInfo(void);
 
+#pragma mark - Fonts (DSTFonts.m)
+
+/** Registers the saved custom fonts and installs their replacements. Call at launch. */
+void DSTFontsLoadSaved(void);
+/** Installs and saves `{ scope, files, map }`; an empty map restores Discord's fonts. Returns `{ active, problems }`. */
+NSDictionary *DSTFontsApply(NSDictionary *table, NSError **error);
+/** The fonts in a font file (PostScript name, family, weight, italic, monospace), without registering it. */
+NSArray<NSDictionary *> *DSTFontsInspect(NSString *relativePath, NSError **error);
+/** Hooks, active replacements and how often they were used, for diagnostics. */
+NSDictionary *DSTFontsInfo(void);
+
+#pragma mark - Code blocks (DSTCodeBlocks.m)
+
+/** Hooks Discord's code block text so rows can carry syntax colours. Call at launch. */
+void DSTCodeBlocksInstall(void);
+/** Which hooks are installed and how often they coloured a block, for the plugin and diagnostics. */
+NSDictionary *DSTCodeBlocksInfo(void);
+
+#pragma mark - Reactions (DSTReactions.m)
+
+/** Installs the reactor avatar hooks (once) and returns what was found plus counters, for WhoReacted. */
+NSDictionary *DSTReactionsEnable(void);
+
+#pragma mark - Header badges (DSTHeaderBadges.m)
+
+/** Installs the chat header badge hooks (once) and reports `{ hooked, version, missing, cachedMessages, counters }`. */
+NSDictionary *DSTHeaderBadgesEnable(void);
+/** Forgets every message's badges (the plugin stopped). */
+void DSTHeaderBadgesClear(void);

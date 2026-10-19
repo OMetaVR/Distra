@@ -10,7 +10,7 @@ Thanks to all of the authors below.
 Selection: plugins marked working (or working with a known issue) in the community list at
 https://github.com/Purple-EyeZ/Plugins-List whose repositories carry a license, plus licensed Enmity plugins.
 
-## Vendetta / Bunny / Revenge (86)
+## Vendetta / Bunny / Revenge (87)
 
 | Plugin | Authors | License | Source | Notes |
 | --- | --- | --- | --- | --- |
@@ -60,6 +60,7 @@ https://github.com/Purple-EyeZ/Plugins-List whose repositories carry a license, 
 | Kazum Kiryu Facecam | nexpid | CC-BY-4.0 | [nexpid/RevengePlugins](https://github.com/nexpid/RevengePlugins/tree/e10e86ef79e7e3cb777c38ecaa9b8f63abe50abc/src/plugins/kiryu-facecam) | known issue: May cause crashes when sending a message. |
 | Keyword Tracker | coder.gg | CC0-1.0 | [il1ll/RevengePlugins](https://github.com/il1ll/RevengePlugins/tree/48d497ad86bbfedff656f9414febb572dd2c6eb6/plugins/KeywordTracker) |  |
 | KonoChan-Randomizer | btmc727, Rico040 | Unlicense | [OTKUSteyler/KonoChan-Randomizer-](https://github.com/OTKUSteyler/KonoChan-Randomizer-/tree/74d96ed1b78175a41db1560302e64073f215a82e/) |  |
+| Let it Snow | Bwlok | MIT | [bwlok/revenge-plugins](https://github.com/bwlok/revenge-plugins/tree/16ccb009899f48ababb15e4484492efdc97e4698/plugins/LetItSnow) |  |
 | LoginSound | Rico040 | CC0-1.0 | [Rico040/bunny-plugins](https://github.com/Rico040/bunny-plugins/tree/f7c4710ca024bba0e53b8855aee0290b5d863386/plugins/login-sound) |  |
 | Message Preview | nexpid, pylix | CC-BY-4.0 | [nexpid/RevengePlugins](https://github.com/nexpid/RevengePlugins/tree/e10e86ef79e7e3cb777c38ecaa9b8f63abe50abc/src/plugins/message-preview) |  |
 | Monet Theme | nexpid, Taki_Shiwa | CC-BY-4.0 | [nexpid/RevengePlugins](https://github.com/nexpid/RevengePlugins/tree/e10e86ef79e7e3cb777c38ecaa9b8f63abe50abc/src/plugins/monet-theme) |  |
@@ -115,7 +116,7 @@ Enmity was discontinued in 2024; these target older Discord versions and may not
 | SecretMessage | mafu | GPL-3.0 | [m4fn3/SecretMessage](https://github.com/m4fn3/SecretMessage/tree/f474bd6d82c25ddb2c85c4876e936813b7d08c1c/) | author's build; Enmity-era |
 | Unfurl | Niko | GPL-3.0 | [hauntii/EnPlugins](https://github.com/hauntii/EnPlugins/tree/fb0db67fdb90c6a52579f15e8d015d0de7b743b5/Unfurl/Source) | Enmity-era |
 
-## Recommended, installed from their authors (17)
+## Recommended, installed from their authors (16)
 
 Listed in the Plugin Library but not bundled: their repositories have no license (so the code can't be redistributed) or aren't on GitHub.
 
@@ -125,7 +126,6 @@ Listed in the Plugin Library but not bundled: their repositories have no license
 | [Better Chat Buttons](https://github.com/PalmDevs/revenge-plugins/tree/main/plugins) | Palm | No license, so its code is not redistributed with Distra |
 | [BringBackTenor](https://github.com/lvwmwm/vendettian-plugins) | Livie | No license, so its code is not redistributed with Distra |
 | [Force Timestamp Locale](https://github.com/PalmDevs/revenge-plugins/tree/main/plugins) | Palm | No license, so its code is not redistributed with Distra |
-| [Let it Snow](https://revenge.bwlok.dev/LetItSnow) | Bwlok | Not hosted on GitHub |
 | [NoTrack](https://github.com/maisymoe/strife) | maisy | No license, so its code is not redistributed with Distra |
 | [Pastelize](https://github.com/cynosphere/VendettaPlugins) | Cynosphere | No license, so its code is not redistributed with Distra |
 | [PermissionViewer](https://github.com/lvwmwm/vendettian-plugins) | Livie | No license, so its code is not redistributed with Distra |

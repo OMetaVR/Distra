@@ -50,20 +50,29 @@ file whether it's installed with a jailbreak or injected into an IPA.
 
 ## Built-in plugins
 
-Distra ships **98 plugins**, all disabled until turned on in
+Distra ships **118 plugins**, all disabled until turned on in
 **Settings > Distra > Plugin Library**:
 
-- **5 of its own**, rebuilt for current Discord from the most popular plugins of other mods,
-  merging their features: **Message Logger** (deleted messages stay in red, edits keep their
-  history, deleted images are greyed out; stored in an on-device SQLite database),
-  **Platform Indicators**, **Radial Status**, **Hide Chat Buttons** (chat bar and call buttons,
-  swipe to collapse) and **Fake Nitro** (fake emoji and sticker links shown as the real thing).
-- **93 community plugins** (86 Vendetta/Bunny/Revenge, 7 Enmity), vendored in
+- **24 of its own**, rebuilt for current Discord from the most popular plugins of other mods
+  (mostly Vencord/Equicord), merging their features:
+  - Messages: **Message Logger** (deleted messages stay in red, edits keep their history,
+    deleted images are greyed out; stored in an on-device SQLite database), **Hide Messages**,
+    **Block Keywords**, **Download All Attachments**, **WhoReacted**, **Better Code Blocks**
+    (syntax highlighting and a language label), **Message Colors**, **Custom Timestamps**.
+  - People: **Platform Indicators**, **Radial Status**, **Role Color Everywhere**,
+    **Show Badges In Chat**, **Friendship Ranks**, **Clickable Roles**, **Timezones**,
+    **Last Active**, **Who's Typing** (typing indicators in channel and DM lists, avatars and role
+    colours in the typing line).
+  - Lists and chat: **Pin DMs** (pin DMs into collapsible, coloured categories at the top of the
+    DM list), **Custom Folder Icons**, **Hide Chat Buttons** (chat bar and call buttons, swipe to
+    collapse), **Fake Nitro** (fake emoji and sticker links shown as the real thing).
+  - Voice and look: **Volume Booster**, **Voice Stats**, **Font Loader** (needs tweak 0.1.2+).
+- **94 community plugins** (87 Vendetta/Bunny/Revenge, 7 Enmity), vendored in
   `builtin-plugins/sources/` at pinned upstream commits under their authors' licenses and built
   with the rest of Distra. Fixes for current Discord live in `builtin-plugins/patches/`.
 
 Duplicates, plugins for features Discord now has itself, and Android-only plugins were merged or
-removed (44, each listed with the reason). The library also offers 17 more plugins that are
+removed (44, each listed with the reason). The library also offers 16 more plugins that are
 installed from their authors because their code can't be redistributed. Full list and credits:
 [builtin-plugins/README.md](builtin-plugins/README.md).
 

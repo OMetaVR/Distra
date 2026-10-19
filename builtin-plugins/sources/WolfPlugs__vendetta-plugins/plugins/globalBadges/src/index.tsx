@@ -49,6 +49,8 @@ export default {
 
     await loadBadges();
     intervalId = setInterval(loadBadges, REFRESH_INTERVAL);
+    // Distra: Show Badges In Chat reads the loaded badges from here.
+    (window as any).distraGlobalBadges = { badgesFor: (userId: string) => GlobalBadges[userId] ?? [] };
 
     const badgeProps = {} as Record<string, BadgeProps>;
 
@@ -112,6 +114,7 @@ export default {
     });
   },
   onUnload: () => {
+    delete (window as any).distraGlobalBadges;
     unpatch?.();
     unpatchIcons?.();
     if (badgeUtils) badgeUtils.MAX_DISPLAYED_PROFILE_BADGES = DISCORD_MAX_BADGES;

@@ -30,12 +30,14 @@ export const fetchData = async () => {
 export const onLoad = async () => {
     await fetchData()
     if (!data) return showToast("Failed to load DB")
-    const { endpoint, bucket, prefix, users } = data;
+    // Distra: look the user up directly (the database lists ~200k users; scanning it cost ~60 ms on every
+    // banner Discord built), read `data` each time so "Reload DB" applies, and treat a null banner (Discord 348's
+    // user records) like a missing one. A Nitro banner still wins.
     unpatch = after("getUserBannerURL", getUserBannerURL, ([user]) => {
-        const customBanner = Object.entries(users).find(([userId, etag]) => userId === user?.id)
-        if (user?.banner === undefined && customBanner) {
-            const [userId, etag] = customBanner;
-            return `${endpoint}/${bucket}/${prefix}${userId}?${etag}`
+        const etag = user?.id ? data?.users[user.id] : undefined
+        if (!user?.banner && etag != null) {
+            const { endpoint, bucket, prefix } = data;
+            return `${endpoint}/${bucket}/${prefix}${user.id}?${etag}`
         }
     })
 }

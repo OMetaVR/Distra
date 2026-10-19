@@ -1,5 +1,5 @@
 diff -ruN a/plugins/Commands/settings/components/Header.tsx b/plugins/Commands/settings/components/Header.tsx
---- a/plugins/Commands/settings/components/Header.tsx	2026-10-16 11:02:27.704159168 -0400
+--- a/plugins/Commands/settings/components/Header.tsx	2026-10-19 08:53:06.662344179 -0400
 +++ b/plugins/Commands/settings/components/Header.tsx	2026-10-14 15:56:24.190619200 -0400
 @@ -280,7 +280,8 @@
                  </RN.Pressable>
@@ -11,8 +11,27 @@ diff -ruN a/plugins/Commands/settings/components/Header.tsx b/plugins/Commands/s
              Commands
                      </RN.Text>
                      <RN.Text style={[TextStyleSheet["text-md/bold"], { color: resolveSemanticColor(semanticColors["TEXT_MUTED"]) }]}>
+diff -ruN a/plugins/Commands/settings/pages/NekosLifeCategoriesPage.tsx b/plugins/Commands/settings/pages/NekosLifeCategoriesPage.tsx
+--- a/plugins/Commands/settings/pages/NekosLifeCategoriesPage.tsx	2026-10-19 08:53:06.662504123 -0400
++++ b/plugins/Commands/settings/pages/NekosLifeCategoriesPage.tsx	2026-10-18 21:09:38.296484400 -0400
+@@ -1,4 +1,4 @@
+-import { React, ReactNative as RN } from "@vendetta/metro/common";
++import { React, ReactNative as RN, stylesheet } from "@vendetta/metro/common";
+ import { semanticColors } from "@vendetta/ui";
+ import {
+     ScrollView,
+@@ -8,7 +8,8 @@
+ } from "../components/TableComponents";
+ 
+ export default function NekosLifeCategoriesPage() {
+-    const styles = RN.StyleSheet.create({
++    // Distra: a plain StyleSheet leaves semantic colours unresolved (black text); themed sheets resolve them per theme.
++    const styles = stylesheet.createThemedStyleSheet({
+         tableHeader: {
+             flexDirection: "row",
+             alignItems: "center",
 diff -ruN a/plugins/Commands/sidebar.tsx b/plugins/Commands/sidebar.tsx
---- a/plugins/Commands/sidebar.tsx	2026-10-16 11:02:27.704324922 -0400
+--- a/plugins/Commands/sidebar.tsx	2026-10-19 08:53:06.662504123 -0400
 +++ b/plugins/Commands/sidebar.tsx	2026-10-14 11:14:50.156461300 -0400
 @@ -154,7 +154,7 @@
                      const sections = config.sections;
@@ -33,7 +52,7 @@ diff -ruN a/plugins/Commands/sidebar.tsx b/plugins/Commands/sidebar.tsx
                          ),
                      );
 diff -ruN a/plugins/Moyai/src/index.ts b/plugins/Moyai/src/index.ts
---- a/plugins/Moyai/src/index.ts	2026-10-16 11:02:27.706436504 -0400
+--- a/plugins/Moyai/src/index.ts	2026-10-19 08:53:06.664535994 -0400
 +++ b/plugins/Moyai/src/index.ts	2026-10-14 11:00:26.678652200 -0400
 @@ -6,8 +6,9 @@
  const { DCDSoundManager } = ReactNative.NativeModules;
@@ -47,7 +66,7 @@ diff -ruN a/plugins/Moyai/src/index.ts b/plugins/Moyai/src/index.ts
  let SOUND_DURATION = -1;
  
 diff -ruN a/plugins/multi-scrobbler/src/sidebar.tsx b/plugins/multi-scrobbler/src/sidebar.tsx
---- a/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-16 11:02:27.707756436 -0400
+--- a/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-19 08:53:06.665560980 -0400
 +++ b/plugins/multi-scrobbler/src/sidebar.tsx	2026-10-14 11:14:50.164672300 -0400
 @@ -153,7 +153,7 @@
                      const sections = config.sections;
@@ -69,8 +88,8 @@ diff -ruN a/plugins/multi-scrobbler/src/sidebar.tsx b/plugins/multi-scrobbler/sr
                      );
 diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx
 --- a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx	1969-12-31 19:00:00.000000000 -0500
-+++ b/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx	2026-10-16 11:00:15.191341600 -0400
-@@ -0,0 +1,189 @@
++++ b/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx	2026-10-18 19:45:15.652894100 -0400
+@@ -0,0 +1,304 @@
 +import React from "react";
 +import { PanResponder, StyleSheet, View } from "react-native";
 +import { find, findByProps } from "@vendetta/metro";
@@ -82,6 +101,14 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +// a tap opens the dock and any movement drags it, so a row of servers inside it can't scroll or be
 +// tapped. The row is therefore drawn on top of the dock card instead, outside that detector, and
 +// handles the vertical swipes itself (up opens the dock, down tucks it away).
++//
++// The row can't follow the card's animations (positions arrive a frame or more late), so it simply
++// appears where the settled card will be shortly after the dock starts opening, and disappears the
++// moment the dock starts closing.
++//
++// When the dock is tucked away (only its notch showing) the same detector would turn a tap into the
++// full drawer; a touch layer over the notch makes a tap bring back the server row instead, while a
++// swipe up still opens the drawer.
 +
 +const ExternalContext = find((m: any) => m?.QuestDockExternalCoordinationContext)?.QuestDockExternalCoordinationContext;
 +const QuestDockMode = find((m: any) => m?.QuestDockMode?.COLLAPSED != null)?.QuestDockMode;
@@ -91,6 +118,8 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +interface Frame { x: number; y: number; width: number; height: number }
 +
 +let cardFrame: Frame | null = null;
++/** Where the card was last seen settled as the row; the row is drawn there while the card opens. */
++let settledFrame: Frame | null = null;
 +/** Measures the card again (set by the mounted tracker). */
 +let remeasureCard: (() => void) | undefined;
 +const frameListeners = new Set<() => void>();
@@ -124,6 +153,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +                const next = { x, y, width, height };
 +                if (sameFrame(cardFrame, next)) return;
 +                cardFrame = next;
++                if (Math.abs(height - COLLAPSED_HEIGHT) < 3) settledFrame = next;
 +                frameListeners.forEach((listener) => listener());
 +            });
 +        };
@@ -157,14 +187,41 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +
 +const CLOSED = QuestDockMode?.CLOSED ?? "closed";
 +const COLLAPSED_HEIGHT = 56;
++/** Discord's dock opens in ~0.23s; the row appears just before it finishes. */
++const SHOW_AFTER_MS = 140;
++
++const WRAPPED = Symbol.for("serverDrawer.setRestingQuestDockMode");
++const requestListeners = new Set<(mode: string) => void>();
++/**
++ * Calls `listener` with the mode whenever anything asks the dock to change mode (the start of its
++ * animation). Wraps the coordination context's setter in place, so every caller goes through it.
++ */
++function onDockModeRequested(ext: any, listener: (mode: string) => void): () => void {
++    if (ext && typeof ext.setRestingQuestDockMode === "function" && !ext.setRestingQuestDockMode[WRAPPED]) {
++        const original = ext.setRestingQuestDockMode;
++        const wrapped = function (this: any, mode: string, ...rest: any[]) {
++            if (typeof mode === "string") requestListeners.forEach((fn) => fn(mode));
++            return original.call(this, mode, ...rest);
++        };
++        (wrapped as any)[WRAPPED] = true;
++        try {
++            ext.setRestingQuestDockMode = wrapped;
++        } catch {
++            // frozen context value: closing is then seen when it finishes
++        }
++    }
++    requestListeners.add(listener);
++    return () => void requestListeners.delete(listener);
++}
 +/** Set when the user tucks the dock away with the row's own swipe, so it isn't reopened. */
 +let closedByUser = 0;
 +
 +/**
-+ * Whether the dock is resting closed-but-visible (the single row state) with its card settled.
-+ * Unless "Hide while scrolling" is on, also undoes Discord tucking the dock away when a list scrolls.
++ * The dock's mode, and whether it's resting closed-but-visible (the single row state) with its card
++ * settled. Unless "Hide while scrolling" is on, also undoes Discord tucking the dock away when a list
++ * scrolls.
 + */
-+function useIsCollapsed(gestureContext: React.Context<any> | null, setMode: (mode: string) => void, frame: Frame | null) {
++function useDockState(gestureContext: React.Context<any> | null, setMode: (mode: string) => void, frame: Frame | null) {
 +    const ctx = gestureContext ? React.useContext(gestureContext) as any : null;
 +    const shared = ctx?.activeQuestDockMode;
 +    const [mode, setCurrent] = React.useState<string | undefined>(undefined);
@@ -179,8 +236,9 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +            remeasureCard?.();
 +        });
 +    }, [shared]);
-+    // Drawn once the card has settled at its closed size, not while it animates there.
-+    return mode === COLLAPSED && frame != null && Math.abs(frame.height - COLLAPSED_HEIGHT) < 3;
++    const collapsed = mode === COLLAPSED && frame != null && Math.abs(frame.height - COLLAPSED_HEIGHT) < 3;
++    const tucked = mode === CLOSED && frame != null && frame.height > 0 && frame.height < COLLAPSED_HEIGHT - 3;
++    return { collapsed, tucked };
 +}
 +
 +export default function CollapsedOverlay({ gestureContext }: { gestureContext: React.Context<any> | null }) {
@@ -196,14 +254,47 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +        });
 +    });
 +
++    // Where the dock is heading. Discord's active mode only changes once an animation ends, so the
++    // row follows this instead: it appears as the card starts growing and leaves as it starts shrinking.
++    const [target, setTargetState] = React.useState<string | undefined>(undefined);
++    const [ready, setReady] = React.useState(false);
++    const readyTimer = React.useRef<ReturnType<typeof setTimeout>>();
++    const targetRef = React.useRef<string | undefined>(undefined);
++    const setTarget = (mode: string | undefined) => {
++        // The same mode reported again (our call, then Discord's shared value catching up) changes nothing.
++        if (mode === targetRef.current) return;
++        targetRef.current = mode;
++        setTargetState(mode);
++        clearTimeout(readyTimer.current);
++        setReady(false);
++        if (mode === COLLAPSED) readyTimer.current = setTimeout(() => setReady(true), SHOW_AFTER_MS);
++    };
++    // Discord only updates the resting mode once a closing animation has finished, but every change
++    // goes through setRestingQuestDockMode, so that call marks the start of an animation.
++    React.useEffect(() => onDockModeRequested(ext, (mode) => {
++        setTarget(mode);
++        remeasureCard?.();
++    }), [ext]);
++    React.useEffect(() => subscribeDockMode(ext?.restingQuestDockMode, (mode) => {
++        setTarget(mode);
++        remeasureCard?.();
++    }), [ext?.restingQuestDockMode]);
++    React.useEffect(() => () => clearTimeout(readyTimer.current), []);
++
 +    const setMode = (mode: string | undefined) => {
 +        try {
-+            if (mode) ext?.setRestingQuestDockMode?.(mode);
++            if (!mode) return;
++            ext?.setRestingQuestDockMode?.(mode);
++            setTarget(mode);
++            remeasureCard?.();
 +        } catch {
 +            // dock coordination unavailable
 +        }
 +    };
-+    const collapsed = useIsCollapsed(gestureContext, setMode, frame);
++    const { collapsed: settled, tucked } = useDockState(gestureContext, setMode, frame);
++    // With a readable resting mode: shown a moment after the dock heads to the row (or as soon as
++    // the card is seen settled), gone the moment it heads anywhere else. Older Discord: settled only.
++    const collapsed = ext?.restingQuestDockMode ? target === COLLAPSED && (ready || settled) : settled;
 +
 +    // Opening a channel or DM from anywhere (an unread DM, a notification) closes the open dock.
 +    React.useEffect(() => {
@@ -241,24 +332,67 @@ diff -ruN a/plugins/ServerDrawer/src/components/CollapsedOverlay.tsx b/plugins/S
 +        });
 +    }, [ext]);
 +
-+    const show = collapsed && frame && origin && frame.width > 0;
++    // The tucked-away notch: a tap brings the server row back, a swipe up opens the drawer.
++    const notch = React.useMemo(() => {
++        let done = false;
++        return PanResponder.create({
++            onStartShouldSetPanResponder: () => true,
++            onMoveShouldSetPanResponder: () => true,
++            onPanResponderGrant: () => void (done = false),
++            onPanResponderMove: (_e, { dy, vy }) => {
++                if (done) return;
++                if (dy < -14 || vy < -0.4) {
++                    done = true;
++                    setMode(QuestDockMode?.EXPANDED ?? "expanded");
++                }
++            },
++            onPanResponderRelease: (_e, { dx, dy }) => {
++                if (!done && Math.abs(dx) < 10 && Math.abs(dy) < 10) setMode(COLLAPSED);
++            },
++            onPanResponderTerminationRequest: () => false,
++        });
++    }, [ext]);
++
++    const placed = frame && origin && frame.width > 0;
++    // Drawn where the card settles; before it has ever been seen settled, where it is now.
++    const at = collapsed && !settled && settledFrame ? settledFrame : frame;
++    const show = !!(collapsed && at && origin && at.width > 0);
 +    return (
 +        <View ref={hostRef} collapsable={false} style={StyleSheet.absoluteFill} pointerEvents="box-none">
 +            {show && (
 +                <View
 +                    {...swipe.panHandlers}
-+                    style={[st.card, { left: frame!.x - origin!.x, top: frame!.y - origin!.y, width: frame!.width, height: frame!.height }]}
++                    style={[st.card, { left: at!.x - origin!.x, top: at!.y - origin!.y, width: at!.width, height: COLLAPSED_HEIGHT }]}
 +                >
-+                    <ServerDrawerSheet gestureContext={gestureContext} variant="row" />
++                    {/* Laid out at its final height, so a growing card reveals it instead of squashing it. */}
++                    <View style={st.rowContent}>
++                        <ServerDrawerSheet gestureContext={gestureContext} variant="row" />
++                    </View>
 +                </View>
++            )}
++            {tucked && target !== COLLAPSED && placed && (
++                <View
++                    {...notch.panHandlers}
++                    style={[st.notch, {
++                        left: frame!.x - origin!.x,
++                        top: frame!.y - origin!.y - NOTCH_SLOP,
++                        width: frame!.width,
++                        height: frame!.height + NOTCH_SLOP * 2,
++                    }]}
++                />
 +            )}
 +        </View>
 +    );
 +}
 +
++/** Extra touch area above and below the thin notch. */
++const NOTCH_SLOP = 8;
++
 +const st = StyleSheet.create({
 +    tracker: { width: "100%", height: "100%" },
 +    card: { position: "absolute", borderRadius: 16, overflow: "hidden", zIndex: 10 },
++    notch: { position: "absolute", zIndex: 10 },
++    rowContent: { position: "absolute", top: 0, left: 0, right: 0, height: COLLAPSED_HEIGHT },
 +});
 diff -ruN a/plugins/ServerDrawer/src/components/Dividers.tsx b/plugins/ServerDrawer/src/components/Dividers.tsx
 --- a/plugins/ServerDrawer/src/components/Dividers.tsx	1969-12-31 19:00:00.000000000 -0500
@@ -289,9 +423,9 @@ diff -ruN a/plugins/ServerDrawer/src/components/Dividers.tsx b/plugins/ServerDra
 +    line: { width: "100%", height: StyleSheet.hairlineWidth * 2, marginVertical: 4, borderRadius: 1 },
 +});
 diff -ruN a/plugins/ServerDrawer/src/components/DmTile.tsx b/plugins/ServerDrawer/src/components/DmTile.tsx
---- a/plugins/ServerDrawer/src/components/DmTile.tsx	2026-10-16 11:02:27.706651839 -0400
-+++ b/plugins/ServerDrawer/src/components/DmTile.tsx	2026-10-14 18:33:44.377352000 -0400
-@@ -1,9 +1,9 @@
+--- a/plugins/ServerDrawer/src/components/DmTile.tsx	2026-10-19 08:53:06.664689668 -0400
++++ b/plugins/ServerDrawer/src/components/DmTile.tsx	2026-10-18 11:55:20.578801100 -0400
+@@ -1,31 +1,26 @@
  import React from "react";
 -import { View, Pressable, Image, StyleSheet } from "react-native";
 +import { View, Pressable, Image, StyleSheet, Text } from "react-native";
@@ -304,7 +438,9 @@ diff -ruN a/plugins/ServerDrawer/src/components/DmTile.tsx b/plugins/ServerDrawe
  
  const ChatIcon = getAssetIDByName("ChatIcon");
  const Haptic = findByProps("triggerHapticFeedback", "HapticFeedbackTypes");
-@@ -12,16 +12,7 @@
+ const ChannelActions = findByProps("selectPrivateChannel");
++const Routing = findByProps("transitionToGuild", "transitionTo");
+ const SelectedChannelStore = findByName("SelectedChannelStore");
  const Flux = findByProps("useStateFromStores");
  const NavContext = findByProps("getGuildId");
  
@@ -322,7 +458,15 @@ diff -ruN a/plugins/ServerDrawer/src/components/DmTile.tsx b/plugins/ServerDrawe
  
  function openDms() {
      Haptic?.triggerHapticFeedback?.(Haptic.HapticFeedbackTypes.SOFT);
-@@ -77,10 +68,78 @@
+-    if (ChannelActions?.selectPrivateChannel) {
++    // The DM list itself (like a server tile shows its channel list), not the last conversation.
++    if (Routing?.transitionToGuild) {
++        Routing.transitionToGuild("@me", null);
++    } else if (ChannelActions?.selectPrivateChannel) {
+         const lastChannelId = SelectedChannelStore?.getLastSelectedChannelId?.();
+         ChannelActions.selectPrivateChannel(lastChannelId);
+     }
+@@ -77,10 +72,78 @@
  
  const st = StyleSheet.create({
      outer: { width: ICON, height: ICON },
@@ -404,9 +548,9 @@ diff -ruN a/plugins/ServerDrawer/src/components/DmTile.tsx b/plugins/ServerDrawe
 +    text: { color: "#fff", fontSize: 10, fontWeight: "700", lineHeight: 17 },
  });
 diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerDrawer/src/components/FolderItem.tsx
---- a/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-16 11:02:27.706651839 -0400
-+++ b/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-14 18:54:46.906792800 -0400
-@@ -1,11 +1,14 @@
+--- a/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-19 08:53:06.664689668 -0400
++++ b/plugins/ServerDrawer/src/components/FolderItem.tsx	2026-10-18 21:32:24.072540700 -0400
+@@ -1,27 +1,31 @@
  import React from "react";
 -import { View, Text, Animated, Pressable, Image, ViewStyle, StyleSheet } from "react-native";
 +import { View, Text, Animated, Pressable, Image, ViewStyle, StyleSheet, LayoutAnimation } from "react-native";
@@ -421,8 +565,10 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
 +import Divider, { DividerKind } from "./Dividers";
  
  const GuildActions = findByProps("toggleGuildFolderExpand");
++const ExpandedGuildFolderStore = findByStoreName("ExpandedGuildFolderStore");
  const Flux = findByProps("useStateFromStores");
-@@ -14,14 +17,14 @@
+ const GuildReadStateStore = findByStoreName("GuildReadStateStore");
+ const SortedGuildStore = findByStoreName("SortedGuildStore");
  const Haptic = findByProps("triggerHapticFeedback", "HapticFeedbackTypes");
  const colors = findByProps("colors", "unsafe_rawColors")?.colors;
  
@@ -443,7 +589,41 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
  ];
  
  const FOLDER_ASSET = getAssetIDByName("FolderIcon");
-@@ -74,22 +77,56 @@
+@@ -56,17 +60,26 @@
+     return null;
+ }
+ 
++// Distra: Custom Folder Icons (distra:custom-folder-icons), while it's on, draws a folder's custom image
++// instead of the server grid (and the grid when the folder has none).
++const customFolderIcon = (): React.ComponentType<any> | undefined =>
++    (window as any).distra?.plugins?.getInstance?.("distra:custom-folder-icons")?.api?.FolderIcon;
++
+ function FolderCover({ node }: { node: GuildNode }) {
+     const col = folderColor(node.color);
++    const grid = (
++        <View style={[fc.icon, { backgroundColor: col }]}>
++            {node.children.slice(0, 4).map((ch, i) => (
++                <View key={ch.id} style={[fc.cell, POS[i]]}>
++                    <GuildIcon id={ch.id as string} size={MINI} />
++                </View>
++            ))}
++        </View>
++    );
++    const CustomIcon = customFolderIcon();
+     return (
+         <View style={fc.outer}>
+-            <View style={[fc.icon, { backgroundColor: col }]}>
+-                {node.children.slice(0, 4).map((ch, i) => (
+-                    <View key={ch.id} style={[fc.cell, POS[i]]}>
+-                        <GuildIcon id={ch.id as string} size={MINI} />
+-                    </View>
+-                ))}
+-            </View>
++            {CustomIcon ? <CustomIcon folderId={node.id} color={node.color} size={ICON} radius={RADIUS}>{grid}</CustomIcon> : grid}
+             <FolderBadge node={node} />
+         </View>
+     );
+@@ -74,22 +87,63 @@
  
  const fc = StyleSheet.create({
      outer: { width: ICON, height: ICON },
@@ -480,9 +660,8 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
 +            {children}
 +        </Animated.View>
 +    );
- }
- 
--export default function FolderItem({ node, onPick, showNames }: { node: GuildNode; onPick: (id: string) => void; showNames?: boolean }) {
++}
++
 +/** A line across the whole row of the wrapping grid, ending a run of servers. */
 +export function RowSeparator() {
 +    return <View style={{ width: "100%", height: StyleSheet.hairlineWidth * 2, marginVertical: 4, borderRadius: 1, backgroundColor: colors?.BACKGROUND_MODIFIER_ACCENT ?? "rgba(255,255,255,0.18)" }} />;
@@ -494,8 +673,9 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
 +    showNames?: boolean;
 +    /** What marks the end of an open folder's servers. */
 +    divider?: DividerKind;
-+}
-+
+ }
+ 
+-export default function FolderItem({ node, onPick, showNames }: { node: GuildNode; onPick: (id: string) => void; showNames?: boolean }) {
 +export default function FolderItem({ node, onPick, showNames, divider }: FolderItemProps) {
      const open = useFolderExpanded(node.id);
  
@@ -504,10 +684,17 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
 +        if (storage.folderAnimation !== false) {
 +            LayoutAnimation.configureNext(LayoutAnimation.create(220, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity));
 +        }
++        // "Close other folders": opening one folds the rest away.
++        if (!open && storage.collapseOtherFolders) {
++            const expanded = ExpandedGuildFolderStore?.getExpandedFolders?.();
++            for (const id of expanded instanceof Set ? [...expanded] : []) {
++                if (id !== node.id) GuildActions?.toggleGuildFolderExpand?.(id);
++            }
++        }
          GuildActions?.toggleGuildFolderExpand?.(node.id);
      };
  
-@@ -101,13 +138,13 @@
+@@ -101,13 +155,13 @@
          Animated.spring(scale, { toValue: v, useNativeDriver: true, damping: 14, stiffness: 220 }).start();
      }, [scale]);
  
@@ -527,7 +714,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
  
      const [menuState, setMenuState] = React.useState<{
          visible: boolean;
-@@ -176,6 +213,7 @@
+@@ -176,6 +230,7 @@
          >
              <View ref={viewRef} collapsable={false}>
                  <Animated.View style={{ transform: [{ scale }] }}>{content}</Animated.View>
@@ -535,7 +722,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
              </View>
          </Pressable>
      );
-@@ -191,11 +229,12 @@
+@@ -191,11 +246,12 @@
                              </View>,
                          ),
                      )}
@@ -551,7 +738,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
                  </>
              ) : (
                  folderButton(folderContent(<FolderCover node={node} />))
-@@ -217,7 +256,7 @@
+@@ -217,7 +273,7 @@
      openIcon: {
          width: ICON,
          height: ICON,
@@ -561,7 +748,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/FolderItem.tsx b/plugins/ServerD
          justifyContent: "center",
      },
 diff -ruN a/plugins/ServerDrawer/src/components/GuildIcon.tsx b/plugins/ServerDrawer/src/components/GuildIcon.tsx
---- a/plugins/ServerDrawer/src/components/GuildIcon.tsx	2026-10-16 11:02:27.706651839 -0400
+--- a/plugins/ServerDrawer/src/components/GuildIcon.tsx	2026-10-19 08:53:06.664689668 -0400
 +++ b/plugins/ServerDrawer/src/components/GuildIcon.tsx	2026-10-14 18:31:36.836335600 -0400
 @@ -5,14 +5,14 @@
  const GuildStore = findByStoreName("GuildStore");
@@ -582,7 +769,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/GuildIcon.tsx b/plugins/ServerDr
              />
          );
 diff -ruN a/plugins/ServerDrawer/src/components/GuildItem.tsx b/plugins/ServerDrawer/src/components/GuildItem.tsx
---- a/plugins/ServerDrawer/src/components/GuildItem.tsx	2026-10-16 11:02:27.706651839 -0400
+--- a/plugins/ServerDrawer/src/components/GuildItem.tsx	2026-10-19 08:53:06.664689668 -0400
 +++ b/plugins/ServerDrawer/src/components/GuildItem.tsx	2026-10-14 18:28:29.198806300 -0400
 @@ -4,8 +4,9 @@
  import { GuildNode } from "../utils/theme";
@@ -703,8 +890,8 @@ diff -ruN a/plugins/ServerDrawer/src/components/SelectionRing.tsx b/plugins/Serv
 +    ring: { position: "absolute", top: 0, left: 0, width: ICON, height: ICON, borderRadius: RADIUS, borderWidth: 2 },
 +});
 diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx
---- a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-16 11:02:27.706651839 -0400
-+++ b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-16 11:00:15.191807200 -0400
+--- a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-19 08:53:06.664689668 -0400
++++ b/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx	2026-10-18 19:41:12.415956300 -0400
 @@ -7,7 +7,10 @@
  import { getGestureContext } from "../utils/gestureContext";
  import GuildItem from "./GuildItem";
@@ -750,7 +937,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
      const extCtx = ExternalContext ? React.useContext(ExternalContext) as any : null;
      const setMode = extCtx?.setRestingQuestDockMode;
  
-@@ -170,28 +165,63 @@
+@@ -170,28 +165,65 @@
          return () => sub.remove();
      }, [setMode, specs]);
  
@@ -762,7 +949,9 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
 +    // The dock mounts its closed and open content together and each normally fades itself out;
 +    // ours don't, so follow the dock's mode (a shared value React can't subscribe to) by polling.
 +    const dockMode = useDockMode(ctx?.activeQuestDockMode);
-+    const open = dockMode != null && dockMode !== (QuestDockMode?.COLLAPSED ?? "collapsed");
++    // Only while expanded: in the closed (tucked) state, and while the card animates back from it,
++    // the grid would otherwise show through as an extra row.
++    const open = dockMode === (QuestDockMode?.EXPANDED ?? "expanded");
 +
 +    const separator = storage.folderSeparator !== false;
 +    const showNames = !!storage.showGuildNames;
@@ -834,7 +1023,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
      );
  }
  
-@@ -201,16 +231,29 @@
+@@ -201,16 +233,29 @@
          justifyContent: "flex-start",
          alignItems: "flex-start",
      },
@@ -866,7 +1055,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
          backgroundColor: createJoinBg,
          alignItems: "center",
          justifyContent: "center",
-@@ -218,7 +261,7 @@
+@@ -218,7 +263,7 @@
      discoveryTile: {
          width: ICON,
          height: ICON,
@@ -876,7 +1065,7 @@ diff -ruN a/plugins/ServerDrawer/src/components/ServerDrawerSheet.tsx b/plugins/
          justifyContent: "center",
      },
 diff -ruN a/plugins/ServerDrawer/src/index.tsx b/plugins/ServerDrawer/src/index.tsx
---- a/plugins/ServerDrawer/src/index.tsx	2026-10-16 11:02:27.706651839 -0400
+--- a/plugins/ServerDrawer/src/index.tsx	2026-10-19 08:53:06.664689668 -0400
 +++ b/plugins/ServerDrawer/src/index.tsx	2026-10-14 18:31:43.193941300 -0400
 @@ -3,7 +3,7 @@
  import { patchMobileQuestDock } from "./patches/mobileQuestDock";
@@ -905,8 +1094,8 @@ diff -ruN a/plugins/ServerDrawer/src/index.tsx b/plugins/ServerDrawer/src/index.
          if (patchEmpty("QuestDockUnenrolledHeader", cleanups)) patched++;
          if (patchEmpty("QuestDockEnrolledBody", cleanups)) patched++;
 diff -ruN a/plugins/ServerDrawer/src/patches/contentPatch.tsx b/plugins/ServerDrawer/src/patches/contentPatch.tsx
---- a/plugins/ServerDrawer/src/patches/contentPatch.tsx	2026-10-16 11:02:27.706651839 -0400
-+++ b/plugins/ServerDrawer/src/patches/contentPatch.tsx	2026-10-14 18:15:26.159207900 -0400
+--- a/plugins/ServerDrawer/src/patches/contentPatch.tsx	2026-10-19 08:53:06.664689668 -0400
++++ b/plugins/ServerDrawer/src/patches/contentPatch.tsx	2026-10-18 19:41:12.415312000 -0400
 @@ -1,6 +1,8 @@
  import { find } from "@vendetta/metro";
  import { React } from "@vendetta/metro/common";
@@ -992,7 +1181,7 @@ diff -ruN a/plugins/ServerDrawer/src/patches/contentPatch.tsx b/plugins/ServerDr
 +    return true;
 +}
 diff -ruN a/plugins/ServerDrawer/src/patches/createElementIntercept.ts b/plugins/ServerDrawer/src/patches/createElementIntercept.ts
---- a/plugins/ServerDrawer/src/patches/createElementIntercept.ts	2026-10-16 11:02:27.706937046 -0400
+--- a/plugins/ServerDrawer/src/patches/createElementIntercept.ts	2026-10-19 08:53:06.664943304 -0400
 +++ b/plugins/ServerDrawer/src/patches/createElementIntercept.ts	2026-10-16 10:59:33.392232200 -0400
 @@ -299,30 +299,20 @@
          return added;
@@ -1037,13 +1226,13 @@ diff -ruN a/plugins/ServerDrawer/src/patches/createElementIntercept.ts b/plugins
          isPatched = false;
          intercepts.clear();
 diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx
---- a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-16 11:02:27.706937046 -0400
-+++ b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-16 10:59:40.924279200 -0400
+--- a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-19 08:53:06.664943304 -0400
++++ b/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx	2026-10-19 08:02:46.186190200 -0400
 @@ -1,10 +1,11 @@
  import React from "react";
  import { View } from "react-native";
  import { findAll } from "@vendetta/metro";
-+import { before } from "@vendetta/patcher";
++import { after, before } from "@vendetta/patcher";
  import { useProxy } from "@vendetta/storage";
  import { storage } from "@vendetta/plugin";
  import { RailDmTile } from "../components/DmTile";
@@ -1089,7 +1278,7 @@ diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerD
  // Patch for HomePanelContent: conditionally render rail content
  function HomePanelContentPatch() {
      useProxy(storage);
-@@ -192,15 +163,42 @@
+@@ -192,15 +163,63 @@
      hidingComplete = found > 0 && applied === 0;
  }
  
@@ -1123,6 +1312,26 @@ diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerD
 +    console.log(TAG, "PATCH: messages panel widened over the empty server rail");
 +}
 +
++/**
++ * Discord sizes the channel list from useChannelListWidth, which is the drawer width minus the 72px
++ * rail. Widening the panel over the empty rail leaves that number 72 short, so a server banner is
++ * measured at 318 wide instead of 390 and the sticky server header (pinned with
++ * translateY = scroll - bannerHeight) ends up ~27px too low, with a gap above it where the channels
++ * scroll past. Giving the width back fixes the banner and the sticky offset together.
++ */
++function patchChannelListWidth(cleanups: (() => void)[]) {
++    const mod = (globalThis as any).bunny?.metro?.findByFilePath?.("modules/channel_list_v2/native/useChannelListWidth.tsx", false);
++    if (typeof mod?.default !== "function") {
++        console.log(TAG, "WARN: useChannelListWidth not found; the server banner keeps its rail-sized width");
++        return;
++    }
++    cleanups.push(after("default", mod, (_: any[], width: any) => {
++        if (typeof width !== "number" || storage.hideDmTile) return;
++        return width + DM_WIDTH;
++    }));
++    console.log(TAG, "PATCH: channel list width restored over the empty server rail");
++}
++
  export function patchHideGuildsBar(cleanups: (() => void)[]): boolean {
      let applied = false;
  
@@ -1135,11 +1344,12 @@ diff -ruN a/plugins/ServerDrawer/src/patches/hideGuildsBar.tsx b/plugins/ServerD
 +    // Distra: the messages panel is widened by a View.render patch; the old per-element props
 +    // transform did the same work on every element Discord created.
 +    patchMessagesPanelWidth(cleanups);
++    patchChannelListWidth(cleanups);
      applied = true;
  
      // 2+3. Persistent module mutation.
 diff -ruN a/plugins/ServerDrawer/src/patches/transparentBackground.ts b/plugins/ServerDrawer/src/patches/transparentBackground.ts
---- a/plugins/ServerDrawer/src/patches/transparentBackground.ts	2026-10-16 11:02:27.706937046 -0400
+--- a/plugins/ServerDrawer/src/patches/transparentBackground.ts	2026-10-19 08:53:06.664943304 -0400
 +++ b/plugins/ServerDrawer/src/patches/transparentBackground.ts	2026-10-16 10:59:33.391632800 -0400
 @@ -6,18 +6,35 @@
  // useAnimatedStyle - no component reference to intercept, so match on the computed style instead.
@@ -1183,9 +1393,9 @@ diff -ruN a/plugins/ServerDrawer/src/patches/transparentBackground.ts b/plugins/
          }
      }
 diff -ruN a/plugins/ServerDrawer/src/ui/Settings.tsx b/plugins/ServerDrawer/src/ui/Settings.tsx
---- a/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-16 11:02:27.706937046 -0400
-+++ b/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-14 18:54:46.907079300 -0400
-@@ -22,6 +22,28 @@
+--- a/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-19 08:53:06.664943304 -0400
++++ b/plugins/ServerDrawer/src/ui/Settings.tsx	2026-10-18 11:55:20.580075200 -0400
+@@ -22,6 +22,34 @@
                          onValueChange={(v: boolean) => { storage.showGuildNames = v; }}
                      />
                  </TableRowGroup>
@@ -1198,6 +1408,12 @@ diff -ruN a/plugins/ServerDrawer/src/ui/Settings.tsx b/plugins/ServerDrawer/src/
 +                    />
 +                </TableRowGroup>
 +                <TableRowGroup title="Folders">
++                    <TableSwitchRow
++                        label="Close other folders"
++                        subLabel="Opening a folder closes any other open folder, so only one is open at a time."
++                        value={!!storage.collapseOtherFolders}
++                        onValueChange={(v: boolean) => { storage.collapseOtherFolders = v; }}
++                    />
 +                    <TableSwitchRow
 +                        label="Folder animation"
 +                        subLabel="An opening folder's servers slide out of it, and the rest glide to their new places."
@@ -1216,13 +1432,13 @@ diff -ruN a/plugins/ServerDrawer/src/ui/Settings.tsx b/plugins/ServerDrawer/src/
                          label="Server Drawer"
 diff -ruN a/plugins/ServerDrawer/src/utils/dockMode.ts b/plugins/ServerDrawer/src/utils/dockMode.ts
 --- a/plugins/ServerDrawer/src/utils/dockMode.ts	1969-12-31 19:00:00.000000000 -0500
-+++ b/plugins/ServerDrawer/src/utils/dockMode.ts	2026-10-16 11:00:15.177120600 -0400
++++ b/plugins/ServerDrawer/src/utils/dockMode.ts	2026-10-18 19:41:12.417049000 -0400
 @@ -0,0 +1,50 @@
 +import React from "react";
 +
 +// The dock keeps its mode in a Reanimated shared value, which React can't subscribe to. One timer
 +// per shared value reads it for every component that cares, and only calls them when it changes.
-+const POLL_MS = 150;
++const POLL_MS = 60;
 +
 +type Listener = (mode: string | undefined) => void;
 +interface Poller { listeners: Set<Listener>; last?: string; timer?: ReturnType<typeof setInterval> }
@@ -1289,7 +1505,7 @@ diff -ruN a/plugins/ServerDrawer/src/utils/metrics.ts b/plugins/ServerDrawer/src
 +export const MINI = Math.round(ICON / 3);
 +export const TOP_PAD = 11;
 diff -ruN a/plugins/ServerDrawer/src/utils/theme.ts b/plugins/ServerDrawer/src/utils/theme.ts
---- a/plugins/ServerDrawer/src/utils/theme.ts	2026-10-16 11:02:27.707336956 -0400
+--- a/plugins/ServerDrawer/src/utils/theme.ts	2026-10-19 08:53:06.665267082 -0400
 +++ b/plugins/ServerDrawer/src/utils/theme.ts	2026-10-14 18:27:55.774836300 -0400
 @@ -31,3 +31,25 @@
      expanded?: boolean;

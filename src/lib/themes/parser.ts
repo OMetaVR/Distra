@@ -242,6 +242,54 @@ export function parseTheme(manifest: any, ctx: ParseContext): ThemeDefinition {
     return { reference, semantic, raw, background };
 }
 
+/** Neutral text tokens whose colours icons share in stock Discord. */
+const TEXT_SOURCES = ["TEXT_STRONG", "TEXT_DEFAULT", "TEXT_MUTED", "TEXT_SUBTLE"];
+const INTERACTIVE_SOURCES = ["INTERACTIVE_TEXT_DEFAULT", "INTERACTIVE_TEXT_HOVER", "INTERACTIVE_TEXT_ACTIVE"];
+
+/**
+ * Colours for the icon tokens a theme leaves unset. Themes colour text, but rarely Discord's newer
+ * icon tokens (TABLEROW_ICON_COLOR_DEFAULT tints every settings row icon), which then stay stock
+ * white or grey on a recoloured, possibly light, background. Each icon token that has the same stock
+ * colour as a text token in every base theme takes that text token's themed colour: its namesake
+ * (ICON_MUTED <- TEXT_MUTED, INTERACTIVE_ICON_HOVER <- INTERACTIVE_TEXT_HOVER) or a neutral text
+ * token (TABLEROW_ICON_COLOR_DEFAULT <- TEXT_STRONG). Icons whose stock colour ever differs (icons
+ * on brand-coloured buttons, which stay white in light mode) are left alone.
+ *
+ * `stock` is Discord's SemanticColor table: token -> base theme -> `{ raw, opacity }`.
+ */
+export function deriveIconColors(
+    semantic: Record<string, string>,
+    stock: Record<string, Partial<Record<BaseTheme, { raw?: string; opacity?: number }>> | undefined>,
+): Record<string, string> {
+    const bases: BaseTheme[] = ["dark", "darker", "midnight", "light"];
+    const key = (token: string) => {
+        const values = bases.map(base => stock[token]?.[base]);
+        return values.every(value => value?.raw) ? values.map(value => `${value!.raw}@${value!.opacity ?? 1}`).join("|") : undefined;
+    };
+    const index = (sources: string[]) => {
+        const byStock = new Map<string, string>();
+        for (const token of sources) {
+            const stockKey = key(token);
+            if (semantic[token] && stockKey && !byStock.has(stockKey)) byStock.set(stockKey, semantic[token]);
+        }
+        return byStock;
+    };
+    const plain = index([...TEXT_SOURCES, ...INTERACTIVE_SOURCES]);
+    // Buttons and inputs take the interactive colours when both match (they're the same in stock).
+    const interactive = index([...INTERACTIVE_SOURCES, ...TEXT_SOURCES]);
+
+    const derived: Record<string, string> = {};
+    for (const token of Object.keys(stock)) {
+        if (!/ICON|_TINT$/.test(token) || semantic[token]) continue;
+        const stockKey = key(token);
+        if (!stockKey) continue;
+        const namesake = token.replace(/^ICON_/, "TEXT_").replace(/^INTERACTIVE_ICON_/, "INTERACTIVE_TEXT_");
+        const color = (namesake !== token && semantic[namesake] && key(namesake) === stockKey ? semantic[namesake] : undefined) ?? (/INTERACTIVE|_TINT$|CONTROL|TOGGLE|INPUT/.test(token) ? interactive : plain).get(stockKey);
+        if (color) derived[token] = color;
+    }
+    return derived;
+}
+
 /** Copies colours set under old token names onto their current names, without overriding explicit ones. */
 function carryLegacyTokens(semantic: Record<string, string>, tokens: ReadonlySet<string>) {
     const explicit = new Set(Object.keys(semantic));

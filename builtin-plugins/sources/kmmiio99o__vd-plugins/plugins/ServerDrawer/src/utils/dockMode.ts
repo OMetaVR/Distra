@@ -2,7 +2,7 @@ import React from "react";
 
 // The dock keeps its mode in a Reanimated shared value, which React can't subscribe to. One timer
 // per shared value reads it for every component that cares, and only calls them when it changes.
-const POLL_MS = 150;
+const POLL_MS = 60;
 
 type Listener = (mode: string | undefined) => void;
 interface Poller { listeners: Set<Listener>; last?: string; timer?: ReturnType<typeof setInterval> }

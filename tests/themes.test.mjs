@@ -28,7 +28,7 @@ const { outputFiles } = await build({
         },
     }],
 });
-const { describeTheme, parseTheme, normalizeColor, withOpacity, LIBRARY } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString("base64")}`);
+const { describeTheme, parseTheme, deriveIconColors, normalizeColor, withOpacity, LIBRARY } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString("base64")}`);
 
 const tokens = new Set(JSON.parse(fs.readFileSync(path.join(root, "tests/fixtures/semantic-tokens-348.json"), "utf8")));
 const ctx = (base = "darker", explicitBase = false) => ({ tokens, rawColor: name => ({ BRAND_500: "#5865f2" })[name], base, explicitBase });
@@ -108,4 +108,26 @@ test("rejects things that aren't themes", () => {
     assert.throws(() => describeTheme({ hello: "world" }), /Not a theme/);
     assert.throws(() => describeTheme([]), /Not a theme/);
     assert.throws(() => describeTheme({ spec: 2, semanticColors: {} }), /no name/);
+});
+
+test("icon tokens a theme leaves unset follow its text colours", () => {
+    const all = (raw, light = raw) => ({ dark: { raw }, darker: { raw }, midnight: { raw }, light: { raw: light } });
+    const stock = {
+        TEXT_STRONG: all("NEUTRAL_1", "NEUTRAL_76"),
+        TEXT_MUTED: all("NEUTRAL_23", "NEUTRAL_41"),
+        INTERACTIVE_TEXT_DEFAULT: all("NEUTRAL_16", "NEUTRAL_47"),
+        TEXT_SUBTLE: all("NEUTRAL_16", "NEUTRAL_47"),
+        TABLEROW_ICON_COLOR_DEFAULT: all("NEUTRAL_1", "NEUTRAL_76"),
+        ICON_MUTED: all("NEUTRAL_23", "NEUTRAL_41"),
+        CHAT_INPUT_ICON_DEFAULT_TINT: all("NEUTRAL_16", "NEUTRAL_47"),
+        // White on the brand-coloured send button in every theme, light included.
+        CHAT_INPUT_SEND_BUTTON_ICON_ACTIVE_TINT: all("NEUTRAL_1", "WHITE"),
+        ICON_STRONG: all("NEUTRAL_1", "NEUTRAL_76"),
+    };
+    const derived = deriveIconColors({ TEXT_STRONG: "#111111ff", TEXT_MUTED: "#222222ff", TEXT_SUBTLE: "#444444ff", INTERACTIVE_TEXT_DEFAULT: "#333333ff", ICON_STRONG: "#555555ff" }, stock);
+    assert.equal(derived.TABLEROW_ICON_COLOR_DEFAULT, "#111111ff");
+    assert.equal(derived.ICON_MUTED, "#222222ff");
+    assert.equal(derived.CHAT_INPUT_ICON_DEFAULT_TINT, "#333333ff", "input icons take the interactive colour");
+    assert.equal(derived.CHAT_INPUT_SEND_BUTTON_ICON_ACTIVE_TINT, undefined, "icons that differ from text in some base are left alone");
+    assert.equal(derived.ICON_STRONG, undefined, "colours the theme sets are kept");
 });

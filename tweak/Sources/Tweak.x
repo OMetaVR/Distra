@@ -129,5 +129,7 @@ static BOOL DSTShouldInject(id owner, NSURL *url) {
         }
         %init;
         DSTThemeLoadSaved();
+        DSTFontsLoadSaved();
+        DSTCodeBlocksInstall();
     }
 }

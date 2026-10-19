@@ -10,7 +10,7 @@ Distra_FILES = $(wildcard Sources/*.x Sources/*.m) Sources/Generated/EmbeddedBun
 Distra_CFLAGS = -fobjc-arc -ISources -Wno-unused-function \
 	-DDISTRA_TWEAK_VERSION=\"$(THEOS_PACKAGE_BASE_VERSION)\" \
 	-DDISTRA_INSTALL_PREFIX=\"$(THEOS_PACKAGE_INSTALL_PREFIX)\"
-Distra_FRAMEWORKS = Foundation UIKit CoreImage
+Distra_FRAMEWORKS = Foundation UIKit CoreImage CoreText
 Distra_LIBRARIES = sqlite3
 # Hooks use the ObjC runtime directly, so the dylib needs no Substrate/ElleKit
 # when injected into an IPA.

@@ -6,7 +6,7 @@ import { Image, Text, TextInput as NativeTextInput, View, type TextStyle, type V
 
 import { findAssetId } from "@/lib/assets";
 import { constants } from "@/metro/common";
-import { semanticColors } from "@/ui/color";
+import { resolveSemanticColor, semanticColors } from "@/ui/color";
 import { Button, TextInput } from "@/ui/components";
 import { createThemedStyleSheet } from "@/ui/styles";
 
@@ -38,7 +38,12 @@ export function Search({ onChangeText, placeholder, style }: { onChangeText?: (v
             <TextInput
                 grow
                 isClearable
-                leadingIcon={() => <Image style={{ width: 16, height: 16 }} source={findAssetId("MagnifyingGlassIcon") ?? findAssetId("icon-search")} />}
+                leadingIcon={(props?: { color?: unknown }) => (
+                    <Image
+                        style={{ width: 16, height: 16, tintColor: typeof props?.color === "string" ? props.color : resolveSemanticColor(semanticColors.INPUT_ICON_DEFAULT ?? semanticColors.INTERACTIVE_ICON_DEFAULT) }}
+                        source={findAssetId("MagnifyingGlassIcon") ?? findAssetId("icon-search")}
+                    />
+                )}
                 placeholder={placeholder ?? "Search"}
                 onChange={(value: string) => {
                     setQuery(value);

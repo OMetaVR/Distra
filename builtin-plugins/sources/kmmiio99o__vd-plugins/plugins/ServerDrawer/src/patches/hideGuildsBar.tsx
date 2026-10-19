@@ -1,7 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import { findAll } from "@vendetta/metro";
-import { before } from "@vendetta/patcher";
+import { after, before } from "@vendetta/patcher";
 import { useProxy } from "@vendetta/storage";
 import { storage } from "@vendetta/plugin";
 import { RailDmTile } from "../components/DmTile";
@@ -193,12 +193,33 @@ function patchMessagesPanelWidth(cleanups: (() => void)[]) {
     console.log(TAG, "PATCH: messages panel widened over the empty server rail");
 }
 
+/**
+ * Discord sizes the channel list from useChannelListWidth, which is the drawer width minus the 72px
+ * rail. Widening the panel over the empty rail leaves that number 72 short, so a server banner is
+ * measured at 318 wide instead of 390 and the sticky server header (pinned with
+ * translateY = scroll - bannerHeight) ends up ~27px too low, with a gap above it where the channels
+ * scroll past. Giving the width back fixes the banner and the sticky offset together.
+ */
+function patchChannelListWidth(cleanups: (() => void)[]) {
+    const mod = (globalThis as any).bunny?.metro?.findByFilePath?.("modules/channel_list_v2/native/useChannelListWidth.tsx", false);
+    if (typeof mod?.default !== "function") {
+        console.log(TAG, "WARN: useChannelListWidth not found; the server banner keeps its rail-sized width");
+        return;
+    }
+    cleanups.push(after("default", mod, (_: any[], width: any) => {
+        if (typeof width !== "number" || storage.hideDmTile) return;
+        return width + DM_WIDTH;
+    }));
+    console.log(TAG, "PATCH: channel list width restored over the empty server rail");
+}
+
 export function patchHideGuildsBar(cleanups: (() => void)[]): boolean {
     let applied = false;
 
     // Distra: the messages panel is widened by a View.render patch; the old per-element props
     // transform did the same work on every element Discord created.
     patchMessagesPanelWidth(cleanups);
+    patchChannelListWidth(cleanups);
     applied = true;
 
     // 2+3. Persistent module mutation.

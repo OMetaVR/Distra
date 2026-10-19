@@ -7,6 +7,8 @@ export interface CorePlugin {
     start(): void | Promise<void>;
     stop(): void | Promise<void>;
     SettingsComponent?: React.ComponentType<any>;
+    /** Functions other plugins (and devtools) can use, via `distra.plugins.getInstance(id).api`. */
+    api?: Record<string, unknown>;
 }
 
 export const definePlugin = (plugin: CorePlugin) => plugin;

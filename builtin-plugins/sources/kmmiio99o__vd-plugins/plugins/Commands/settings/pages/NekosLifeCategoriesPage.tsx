@@ -1,4 +1,4 @@
-import { React, ReactNative as RN } from "@vendetta/metro/common";
+import { React, ReactNative as RN, stylesheet } from "@vendetta/metro/common";
 import { semanticColors } from "@vendetta/ui";
 import {
     ScrollView,
@@ -8,7 +8,8 @@ import {
 } from "../components/TableComponents";
 
 export default function NekosLifeCategoriesPage() {
-    const styles = RN.StyleSheet.create({
+    // Distra: a plain StyleSheet leaves semantic colours unresolved (black text); themed sheets resolve them per theme.
+    const styles = stylesheet.createThemedStyleSheet({
         tableHeader: {
             flexDirection: "row",
             alignItems: "center",

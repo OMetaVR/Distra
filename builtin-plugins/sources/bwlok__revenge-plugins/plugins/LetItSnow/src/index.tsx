@@ -196,29 +196,20 @@ export default {
     patches.push(
       before("render", General.View, (args) => {
           const [wrapper] = args;
-          if (!wrapper || !Array.isArray(wrapper.style)) return;
+          if (!wrapper) return;
 
-          const hasFlexOne = wrapper.style.some(s => s?.flex === 1);
-          if (!hasFlexOne) return;
+          // Distra: Discord 348 has no flex:1 View around NativeStackViewInner any more (the navigator
+          // sits under StartupProfiler/GlobalStatusIndicator views), so the old match never hit. The
+          // overlay goes on the app's root View instead, the flex:1 View whose child is the App component.
+          const styles = Array.isArray(wrapper.style) ? wrapper.style : [wrapper.style];
+          if (!styles.some(s => s?.flex === 1)) return;
 
-          let child = wrapper.children;
-
-          //If ViewBackground plugin
-          if (Array.isArray(child)) {
-              child = child.find(c => c?.type?.name === "NativeStackViewInner");
-          }
-
-          if (child?.type?.name !== "NativeStackViewInner") return;
-
-          const routes = child?.props?.state?.routeNames;
-          if (!routes?.includes("main") || !routes?.includes("modal")) return;
-
-          const currentChildren = Array.isArray(wrapper.children)
-              ? wrapper.children
-              : [wrapper.children];
+          const kids = Array.isArray(wrapper.children) ? wrapper.children : [wrapper.children];
+          if (!kids.some(c => c?.type?.name === "App")) return;
+          if (kids.some(c => c?.key === "persistent-overlay")) return;
 
           wrapper.children = [
-              ...currentChildren,
+              ...kids,
               React.createElement(FallingParticles, { key: "persistent-overlay" })
           ];
       })
