@@ -100,13 +100,14 @@ function hashKey(text: string) {
 
 /** Every image of a stored message with the key its files are saved under. */
 function imagesOf(stored: db.StoredMessage) {
-    const images: { key: string; source: string; target: db.StoredAttachment | db.StoredEmbedImage }[] = [];
+    const images: { key: string; sources: string[]; target: db.StoredAttachment | db.StoredEmbedImage }[] = [];
     for (const a of stored.attachments) {
-        if (isImage({ content_type: a.t, filename: a.f })) images.push({ key: a.id, source: a.u, target: a });
+        // The media proxy often keeps serving a deleted attachment after the CDN stops.
+        if (isImage({ content_type: a.t, filename: a.f })) images.push({ key: a.id, sources: [...new Set([a.u, a.p].filter(Boolean) as string[])], target: a });
     }
     for (const embed of stored.embeds ?? []) {
         for (const image of [embed.image, embed.thumbnail]) {
-            if (image) images.push({ key: `e${hashKey(image.u)}`, source: image.p ?? image.u, target: image });
+            if (image) images.push({ key: `e${hashKey(image.u)}`, sources: [...new Set([image.p, image.u].filter(Boolean) as string[])], target: image });
         }
     }
     return images;
@@ -125,23 +126,33 @@ function saveImages(stored: db.StoredMessage) {
     const pending = imagesOf(stored).filter(image => (!image.target.l || !image.target.o) && !image.target.x);
     if (!pending.length) return;
 
-    Promise.allSettled(pending.map(async ({ key, source, target }) => {
-        try {
-            // Same url for both, so the second request is served from the HTTP cache.
-            const grey = await callNative<{ uri: string }>("image.cache", source, db.imagePath(key), { maxSize: 720, quality: 0.6, greyscale: true, alpha: 0.75 });
-            target.l = grey.uri;
-            const original = await callNative<{ uri: string }>("image.cache", source, db.imagePath(key, "o"), { maxSize: 2048, quality: 0.8 });
-            target.o = original.uri;
-        } catch (e) {
-            // Gone from the CDN: remember, so it isn't requested again on every launch.
-            if (/HTTP 40[34]/.test(String(e))) target.x = true;
-            throw e;
+    Promise.allSettled(pending.map(async ({ key, sources, target }) => {
+        let gone = 0;
+        for (const source of sources) {
+            try {
+                // Same url for both, so the second request is served from the HTTP cache.
+                const grey = await callNative<{ uri: string }>("image.cache", source, db.imagePath(key), { maxSize: 720, quality: 0.6, greyscale: true, alpha: 0.75 });
+                target.l = grey.uri;
+                const original = await callNative<{ uri: string }>("image.cache", source, db.imagePath(key, "o"), { maxSize: 2048, quality: 0.8 });
+                target.o = original.uri;
+                return;
+            } catch (e) {
+                if (/HTTP 40[34]/.test(String(e))) gone++;
+                if (source === sources[sources.length - 1]) {
+                    // Gone everywhere: remember, so it isn't requested again on every launch.
+                    if (gone === sources.length) target.x = true;
+                    throw e;
+                }
+            }
         }
     })).then(async results => {
         const failed = results.filter(r => r.status === "rejected");
         if (failed.length) logger.warn(`Could not save ${failed.length} image(s) of ${stored.id}`, (failed[0] as PromiseRejectedResult).reason);
         if (failed.length === results.length) {
-            if (imagesOf(stored).some(image => image.target.x)) await db.setMedia(stored);
+            if (imagesOf(stored).some(image => image.target.x)) {
+                await db.setMedia(stored);
+                refresh(stored.id);
+            }
             return;
         }
         await db.setMedia(stored);
@@ -151,15 +162,19 @@ function saveImages(stored: db.StoredMessage) {
 
 /** API-format attachments and embeds pointing at the saved originals, so the full-size viewer opens those. */
 function localMedia(stored: db.StoredMessage | undefined) {
-    if (!stored || ![...stored.attachments, ...(stored.embeds ?? []).flatMap(e => [e.image, e.thumbnail])].some(item => item?.o)) return {};
+    if (!stored || ![...stored.attachments, ...(stored.embeds ?? []).flatMap(e => [e.image, e.thumbnail])].some(item => item?.o || item?.x)) return {};
     return { attachments: toApiAttachments(stored), embeds: toApiEmbeds(stored) };
 }
 
-const toApiAttachments = (stored: db.StoredMessage) => stored.attachments.map(a => ({
-    id: a.id, filename: a.f, url: a.o ?? a.u, proxy_url: a.o ?? a.p ?? a.u, width: a.w, height: a.h, size: a.s ?? 0, content_type: a.t,
+// Images that were gone before they could be saved are left out (the row says so instead); ones
+// whose original couldn't be saved open the greyed-out copy rather than a dead CDN link.
+const toApiAttachments = (stored: db.StoredMessage) => stored.attachments.filter(a => !(a.x && !a.o && !a.l)).map(a => ({
+    id: a.id, filename: a.f, url: savedOriginal(a) ?? a.u, proxy_url: savedOriginal(a) ?? a.p ?? a.u, width: a.w, height: a.h, size: a.s ?? 0, content_type: a.t,
 }));
 
-const toApiImage = (image: db.StoredEmbedImage | undefined) => image && ({ url: image.o ?? image.u, proxy_url: image.o ?? image.p ?? image.u, width: image.w, height: image.h });
+const savedOriginal = (item: { o?: string; l?: string; x?: boolean }) => db.localUri(item.o ?? (item.x ? item.l : undefined));
+
+const toApiImage = (image: db.StoredEmbedImage | undefined) => image && ({ url: savedOriginal(image) ?? image.u, proxy_url: savedOriginal(image) ?? image.p ?? image.u, width: image.w, height: image.h });
 
 const toApiEmbeds = (stored: db.StoredMessage) => (stored.embeds ?? []).map(e => ({
     type: e.t, url: e.url, title: e.title, description: e.description, color: e.color, author: e.author, footer: e.footer, fields: e.fields,

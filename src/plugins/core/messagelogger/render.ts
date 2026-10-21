@@ -8,7 +8,7 @@ import { ReactNative } from "@/metro/common";
 
 import { settings } from "./settings";
 import { ZWSP } from "./capture";
-import type { StoredMessage } from "./db";
+import { localUri, type StoredMessage } from "./db";
 import { edits, isDeleted, logged } from "./state";
 
 const RowManager = findByNameLazy("RowManager");
@@ -78,27 +78,37 @@ const fingerprint = (url: string) => url.replace(/^[a-z]+:\/\//, "").replace(/[?
  * Shows the greyed-out copies of a deleted message's images in its row. Attachments are matched
  * by id; embed images by their original url, which media proxy urls contain, or by the saved original.
  */
-function swapImages(rowMessage: any, stored: StoredMessage) {
+function swapImages(rowMessage: any, stored: StoredMessage): string[] {
     // The row can share its attachment and embed objects with the message store, which the
     // full-size viewer reads: swap in copies so the viewer keeps the originals.
     if (Array.isArray(rowMessage.attachments)) rowMessage.attachments = rowMessage.attachments.map((a: any) => cloneData(a));
     if (Array.isArray(rowMessage.embeds)) rowMessage.embeds = rowMessage.embeds.map((e: any) => cloneData(e));
+    const lost: string[] = [];
     for (const attachment of stored.attachments) {
-        if (!attachment.l) continue;
+        if (!attachment.l) {
+            // Deleted before it could be saved: the CDN no longer has it, so the tile and the
+            // full-size viewer would only show an error. Say so in the message instead.
+            if (attachment.x) lost.push(attachment.id);
+            continue;
+        }
         const target = rowMessage.attachments?.find((a: any) => a?.id === attachment.id);
-        if (target) replaceUrls(target, () => true, attachment.l);
+        if (target) replaceUrls(target, () => true, localUri(attachment.l));
+    }
+    if (lost.length && Array.isArray(rowMessage.attachments)) {
+        rowMessage.attachments = rowMessage.attachments.filter((a: any) => !lost.includes(a?.id));
     }
     for (const embed of stored.embeds ?? []) {
         for (const image of [embed.image, embed.thumbnail]) {
             if (!image?.l) continue;
-            const prints = [fingerprint(image.u), image.o && fingerprint(image.o)].filter(Boolean) as string[];
+            const prints = [fingerprint(image.u), image.o && fingerprint(localUri(image.o)), image.o && fingerprint(image.o)].filter(Boolean) as string[];
             for (const rowEmbed of rowMessage.embeds ?? []) {
                 for (const part of [rowEmbed?.image, rowEmbed?.thumbnail, rowEmbed?.video]) {
-                    replaceUrls(part, url => prints.some(print => url.includes(print)), image.l);
+                    replaceUrls(part, url => prints.some(print => url.includes(print)), localUri(image.l));
                 }
             }
         }
     }
+    return stored.attachments.filter(a => lost.includes(a.id)).map(a => a.f);
 }
 
 export function patchRows(patcher: Patcher) {
@@ -130,7 +140,12 @@ export function patchRows(patcher: Patcher) {
                     gutterColor: color(`${settings.highlightColor}CC`),
                 };
             }
-            swapImages(row.message, stored);
+            const lost = swapImages(row.message, stored);
+            if (lost.length && Array.isArray(row.message.content)) {
+                const note = lost.map(name => `🖼 ${name} (deleted before it could be saved)`).join("\n");
+                const line = colored([text(note)], settings.deletedTextColor, message);
+                row.message.content = row.message.content.length ? [...row.message.content, text("\n"), line] : [line];
+            }
         }
     });
 }

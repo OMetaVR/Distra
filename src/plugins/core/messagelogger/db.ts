@@ -150,6 +150,9 @@ export const setMedia = (message: StoredMessage) =>
 
 const IMAGE_DIR = "logger/images";
 
+/** A saved image's file URI; ones saved before the Discordia → Distra rename point at the old folder. */
+export const localUri = <T extends string | undefined>(uri: T): T => (uri?.replace("/Documents/Discordia/logger/", "/Documents/Distra/logger/") ?? uri) as T;
+
 /** Path of a saved image relative to the Distra folder (`variant` "o" is the original). */
 export const imagePath = (key: string, variant?: "o") => `${IMAGE_DIR}/${key}${variant ? `.${variant}` : ""}.jpg`;
 

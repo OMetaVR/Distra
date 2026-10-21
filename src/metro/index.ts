@@ -161,6 +161,9 @@ function byNameOrFile(filter: Filter, name: string, expDefault: boolean) {
     return findFile(name, expDefault);
 }
 
+/** A file's default export, or the export named after the file (Navigator.tsx exports `Navigator`). */
+const fileExport = (exports: any, name: string) => exports.default ?? (exports[name] !== undefined ? exports[name] : exports);
+
 function findFile(name: string, expDefault: boolean) {
     // Uppercase component names and hooks (useFoo) are the only ones that map cleanly to files.
     if (!/^(?:[A-Z]|use[A-Z])/.test(name)) return undefined;
@@ -171,7 +174,7 @@ function findFile(name: string, expDefault: boolean) {
     const cached = cachedIds?.[0];
     if (cached !== undefined) {
         const exports = requireModule(cached);
-        if (exports !== undefined) return expDefault ? exports.default ?? exports : exports;
+        if (exports !== undefined) return expDefault ? fileExport(exports, name) : exports;
     }
 
     let best: { id: ModuleID; exports: any; native: boolean } | undefined;
@@ -186,7 +189,7 @@ function findFile(name: string, expDefault: boolean) {
         return undefined;
     }
     setCachedIds(key, [best.id]);
-    return expDefault ? best.exports.default ?? best.exports : best.exports;
+    return expDefault ? fileExport(best.exports, name) : best.exports;
 }
 
 const allByNameOrFile = (filter: Filter, name: string, expDefault: boolean) => {

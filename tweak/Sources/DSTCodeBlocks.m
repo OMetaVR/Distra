@@ -174,9 +174,27 @@ static void DSTApplySpans(NSMutableAttributedString *text, NSRange codeRange, NS
  * that the code's box overlaps the strip's lower edge: a header strip attached to the box, with
  * the code box's top border as the separator. In quotes (no overhang) it stays in the same box.
  */
+static NSDictionary *gLastHeader;
+
+static UIColor *DSTFillOf(id border) {
+    id fill = DSTSend(border, NSSelectorFromString(@"fillColor"));
+    return [fill isKindOfClass:UIColor.class] ? fill : nil;
+}
+
+static CGFloat DSTAlphaOf(UIColor *color) {
+    CGFloat r, g, b, a = 0;
+    return [color getRed:&r green:&g blue:&b alpha:&a] ? a : 0;
+}
+
+static NSString *DSTHex(UIColor *color) {
+    CGFloat r = 0, g = 0, b = 0, a = 0;
+    if (![color getRed:&r green:&g blue:&b alpha:&a]) return @"-";
+    return [NSString stringWithFormat:@"#%02x%02x%02x%02x", (int)round(r * 255), (int)round(g * 255), (int)round(b * 255), (int)round(a * 255)];
+}
+
 static void DSTInsertHeader(NSMutableAttributedString *text, NSString *label) {
     NSMutableDictionary *attributes = [[text attributesAtIndex:0 effectiveRange:NULL] mutableCopy];
-    for (NSString *key in @[DSTBackgroundBorderKey, NSUnderlineStyleAttributeName, (NSString *)kCTUnderlineStyleAttributeName]) [attributes removeObjectForKey:key];
+    for (NSString *key in @[NSUnderlineStyleAttributeName, (NSString *)kCTUnderlineStyleAttributeName]) [attributes removeObjectForKey:key];
 
     UIFont *codeFont = [attributes[NSFontAttributeName] isKindOfClass:UIFont.class] ? attributes[NSFontAttributeName] : nil;
     CGFloat size = MAX(10, round((codeFont.pointSize ?: 15) * 0.8));
@@ -188,21 +206,37 @@ static void DSTInsertHeader(NSMutableAttributedString *text, NSString *label) {
     NSParagraphStyle *base = [attributes[NSParagraphStyleAttributeName] isKindOfClass:NSParagraphStyle.class] ? attributes[NSParagraphStyleAttributeName] : NSParagraphStyle.defaultParagraphStyle;
     NSMutableParagraphStyle *style = [base mutableCopy];
     id border = attributes[DSTBlockBorderKey];
+    id lineBackground = attributes[DSTBackgroundBorderKey];
+    // The box's colour is either the block border's fill or a background drawn behind each line.
+    UIColor *blockFill = DSTFillOf(border), *lineFill = DSTFillOf(lineBackground);
+    UIColor *boxFill = DSTAlphaOf(blockFill) > 0.01 ? blockFill : DSTAlphaOf(lineFill) > 0.01 ? lineFill : nil;
     UIEdgeInsets insets = UIEdgeInsetsZero;
     if ([border respondsToSelector:@selector(insets)]) insets = ((UIEdgeInsets (*)(id, SEL))objc_msgSend)(border, @selector(insets));
     SEL setFill = NSSelectorFromString(@"setFillColor:");
-    if (border && insets.top < 0 && [border conformsToProtocol:@protocol(NSCopying)] && [border respondsToSelector:setFill]) {
-        id strip = [border copy];
-        UIColor *fill = DSTSend(border, NSSelectorFromString(@"fillColor"));
+    BOOL strip = border && boxFill && insets.top < 0 && [border conformsToProtocol:@protocol(NSCopying)] && [border respondsToSelector:setFill];
+    if (strip) {
+        // Its own solid box in a slightly lighter shade, overlapped by the code's box.
+        id header = [border copy];
         UIColor *tint = DSTThemeColor(@"textDefault") ?: muted;
-        if ([fill isKindOfClass:UIColor.class]) ((void (*)(id, SEL, UIColor *))objc_msgSend)(strip, setFill, DSTBlend(DSTOpaque(fill), tint, 0.06));
-        attributes[DSTBlockBorderKey] = strip;
+        ((void (*)(id, SEL, UIColor *))objc_msgSend)(header, setFill, DSTBlend(DSTOpaque(boxFill), tint, 0.06));
+        attributes[DSTBlockBorderKey] = header;
+        [attributes removeObjectForKey:DSTBackgroundBorderKey];
         style.paragraphSpacing = -insets.top;
     } else {
+        // Same box as the code (keeps the line background, if that's what draws the box).
         style.paragraphSpacing = 4;
     }
     style.paragraphSpacingBefore = 0;
     attributes[NSParagraphStyleAttributeName] = style;
+
+    gLastHeader = @{
+        @"strip": @(strip),
+        @"blockBorder": border ? NSStringFromClass([border class]) : @"-",
+        @"blockFill": blockFill ? DSTHex(blockFill) : @"-",
+        @"lineBackground": lineBackground ? NSStringFromClass([lineBackground class]) : @"-",
+        @"lineFill": lineFill ? DSTHex(lineFill) : @"-",
+        @"insetsTop": @(insets.top),
+    };
 
     NSAttributedString *header = [[NSAttributedString alloc] initWithString:[label stringByAppendingString:@"\n"] attributes:attributes];
     [text insertAttributedString:header atIndex:0];
@@ -345,5 +379,6 @@ NSDictionary *DSTCodeBlocksInfo(void) {
         @"colored": @(gColored),
         @"headers": @(gHeaders),
         @"failures": @(gFailures),
+        @"lastHeader": gLastHeader ?: NSNull.null,
     };
 }
