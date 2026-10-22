@@ -50,17 +50,18 @@ file whether it's installed with a jailbreak or injected into an IPA.
 
 ## Built-in plugins
 
-Distra ships **118 plugins**, all disabled until turned on in
+Distra ships **120 plugins**, all disabled until turned on in
 **Settings > Distra > Plugin Library**:
 
-- **24 of its own**, rebuilt for current Discord from the most popular plugins of other mods
+- **26 of its own**, rebuilt for current Discord from the most popular plugins of other mods
   (mostly Vencord/Equicord), merging their features:
   - Messages: **Message Logger** (deleted messages stay in red, edits keep their history,
     deleted images are greyed out; stored in an on-device SQLite database), **Hide Messages**,
     **Block Keywords**, **Download All Attachments**, **WhoReacted**, **Better Code Blocks**
     (syntax highlighting and a language label), **Message Colors**, **Custom Timestamps**.
   - People: **Platform Indicators**, **Radial Status**, **Role Color Everywhere**,
-    **Show Badges In Chat**, **Friendship Ranks**, **Clickable Roles**, **Timezones**,
+    **Show Badges In Chat**, **Fake Badges** (self-assigned badges other Distra users see, labelled as
+    fake), **Expandable Badges**, **Friendship Ranks**, **Clickable Roles**, **Timezones**,
     **Last Active**, **Who's Typing** (typing indicators in channel and DM lists, avatars and role
     colours in the typing line).
   - Lists and chat: **Pin DMs** (pin DMs into collapsible, coloured categories at the top of the

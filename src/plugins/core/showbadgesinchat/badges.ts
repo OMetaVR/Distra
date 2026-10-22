@@ -1,5 +1,6 @@
 // Which badges a user has: Discord's profile badges (from their cached profile, else their public
-// flags), Nitro, and Global Badges (the vendored Global Badges plugin publishes what it loaded).
+// flags), Nitro, Global Badges (the vendored Global Badges plugin publishes what it loaded) and
+// Fake Badges (self-assigned, read from the About Me of loaded profiles).
 
 import { findByStoreNameLazy } from "@/metro";
 
@@ -57,8 +58,14 @@ function globalBadges(userId: string): ChatBadge[] {
     return list.filter(badge => typeof badge?.badge === "string").map(badge => ({ label: badge.tooltip ?? badge.mod ?? "Badge", url: badge.badge }));
 }
 
+function fakeBadges(userId: string): ChatBadge[] {
+    const list = (globalThis as any).distra?.plugins?.getInstance?.("distra:fake-badges")?.api?.badgesFor?.(userId);
+    return Array.isArray(list) ? list : [];
+}
+
 const sources: Record<BadgeGroup, (userId: string, user: any) => ChatBadge[]> = {
     global: globalBadges,
+    fake: fakeBadges,
     discord: discordBadges,
     nitro: nitroBadges,
 };

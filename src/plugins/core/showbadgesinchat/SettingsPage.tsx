@@ -12,6 +12,11 @@ const GROUP_INFO: Record<BadgeGroup, { label: string; subLabel: string; icon: st
         subLabel: "Badges from other mods (Vencord, Equicord, Bunny, ...). Needs the Global Badges plugin enabled.",
         icon: "https://cdn.discordapp.com/emojis/1026533070955872337.png",
     },
+    fake: {
+        label: "Fake badges",
+        subLabel: "Self-assigned with Distra's Fake Badges plugin, shown once their profile was opened. Needs Fake Badges enabled.",
+        icon: "https://cdn.discordapp.com/badge-icons/5e74e9b61934fc1f67c65515d1f7e60d.png",
+    },
     discord: {
         label: "Discord badges",
         subLabel: "HypeSquad, Early Supporter, Bug Hunter, ... (all profile badges once their profile was opened)",

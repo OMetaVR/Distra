@@ -1,6 +1,6 @@
 import { createFileStorage } from "@/core/storage";
 
-export type BadgeGroup = "global" | "discord" | "nitro";
+export type BadgeGroup = "global" | "fake" | "discord" | "nitro";
 export type Placement = "header" | "text" | "name";
 
 export interface BadgeSettings {
@@ -19,12 +19,12 @@ export interface BadgeSettings {
     layoutVersion?: number;
 }
 
-export const GROUPS: BadgeGroup[] = ["global", "discord", "nitro"];
+export const GROUPS: BadgeGroup[] = ["global", "fake", "discord", "nitro"];
 const PLACEMENTS: Placement[] = ["header", "text", "name"];
 const LAYOUT_VERSION = 2;
 
 export const defaults: BadgeSettings = {
-    show: { global: true, discord: true, nitro: true },
+    show: { global: true, fake: true, discord: true, nitro: true },
     order: [...GROUPS],
     placement: "header",
     limit: 5,
