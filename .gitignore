@@ -12,3 +12,9 @@ tweak/Sources/Generated/
 *.deb
 Payload/
 work/
+
+# Promo renderer: Discord's fonts/icons (copied from the app, not redistributed) and render output
+tools/promo/assets/
+tools/promo/plugins.json
+tools/promo/frames*/
+tools/promo/frame.png

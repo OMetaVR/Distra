@@ -27,6 +27,9 @@ importers:
       esbuild:
         specifier: ^0.25.0
         version: 0.25.12
+      playwright-core:
+        specifier: 1.56.0
+        version: 1.56.0
       react-native:
         specifier: 0.79.2
         version: 0.79.2(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
@@ -1238,6 +1241,11 @@ packages:
   pirates@4.0.7:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
+
+  playwright-core@1.56.0:
+    resolution: {integrity: sha512-1SXl7pMfemAMSDn5rkPeZljxOCYAmQnYLBTExuh6E8USHXGSX3dx6lYZN/xPpTz1vimXmPA9CDnILvmJaB8aSQ==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   pretty-format@29.7.0:
     resolution: {integrity: sha512-Pdlw/oPxN+aXdmM9R00JVC9WVFoCLTKJvDVLgmJ+qAffBMxsV85l/Lu7sNx4zSzPyoL2euImuEwHhOXdEgNFZQ==}
@@ -2824,6 +2832,8 @@ snapshots:
   picomatch@2.3.2: {}
 
   pirates@4.0.7: {}
+
+  playwright-core@1.56.0: {}
 
   pretty-format@29.7.0:
     dependencies:

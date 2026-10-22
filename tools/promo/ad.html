@@ -1,0 +1,673 @@
+<!doctype html>
+<!--
+  Distra promo: a phone mockup of Discord with Distra, as a 30 second animated ad (1280x720 canvas).
+  Every animation is a paused Web Animation; render.mjs seeks them frame by frame (window.seek) once
+  window.ready resolves. Scenes: intro, chat (code blocks, WhoReacted, badges, typing), Plugin Library,
+  more features (Message Logger, Fake Nitro, No Typing, Server Drawer), themes, profile badges, outro.
+  "?static" keeps the background glows still, for the GIF.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face { font-family: "gg sans"; src: url(assets/fonts/ggsans-400-normal.ttf); font-weight: 400; }
+@font-face { font-family: "gg sans"; src: url(assets/fonts/ggsans-500-medium.ttf); font-weight: 500; }
+@font-face { font-family: "gg sans"; src: url(assets/fonts/ggsans-600-semibold.ttf); font-weight: 600; }
+@font-face { font-family: "gg sans"; src: url(assets/fonts/ggsans-700-bold.ttf); font-weight: 700; }
+@font-face { font-family: "gg sans"; src: url(assets/fonts/ggsans-800-extrabold.ttf); font-weight: 800; }
+@font-face { font-family: "gg mono"; src: url(assets/fonts/ggmono-400-normal.ttf); font-weight: 400; }
+@font-face { font-family: "gg mono"; src: url(assets/fonts/ggmono-600-semibold.ttf); font-weight: 600; }
+@font-face { font-family: "Ginto"; src: url(assets/fonts/abcgintonord-800-extrabold.ttf); font-weight: 800; }
+
+@property --bg { syntax: "<color>"; inherits: true; initial-value: #1c1d22; }
+@property --bg2 { syntax: "<color>"; inherits: true; initial-value: #141518; }
+@property --bg3 { syntax: "<color>"; inherits: true; initial-value: #26272e; }
+@property --border { syntax: "<color>"; inherits: true; initial-value: #2d2e35; }
+@property --text { syntax: "<color>"; inherits: true; initial-value: #dfe0e4; }
+@property --muted { syntax: "<color>"; inherits: true; initial-value: #959ba3; }
+@property --header { syntax: "<color>"; inherits: true; initial-value: #f2f3f5; }
+@property --accent { syntax: "<color>"; inherits: true; initial-value: #5865f2; }
+@property --codebg { syntax: "<color>"; inherits: true; initial-value: #141519; }
+@property --codehead { syntax: "<color>"; inherits: true; initial-value: #1f2026; }
+@property --tk { syntax: "<color>"; inherits: true; initial-value: #ff7b72; }
+@property --ts { syntax: "<color>"; inherits: true; initial-value: #a5d6ff; }
+@property --tf { syntax: "<color>"; inherits: true; initial-value: #d2a8ff; }
+@property --tn { syntax: "<color>"; inherits: true; initial-value: #79c0ff; }
+@property --tc { syntax: "<color>"; inherits: true; initial-value: #8b949e; }
+@property --tb { syntax: "<color>"; inherits: true; initial-value: #ffa657; }
+@property --n { syntax: "<integer>"; inherits: true; initial-value: 0; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1280px; height: 720px; overflow: hidden; background: #0a0a10; }
+body { font-family: "gg sans", "Noto Color Emoji", sans-serif; -webkit-font-smoothing: antialiased; color: #fff; }
+#canvas { position: relative; width: 1280px; height: 720px; overflow: hidden; background: radial-gradient(120% 90% at 70% 50%, #12121c 0%, #0a0a10 60%); }
+
+/* Background */
+.glow { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; }
+.g1 { width: 620px; height: 620px; left: 560px; top: -120px; background: radial-gradient(circle, #5865f2 0%, transparent 65%); }
+.g2 { width: 560px; height: 560px; left: 40px; top: 300px; background: radial-gradient(circle, #b845c8 0%, transparent 65%); opacity: .32; }
+.g3 { width: 420px; height: 420px; left: 860px; top: 380px; background: radial-gradient(circle, #2a9bd8 0%, transparent 65%); opacity: .22; }
+.dots { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px); background-size: 28px 28px;
+  mask-image: radial-gradient(70% 70% at 50% 50%, #000 30%, transparent 85%); }
+
+/* Brand */
+.mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #5865f2, #b845c8 70%, #eb459e);
+  display: grid; place-items: center; font: 800 18px/1 Ginto; color: #fff; box-shadow: 0 6px 18px rgba(88,101,242,.35), inset 0 1px 0 rgba(255,255,255,.25); }
+.brand { position: absolute; left: 56px; top: 42px; display: flex; align-items: center; gap: 12px; opacity: 0; }
+.brand span { font: 800 20px/1 Ginto; letter-spacing: .02em; }
+.wm { font: 800 112px/1 Ginto; letter-spacing: .01em; display: flex; }
+.wm i { font-style: normal; display: inline-block; background: linear-gradient(180deg, #ffffff 30%, #c7cbff 100%); -webkit-background-clip: text; color: transparent; opacity: 0; }
+.intro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+.intro .tag { font: 500 24px/1.2 "gg sans"; color: #b8bcd8; opacity: 0; }
+
+/* Captions */
+.caps { position: absolute; left: 96px; top: 0; width: 560px; height: 720px; }
+.cap { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; display: flex; flex-direction: column; gap: 18px; }
+.cap > * { opacity: 0; }
+.eyebrow { font: 700 14px/1 "gg sans"; letter-spacing: .22em; color: #8f98ff; display: flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 26px; height: 2px; border-radius: 2px; background: currentColor; }
+.cap h1 { font: 800 46px/1.08 Ginto; letter-spacing: .005em; color: #fff; }
+.cap p { font: 500 19px/1.45 "gg sans"; color: #b5b9cc; max-width: 500px; }
+.tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.chip { font: 600 15px/1 "gg sans"; padding: 10px 14px; border-radius: 999px; color: #c9cce0; background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; gap: 8px; }
+.chip b { width: 7px; height: 7px; border-radius: 50%; background: #5d6070; }
+.count { display: inline-block; text-align: right; }
+.count::before { counter-reset: c var(--n); content: counter(c); }
+.swatches { display: flex; gap: 14px; margin-top: 8px; position: relative; }
+.sw { width: 160px; border-radius: 16px; padding: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); position: relative; }
+.sw .pv { height: 62px; border-radius: 10px; display: grid; grid-template-columns: 18px 1fr; overflow: hidden; }
+.sw .pv i { display: block; }
+.sw .pv div { padding: 9px 8px; display: flex; flex-direction: column; gap: 6px; }
+.sw .pv u { display: block; height: 6px; border-radius: 3px; }
+.sw span { display: block; font: 600 14px/1 "gg sans"; color: #dfe1ee; margin-top: 10px; }
+.sw small { display: block; font: 500 12px/1 "gg sans"; color: #8e92a8; margin-top: 5px; }
+.ring { position: absolute; width: 160px; height: 120px; border-radius: 17px; border: 2px solid #8f98ff; box-shadow: 0 0 0 4px rgba(143,152,255,.18); top: 0; left: 0; pointer-events: none; opacity: 0; }
+
+/* Phone */
+.stage { position: absolute; left: 648px; top: -74px; width: 414px; height: 868px; scale: .76; transform-origin: 50% 50%; transform: translateY(900px); }
+.device { position: relative; width: 414px; height: 868px; border-radius: 66px; padding: 12px; background: linear-gradient(145deg, #2a2b31, #0c0c0f 40%, #1b1c21);
+  box-shadow: 0 50px 110px rgba(0,0,0,.6), 0 0 0 1.5px #3a3b42, inset 0 0 0 2px #050506; }
+.device::before, .device::after { content: ""; position: absolute; width: 4px; border-radius: 2px; background: #26272c; }
+.device::before { left: -3px; top: 170px; height: 64px; box-shadow: 0 86px 0 #26272c; }
+.device::after { right: -3px; top: 220px; height: 96px; }
+.screen { position: relative; width: 390px; height: 844px; border-radius: 54px; overflow: hidden; background: var(--bg); color: var(--text); }
+.island { position: absolute; left: 50%; top: 11px; width: 122px; height: 36px; margin-left: -61px; border-radius: 20px; background: #000; z-index: 50; }
+.status { position: absolute; left: 0; right: 0; top: 0; height: 54px; z-index: 40; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0 46px; color: var(--header); }
+.status .time { font: 600 17px/1 "gg sans"; }
+.status .icons { display: flex; gap: 6px; align-items: center; }
+.home { position: absolute; bottom: 8px; left: 50%; width: 136px; height: 5px; margin-left: -68px; border-radius: 3px; background: var(--header); opacity: .9; z-index: 45; }
+.ic { display: inline-block; width: 24px; height: 24px; background: var(--muted); -webkit-mask-size: contain; -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; flex: none; }
+
+.view { position: absolute; inset: 0; background: var(--bg); }
+.vhead { position: absolute; left: 0; right: 0; top: 54px; height: 56px; display: flex; align-items: center; padding: 0 14px; gap: 10px; border-bottom: 1px solid var(--border); background: var(--bg); z-index: 5; }
+.vhead .title { font: 700 18px/1 "gg sans"; color: var(--header); display: flex; align-items: center; gap: 4px; flex: 1; }
+.vhead .title .ic { background: var(--muted); width: 22px; height: 22px; }
+
+/* Chat */
+.mview { position: absolute; left: 0; right: 0; top: 110px; bottom: 120px; overflow: hidden; }
+.msgs { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; padding: 0 0 6px; }
+.divider { display: flex; align-items: center; gap: 10px; margin: 10px 16px 6px; font: 600 12px/1 "gg sans"; color: var(--muted); }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.msg { display: flex; gap: 12px; padding: 8px 16px 4px; }
+.av { width: 40px; height: 40px; border-radius: 50%; flex: none; }
+.body { flex: 1; min-width: 0; }
+.hdr { display: flex; align-items: center; gap: 6px; height: 21px; }
+.name { font: 600 16px/1 "gg sans"; }
+.time2 { font: 500 12px/1 "gg sans"; color: var(--muted); }
+.hb { display: flex; gap: 3px; margin-left: 2px; }
+.hb img { width: 16px; height: 16px; }
+.text { font: 400 16px/1.35 "gg sans", "Noto Color Emoji"; color: var(--text); margin-top: 2px; }
+.code { margin-top: 6px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--codebg); }
+.code .lang { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: var(--codehead); border-bottom: 1px solid var(--border);
+  font: 600 12px/1 "gg sans"; color: var(--muted); letter-spacing: .02em; }
+.code .lang em { font: 600 11px/1 "gg mono"; font-style: normal; opacity: .8; }
+.code pre { font: 400 12.5px/18px "gg mono"; padding: 8px 10px 9px; color: var(--text); white-space: pre; }
+.k { color: var(--tk); } .s { color: var(--ts); } .f { color: var(--tf); } .nn { color: var(--tn); } .c { color: var(--tc); font-style: italic; } .bi { color: var(--tb); }
+.rx { display: flex; gap: 6px; padding: 2px 16px 8px 68px; }
+.pill { display: flex; align-items: center; height: 30px; padding: 0 9px; border-radius: 9px; background: var(--bg3); border: 1px solid transparent; gap: 5px;
+  font: 600 14px/1 "gg sans", "Noto Color Emoji"; color: var(--text); }
+.pill.me { background: color-mix(in srgb, var(--accent) 22%, var(--bg)); border-color: var(--accent); }
+.pill .e { font-size: 16px; }
+.stack { display: flex; overflow: hidden; max-width: 0; }
+.stack img { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg3); margin-left: -5px; }
+.pill.me .stack img { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, var(--bg)); }
+.stack img:first-child { margin-left: 4px; }
+.pill.add { width: 36px; justify-content: center; padding: 0; }
+.typing { position: absolute; left: 0; right: 0; bottom: 92px; height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 18px; font: 500 13px/1 "gg sans"; color: var(--muted); opacity: 0; }
+.typing img { width: 16px; height: 16px; border-radius: 50%; }
+.typing b { color: #f0b232; font-weight: 700; }
+.tdots { display: inline-flex; gap: 3px; padding: 5px 7px; border-radius: 9px; background: var(--bg3); margin-right: 2px; }
+.tdots i { width: 5px; height: 5px; border-radius: 50%; background: var(--text); display: block; }
+.input { position: absolute; left: 0; right: 0; bottom: 34px; height: 58px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--bg); }
+.cbtn { width: 40px; height: 40px; border-radius: 50%; background: var(--bg3); display: grid; place-items: center; flex: none; }
+.field { flex: 1; height: 40px; border-radius: 20px; background: var(--bg3); display: flex; align-items: center; padding: 0 12px 0 16px; font: 500 16px/1 "gg sans"; color: var(--muted); gap: 8px; }
+.field > span:first-child { flex: 1; min-width: 0; }
+
+/* Library (matches src/ui/pages/PluginLibrary.tsx: Discord TableRows) */
+.lview { transform: translateX(390px); z-index: 10; }
+.lview .vhead { border-bottom: 1px solid var(--border); }
+.lview .vhead .title { font: 600 20px/1 "gg sans"; }
+.lscroll { position: absolute; left: 0; right: 0; top: 110px; bottom: 0; overflow: hidden; }
+.llist { padding: 16px 16px 60px; }
+.lsearch { height: 46px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--text) 22%, transparent); display: flex; align-items: center; padding: 0 14px; font: 400 17px/1 "gg sans"; color: var(--muted); }
+.group { background: var(--bg3); border-radius: 16px; overflow: hidden; }
+.lsec { font: 500 16px/1 "gg sans"; color: var(--muted); margin: 22px 4px 10px; }
+.trow { display: flex; align-items: center; gap: 14px; padding: 13px 14px 13px 16px; position: relative; }
+.trow + .trow::before { content: ""; position: absolute; top: 0; left: 54px; right: 0; height: 1px; background: var(--border); }
+.trow .ic { width: 24px; height: 24px; background: var(--muted); }
+.trow .ic.on { background: var(--header); }
+.ttext { flex: 1; min-width: 0; }
+.ttext b { display: block; font: 500 17px/1.25 "gg sans", "Noto Color Emoji"; color: var(--header); }
+.ttext small { display: block; font: 400 14px/1.35 "gg sans", "Noto Color Emoji"; color: var(--muted); margin-top: 2px; white-space: pre-line; }
+.trow .chev { width: 18px; height: 18px; background: var(--muted); opacity: .8; }
+.lfoot { font: 400 13px/1.4 "gg sans"; color: var(--muted); text-align: center; margin: 20px 8px 0; }
+.dim { position: absolute; inset: 0; background: #000; opacity: 0; z-index: 8; pointer-events: none; }
+
+/* Scene: more features */
+.c2 { opacity: 0; }
+.stackcell { display: grid; }
+.stackcell > * { grid-area: 1 / 1; }
+.lograw { position: relative; }
+.lograw .gut { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #f23f43; opacity: 0; }
+.lograw .tint { position: absolute; inset: 0; background: rgba(242,63,67,.1); opacity: 0; }
+.deltag { color: #f23f43; font: 500 12px/1 "gg sans"; opacity: 0; }
+.oldv { max-height: 0; overflow: hidden; opacity: 0; color: var(--muted); font: 400 16px/1.35 "gg sans"; }
+.edtag { font: 500 11px/1 "gg sans"; color: var(--muted); opacity: 0; margin-left: 4px; }
+.flink { color: #00a8fc; font: 400 15px/1.35 "gg sans"; word-break: break-all; }
+.femoji { width: 48px; height: 48px; opacity: 0; margin-top: 2px; }
+.kbtn { position: relative; width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 6px; }
+.kbtn .ic { width: 22px; height: 22px; }
+.kbtn .slash { position: absolute; width: 26px; height: 2.5px; border-radius: 2px; background: var(--accent); transform: rotate(-40deg) scaleX(0); box-shadow: 0 0 0 1.5px var(--bg3); }
+.typed { display: inline; color: var(--text); font: 500 16px/1 "gg sans", "Noto Color Emoji"; white-space: pre; }
+.typed i { font-style: normal; opacity: 0; }
+.caret { display: inline-block; width: 2px; height: 18px; background: var(--accent); vertical-align: -3px; margin-left: 1px; opacity: 0; }
+.drawer { position: absolute; left: 0; right: 0; bottom: 0; height: 236px; border-radius: 26px 26px 0 0; background: var(--bg2); z-index: 25; transform: translateY(260px);
+  box-shadow: 0 -12px 40px rgba(0,0,0,.4); border-top: 1px solid var(--border); padding: 18px 0 0; }
+.drawer .grab { background: color-mix(in srgb, var(--text) 35%, transparent); }
+.drawer h5 { font: 700 12px/1 "gg sans"; color: var(--muted); letter-spacing: .06em; margin: 14px 18px 12px; }
+.srow { display: flex; gap: 12px; padding: 0 18px; }
+.srv { width: 56px; height: 56px; border-radius: 18px; flex: none; display: grid; place-items: center; font: 700 18px/1 "gg sans", "Noto Color Emoji"; color: #fff; position: relative; }
+.srv.pill::before { content: ""; position: absolute; left: -10px; top: 50%; width: 4px; height: 40px; margin-top: -20px; border-radius: 0 3px 3px 0; background: var(--header); }
+.srv .ic { background: #fff; width: 26px; height: 26px; }
+.folder { background: color-mix(in srgb, var(--accent) 28%, var(--bg3)); display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 9px; }
+.folder i { border-radius: 7px; display: block; }
+.dock { display: flex; gap: 12px; margin: 16px 18px 0; }
+.dock span { flex: 1; height: 40px; border-radius: 12px; background: var(--bg3); display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px/1 "gg sans"; color: var(--text); }
+.dock .ic { width: 18px; height: 18px; background: var(--text); }
+
+/* Toasts */
+.toast { position: absolute; left: 50%; top: 60px; transform: translate(-50%, -24px); opacity: 0; z-index: 60; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 10px 14px 10px 10px; border-radius: 999px; background: var(--bg3); border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  font: 600 14px/1 "gg sans"; color: var(--header); }
+.toast .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); }
+.toast .dot .ic { width: 14px; height: 14px; background: #fff; }
+.toast img { width: 22px; height: 22px; }
+
+/* Profile sheet */
+.pdim { position: absolute; inset: 0; background: #000; opacity: 0; z-index: 20; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 690px; border-radius: 26px 26px 0 0; background: var(--bg2); z-index: 21; overflow: hidden; transform: translateY(720px); }
+.grab { position: absolute; top: 8px; left: 50%; width: 40px; height: 5px; margin-left: -20px; border-radius: 3px; background: rgba(255,255,255,.4); z-index: 3; }
+.banner { height: 130px; background: linear-gradient(120deg, #5865f2, #9b59b6 55%, #eb459e); position: relative; overflow: hidden; }
+.banner::after { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 120% at 80% 0%, rgba(255,255,255,.35), transparent 60%); }
+.pav { position: absolute; left: 16px; top: 82px; width: 96px; height: 96px; border-radius: 50%; border: 6px solid var(--bg2); background: var(--bg2); }
+.pav img { width: 100%; height: 100%; border-radius: 50%; }
+.pav::after { content: ""; position: absolute; right: -2px; bottom: 2px; width: 22px; height: 22px; border-radius: 50%; background: #23a55a; border: 5px solid var(--bg2); }
+.pbody { padding: 54px 16px 0; display: flex; flex-direction: column; gap: 12px; }
+.pname { font: 800 24px/1.1 "gg sans"; color: var(--header); }
+.puser { font: 500 15px/1 "gg sans"; color: var(--text); margin-top: 4px; }
+.bwrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.bpill { display: flex; gap: 4px; padding: 2px 7px; border-radius: 8px; background: #97979f1f; }
+.bpill img { width: 20px; height: 20px; opacity: 0; }
+.card { background: var(--bg3); border-radius: 14px; padding: 12px 14px; }
+.card h4 { font: 700 12px/1 "gg sans"; color: var(--header); letter-spacing: .02em; margin-bottom: 8px; }
+.card p { font: 500 15px/1.35 "gg sans", "Noto Color Emoji"; color: var(--text); }
+.tz { display: flex; align-items: center; gap: 8px; font: 600 14px/1 "gg sans"; color: var(--text); opacity: 0; }
+.tz .ic { width: 18px; height: 18px; }
+.tap { position: absolute; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.35); border: 2px solid rgba(255,255,255,.7); z-index: 30; opacity: 0; pointer-events: none; }
+
+/* Outro */
+.outro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+.outro > * { opacity: 0; }
+.obrand { display: flex; align-items: center; gap: 22px; }
+.obrand .mark { width: 84px; height: 84px; border-radius: 24px; font-size: 46px; }
+.obrand .wm { font-size: 96px; }
+.obrand .wm i { opacity: 1; }
+.otag { font: 500 26px/1.2 "gg sans"; color: #c3c7df; }
+.olink { font: 600 20px/1 "gg mono"; color: #8f98ff; padding: 12px 20px; border-radius: 14px; background: rgba(88,101,242,.12); border: 1px solid rgba(143,152,255,.3); }
+.opills { display: flex; gap: 10px; }
+.fade { position: absolute; inset: 0; background: #0a0a10; opacity: 0; z-index: 100; }
+</style>
+</head>
+<body>
+<div id="canvas">
+  <div class="glow g1" id="g1"></div><div class="glow g2" id="g2"></div><div class="glow g3" id="g3"></div>
+  <div class="dots"></div>
+
+  <div class="intro" id="intro">
+    <div class="wm" id="wm"><i>D</i><i>i</i><i>s</i><i>t</i><i>r</i><i>a</i></div>
+    <div class="tag" id="itag">Discord for iOS, extended.</div>
+  </div>
+
+
+  <div class="caps">
+    <section class="cap" id="cap1">
+      <div class="eyebrow">MESSAGES</div>
+      <h1>Chat that does more.</h1>
+      <p>Highlighted code, reactions you can read at a glance, and badges right where you see people.</p>
+      <div class="tags">
+        <div class="chip" id="t-code"><b></b>Better Code Blocks</div>
+        <div class="chip" id="t-react"><b></b>WhoReacted</div>
+        <div class="chip" id="t-badge"><b></b>Show Badges In Chat</div>
+        <div class="chip" id="t-type"><b></b>Who's Typing</div>
+      </div>
+    </section>
+    <section class="cap" id="cap2">
+      <div class="eyebrow">PLUGINS</div>
+      <h1><span class="count" id="count"></span> plugins, built&nbsp;in.</h1>
+      <p>Vencord and Equicord favourites rebuilt for iOS, plus the best of Vendetta, Bunny and Enmity. One tap to turn on.</p>
+      <div class="tags">
+        <div class="chip" id="t-own"><b></b>26 made by Distra</div>
+        <div class="chip" id="t-comm"><b></b>94 from the community</div>
+      </div>
+    </section>
+    <section class="cap" id="cap5">
+      <div class="eyebrow">AND MORE</div>
+      <h1>Every corner, covered.</h1>
+      <p>Keep deleted messages, send any emoji like you have Nitro, type without being seen, and reach every server from anywhere.</p>
+      <div class="tags">
+        <div class="chip" id="t-log"><b></b>Message Logger</div>
+        <div class="chip" id="t-nitro"><b></b>Fake Nitro</div>
+        <div class="chip" id="t-notype"><b></b>No Typing</div>
+        <div class="chip" id="t-drawer"><b></b>Server Drawer</div>
+      </div>
+    </section>
+    <section class="cap" id="cap3">
+      <div class="eyebrow">THEMES</div>
+      <h1>Make it yours.</h1>
+      <p>Vendetta, Bunny and Enmity themes recolour all of Discord, native parts included.</p>
+      <div class="swatches" id="swatches">
+        <div class="sw"><div class="pv" style="background:#1c1d22"><i style="background:#141518"></i><div><u style="background:#5865f2;width:60%"></u><u style="background:#959ba3;width:85%"></u><u style="background:#3a3b43;width:45%"></u></div></div><span>Discord Dark</span><small>Built in</small></div>
+        <div class="sw"><div class="pv" style="background:#1e1e2e"><i style="background:#181825"></i><div><u style="background:#cba6f7;width:60%"></u><u style="background:#a6adc8;width:85%"></u><u style="background:#45475a;width:45%"></u></div></div><span>Catppuccin Mocha</span><small>Theme Library</small></div>
+        <div class="sw"><div class="pv" style="background:#eff1f5"><i style="background:#dce0e8"></i><div><u style="background:#8839ef;width:60%"></u><u style="background:#6c6f85;width:85%"></u><u style="background:#ccd0da;width:45%"></u></div></div><span>Catppuccin Latte</span><small>Theme Library</small></div>
+        <div class="ring" id="ring"></div>
+      </div>
+    </section>
+    <section class="cap" id="cap4">
+      <div class="eyebrow">PROFILES</div>
+      <h1>Badges, your way.</h1>
+      <p>Every badge, wrapped and visible. Add your own for fun, always labelled as fake. Plus each friend's local time.</p>
+      <div class="tags">
+        <div class="chip" id="t-exp"><b></b>Expandable Badges</div>
+        <div class="chip" id="t-rank"><b></b>Friendship Ranks</div>
+        <div class="chip" id="t-tz"><b></b>Timezones</div>
+        <div class="chip" id="t-fake"><b></b>Fake Badges</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="stage" id="stage"><div class="device"><div class="screen" id="phone">
+    <div class="island"></div>
+    <div class="status">
+      <span class="time">9:41</span>
+      <span class="icons">
+        <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+        <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 2.6c2.3 0 4.4.9 6 2.4l1.2-1.2A10.2 10.2 0 0 0 8.5.9 10.2 10.2 0 0 0 1.3 3.8L2.5 5a8.6 8.6 0 0 1 6-2.4Zm0 3.4c1.4 0 2.6.5 3.6 1.4l1.2-1.2a6.8 6.8 0 0 0-9.6 0l1.2 1.2c1-.9 2.2-1.4 3.6-1.4Zm0 3.3c-.5 0-1 .2-1.3.6L8.5 11.2l1.3-1.3c-.3-.4-.8-.6-1.3-.6Z"/></svg>
+        <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="22" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="19" height="9" rx="2" fill="currentColor"/><rect x="24" y="4.5" width="2" height="4" rx="1" fill="currentColor" opacity=".45"/></svg>
+      </span>
+    </div>
+
+    <div class="view" id="chat">
+      <div class="vhead">
+        <span class="ic" style="-webkit-mask-image:url(assets/icons/ArrowSmallLeftIcon.png);background:var(--header)"></span>
+        <div class="title"><span class="ic" style="-webkit-mask-image:url(assets/icons/TextIcon.png)"></span>general</div>
+        <span class="ic" style="-webkit-mask-image:url(assets/icons/MagnifyingGlassIcon.png)"></span>
+        <span class="ic" style="-webkit-mask-image:url(assets/icons/GroupIcon.png)"></span>
+      </div>
+      <div class="mview"><div class="msgs" id="msgs">
+        <div class="divider">Today</div>
+        <div class="msg"><img class="av" src="assets/av2.png"><div class="body"><div class="hdr"><span class="name" style="color:#3ba55c">Lumi</span><span class="time2">9:24 PM</span></div><div class="text">evening everyone 🌙</div></div></div>
+        <div class="msg"><img class="av" src="assets/av3.png"><div class="body"><div class="hdr"><span class="name" style="color:#f0b232">Kai</span><span class="time2">9:31 PM</span></div><div class="text">anyone tried the new beta yet?</div></div></div>
+        <div class="msg seq" id="m1"><img class="av" src="assets/av0.png"><div class="body"><div class="hdr"><span class="name" style="color:#b9a3ff">mmeta</span><span class="time2">9:38 PM</span><span class="hb"><img src="assets/badge_5e74e9b61934fc1f67c65515d1f7e60d.png"><img src="assets/badge_6bdc42827a38498929a4920da12695d9.png"><img src="assets/badge_7060786766c9c840eb3019e725d2b358.png"><img src="assets/badge_2ba85e8026a8614b640c2837bcdfe21b.png"></span></div><div class="text">just pushed it 🚀 reaction avatars finally work</div></div></div>
+        <div class="msg seq" id="m2"><img class="av" src="assets/av4.png"><div class="body"><div class="hdr"><span class="name" style="color:#f47fff">Nova</span><span class="time2">9:39 PM</span><span class="hb"><img src="assets/badge_011940fd013da3f7fb926e4a1cd2e618.png"><img src="assets/badge_2717692c7dca7289b35297368a940dd0.png"></span></div><div class="text">ooh does the code block thing work yet?</div></div></div>
+        <div class="msg seq" id="m3"><img class="av" src="assets/av0.png"><div class="body"><div class="hdr"><span class="name" style="color:#b9a3ff">mmeta</span><span class="time2">9:40 PM</span><span class="hb"><img src="assets/badge_5e74e9b61934fc1f67c65515d1f7e60d.png"><img src="assets/badge_6bdc42827a38498929a4920da12695d9.png"><img src="assets/badge_7060786766c9c840eb3019e725d2b358.png"><img src="assets/badge_2ba85e8026a8614b640c2837bcdfe21b.png"></span></div><div class="text">see for yourself</div>
+          <div class="code" id="code"><div class="lang">JavaScript<em>js</em></div><pre><span class="c">// greet whoever just joined</span>
+<span class="k">const</span> <span class="f">greet</span> = (<span class="bi">user</span>) <span class="k">=&gt;</span> {
+  <span class="k">const</span> name = user.<span class="nn">globalName</span>;
+  <span class="k">return</span> <span class="s">`hey ${</span>name<span class="s">}! welcome`</span>;
+};
+<span class="bi">console</span>.<span class="f">log</span>(<span class="f">greet</span>(me), <span class="nn">42</span>);</pre></div></div></div>
+        <div class="rx seq" id="rx">
+          <div class="pill me"><span class="e">🔥</span>4<span class="stack" id="st1"><img src="assets/av0.png"><img src="assets/av3.png"><img src="assets/av4.png"></span></div>
+          <div class="pill"><span class="e">👀</span>2<span class="stack" id="st2"><img src="assets/av2.png"><img src="assets/av5.png"></span></div>
+          <div class="pill"><span class="e">🎉</span>1<span class="stack" id="st3"><img src="assets/av1.png"></span></div>
+        </div>
+      </div></div>
+      <div class="typing" id="typing"><span class="tdots"><i></i><i></i><i></i></span><img src="assets/av3.png"><b>Kai</b>is typing…</div>
+      <div class="input">
+        <div class="cbtn"><span class="ic" style="-webkit-mask-image:url(assets/icons/PlusLargeIcon.png);width:20px;height:20px;background:var(--text)"></span></div>
+        <div class="field"><span>Message #general</span><span class="ic" style="-webkit-mask-image:url(assets/icons/GiftIcon.png);width:22px;height:22px;flex:none"></span><span class="ic" style="-webkit-mask-image:url(assets/icons/ReactionIcon.png);width:22px;height:22px;flex:none"></span></div>
+        <div class="cbtn"><span class="ic" style="-webkit-mask-image:url(assets/icons/MicrophoneIcon.png);width:20px;height:20px;background:var(--text)"></span></div>
+      </div>
+      <div class="dim" id="dim"></div>
+    </div>
+
+    <div class="view c2" id="chat2">
+      <div class="vhead">
+        <span class="ic" style="-webkit-mask-image:url(assets/icons/ArrowSmallLeftIcon.png);background:var(--header)"></span>
+        <div class="title"><span class="ic" style="-webkit-mask-image:url(assets/icons/TextIcon.png)"></span>lounge</div>
+        <span class="ic" style="-webkit-mask-image:url(assets/icons/MagnifyingGlassIcon.png)"></span>
+        <span class="ic" style="-webkit-mask-image:url(assets/icons/GroupIcon.png)"></span>
+      </div>
+      <div class="mview" style="bottom:92px"><div class="msgs" id="msgs2">
+        <div class="divider">Today</div>
+        <div class="msg"><img class="av" src="assets/av5.png"><div class="body"><div class="hdr"><span class="name" style="color:#e67e22">Rex</span><span class="time2">9:31 PM</span></div><div class="text">back, what did i miss</div></div></div>
+        <div class="msg"><img class="av" src="assets/av2.png"><div class="body"><div class="hdr"><span class="name" style="color:#3ba55c">Lumi</span><span class="time2">9:33 PM</span></div><div class="text">ok the new theme library is actually so good</div></div></div>
+        <div class="msg"><img class="av" src="assets/av1.png"><div class="body"><div class="hdr"><span class="name" style="color:#00a8fc">Ivy</span><span class="time2">9:35 PM</span></div><div class="text">catppuccin supremacy 🐈</div></div></div>
+        <div class="msg"><img class="av" src="assets/av3.png"><div class="body"><div class="hdr"><span class="name" style="color:#f0b232">Kai</span><span class="time2">9:40 PM</span></div><div class="text">who's on for ranked later?</div></div></div>
+        <div class="msg lograw" id="rex"><span class="tint"></span><span class="gut"></span><img class="av" src="assets/av5.png"><div class="body"><div class="hdr"><span class="name" style="color:#e67e22">Rex</span><span class="stackcell"><span class="time2" id="rextime">9:42 PM</span><span class="deltag" id="rexdel">deleted 9:43 PM</span></span></div><div class="text" id="rextext">wait wrong chat, ignore that 💀</div></div></div>
+        <div class="msg"><img class="av" src="assets/av4.png"><div class="body"><div class="hdr"><span class="name" style="color:#f47fff">Nova</span><span class="time2">9:43 PM</span></div>
+          <div class="oldv" id="oldv">I'm in at 8</div>
+          <div class="text"><span class="stackcell" style="display:inline-grid"><span id="nv1">I'm in at 8</span><span id="nv2" style="opacity:0">I'm in at 9 actually</span></span><span class="edtag" id="edtag">(edited)</span></div></div></div>
+        <div class="msg seq" id="fn"><img class="av" src="assets/av0.png"><div class="body"><div class="hdr"><span class="name" style="color:#b9a3ff">mmeta</span><span class="time2">9:44 PM</span></div>
+          <div class="stackcell"><span class="flink" id="flink">https://cdn.discordapp.com/emojis/102653307…png?name=catblob</span><img class="femoji" id="femoji" src="assets/emoji1.png"></div></div></div>
+      </div></div>
+      <div class="input">
+        <div class="cbtn"><span class="ic" style="-webkit-mask-image:url(assets/icons/PlusLargeIcon.png);width:20px;height:20px;background:var(--text)"></span></div>
+        <div class="field" id="field2"><span class="stackcell" style="flex:1"><span id="ph2" style="white-space:nowrap;overflow:hidden">Message #lounge</span><span class="typed" id="typed"></span></span>
+          <span class="kbtn" id="kbtn"><span class="ic" id="kic" style="-webkit-mask-image:url(assets/icons/KeyboardIcon.png)"></span><span class="slash" id="kslash"></span></span>
+          <span class="ic" style="-webkit-mask-image:url(assets/icons/GiftIcon.png);width:22px;height:22px;flex:none"></span></div>
+        <div class="cbtn"><span class="ic" style="-webkit-mask-image:url(assets/icons/MicrophoneIcon.png);width:20px;height:20px;background:var(--text)"></span></div>
+      </div>
+      <div class="tap" id="tap2"></div>
+      <div class="drawer" id="drawer"><div class="grab"></div>
+        <h5>SERVERS</h5>
+        <div class="srow" id="srow">
+          <div class="srv" style="background:#5865f2"><span class="ic" style="-webkit-mask-image:url(assets/icons/ChatIcon.png)"></span></div>
+          <div class="srv pill" style="background:linear-gradient(135deg,#5865f2,#b845c8 70%,#eb459e);font-family:Ginto;font-weight:800">D</div>
+          <div class="srv" style="background:#23a55a">🎮</div>
+          <div class="srv folder"><i style="background:#f0b232"></i><i style="background:#eb459e"></i><i style="background:#00a8fc"></i><i style="background:#f23f43"></i></div>
+          <div class="srv" style="background:#e67e22">🍕</div>
+          <div class="srv" style="background:#2b2d31;border:1px solid var(--border)">🎧</div>
+          <div class="srv" style="background:#9b59b6">✨</div>
+        </div>
+        <div class="dock"><span><span class="ic" style="-webkit-mask-image:url(assets/icons/ChatIcon.png)"></span>Messages</span><span><span class="ic" style="-webkit-mask-image:url(assets/icons/FolderIcon.png)"></span>Folders</span></div>
+      </div>
+      <div class="dim" id="dim2" style="opacity:.45"></div>
+    </div>
+
+    <div class="view lview" id="lib">
+      <div class="vhead">
+        <span class="ic" style="-webkit-mask-image:url(assets/icons/ArrowSmallLeftIcon.png);background:var(--header)"></span>
+        <div class="title">Plugin Library</div>
+      </div>
+      <div class="lscroll"><div class="llist" id="llist"></div></div>
+    </div>
+
+    <div class="pdim" id="pdim"></div>
+    <div class="sheet" id="sheet">
+      <div class="grab"></div>
+      <div class="banner"></div>
+      <div class="pav"><img src="assets/av0.png"></div>
+      <div class="pbody">
+        <div><div class="pname">Meta</div><div class="puser">mmeta</div></div>
+        <div class="bwrap" id="bwrap"></div>
+        <div class="tz" id="tz"><span class="ic" style="-webkit-mask-image:url(assets/icons/ClockIcon.png)"></span>9:41 PM local time · GMT+11</div>
+        <div class="card"><h4>About Me</h4><p>building Distra ✨ an iOS Discord mod. coffee-powered.</p></div>
+        <div class="card"><h4>Member Since</h4><p>Jun 2, 2017</p></div>
+      </div>
+      <div class="tap" id="tap"></div>
+    </div>
+
+    <div class="toast" id="toast1"><span class="dot"><span class="ic" style="-webkit-mask-image:url(assets/icons/PaintPaletteIcon.png)"></span></span>Applied Catppuccin Mocha</div>
+    <div class="toast" id="toast2"><span class="dot"><span class="ic" style="-webkit-mask-image:url(assets/icons/PaintPaletteIcon.png)"></span></span>Applied Catppuccin Latte</div>
+    <div class="toast" id="toast4"><span class="dot"><span class="ic" style="-webkit-mask-image:url(assets/icons/KeyboardIcon.png)"></span></span>Typing indicator hidden</div>
+    <div class="toast" id="toast3"><img src="assets/badge_5e74e9b61934fc1f67c65515d1f7e60d.png">Discord Staff (fake, self-assigned with Distra)</div>
+    <div class="home"></div>
+  </div></div></div>
+
+  <div class="outro" id="outro">
+    <div class="obrand"><div class="mark">D</div><div class="wm">Distra</div></div>
+    <div class="otag">Discord for iOS, extended.</div>
+    <div class="opills"><div class="chip"><b style="background:#8f98ff"></b>120 plugins</div><div class="chip"><b style="background:#eb459e"></b>Themes & icon packs</div><div class="chip"><b style="background:#23a55a"></b>Free & open source</div></div>
+    <div class="olink">github.com/OMetaVR/Distra</div>
+  </div>
+  <div class="fade" id="fade"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const DURATION = 30.15;
+const OUT = "cubic-bezier(.16,1,.3,1)";      // expo-ish ease out
+const INOUT = "cubic-bezier(.65,0,.35,1)";
+const SOFT = "cubic-bezier(.22,.8,.25,1)";
+
+function A(el, keyframes, start, dur, easing = OUT, opts = {}) {
+  if (typeof el === "string") el = $(el);
+  const a = el.animate(keyframes, { delay: start * 1000, duration: dur * 1000, fill: opts.fill ?? "forwards", easing, iterations: opts.iterations ?? 1 });
+  a.pause();
+  return a;
+}
+const fadeUp = (el, t, d = .7, y = 22) => A(el, [{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: "translateY(0)" }], t, d);
+const fadeOutUp = (el, t, d = .45, y = -18) => A(el, [{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: `translateY(${y}px)` }], t, d, "cubic-bezier(.5,0,.75,0)");
+
+// Real data (names, descriptions, authors) from Distra's catalog and core plugins, alphabetical like the app.
+const ENABLED = new Set(["Better Code Blocks", "Block Keywords", "Char Counter", "Clean URLs", "Clickable Roles", "Custom Timestamps", "Expandable Badges", "Fake Badges", "Fake Nitro", "Friendship Ranks",
+  "Hide Chat Buttons", "Message Logger", "No typing", "Pin DMs", "Platform Indicators", "ReviewDB", "Role Color Everywhere", "Server Drawer", "Show Badges In Chat", "Timezones", "Who's Typing", "WhoReacted", "Volume Booster", "Voice Stats"]);
+const esc = t => t.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+function libraryHTML(list) {
+  const icon = name => `<span class="ic${name === "CheckmarkLargeIcon" ? " on" : ""}" style="-webkit-mask-image:url(assets/icons/${name}.png)"></span>`;
+  const rows = list.map(p => {
+    const on = ENABLED.has(p.n);
+    const sub = [on ? "Enabled" : null, p.d, [p.f, p.a].filter(Boolean).join(" · ")].filter(Boolean).join("\n");
+    return `<div class="trow">${icon(on ? "CheckmarkLargeIcon" : "PuzzlePieceIcon")}<div class="ttext"><b>${esc(p.n)}</b><small>${esc(sub)}</small></div><span class="ic chev" style="-webkit-mask-image:url(assets/icons/ChevronSmallRightIcon.png)"></span></div>`;
+  }).join("");
+  return `<div class="lsearch">Search plugins</div>
+    <div class="group" style="margin-top:14px"><div class="trow">${icon("ChannelListMagnifyingGlassIcon")}<div class="ttext"><b>Showing: All plugins</b><small>${list.length} of ${list.length}</small></div></div></div>
+    <div class="lsec">Included with Distra</div><div class="group">${rows}</div>
+    <div class="lfoot">Built in plugins are written by their respective authors and shipped under their own licenses.</div>`;
+}
+
+const BADGES = ["5e74e9b61934fc1f67c65515d1f7e60d", "3f9748e53446a137a052f3454e2de41e", "fee1624003e2fee35cb398e125dc479b", "8a88d63823d8a71cd5e390baa45efa02",
+  "2717692c7dca7289b35297368a940dd0", "6bdc42827a38498929a4920da12695d9", "7060786766c9c840eb3019e725d2b358", "6de6d34650760ba5551a79732e98ed60",
+  "7d9ae358c8c5e118768335dbe68b4fb8", "83d8a1eb09a8d64e59233eec5d4d5c2d", "2ba85e8026a8614b640c2837bcdfe21b", "0d61871f72bb9a33a7ae568c1fb4f20a",
+  "991c9f39ee33d7537d9f408c3e53141e", "011940fd013da3f7fb926e4a1cd2e618"].map(id => `assets/badge_${id}.png`).concat(["assets/royal.png", "assets/besties.png"]);
+const PER_PILL = 14;
+let bhtml = "";
+for (let i = 0; i < BADGES.length; i += PER_PILL) bhtml += `<div class="bpill">${BADGES.slice(i, i + PER_PILL).map(src => `<img src="${src}">`).join("")}</div>`;
+$("#bwrap").innerHTML = bhtml;
+
+const THEMES = {
+  dark:  { "--bg": "#1c1d22", "--bg2": "#141518", "--bg3": "#26272e", "--border": "#2d2e35", "--text": "#dfe0e4", "--muted": "#959ba3", "--header": "#f2f3f5", "--accent": "#5865f2", "--codebg": "#141519", "--codehead": "#1f2026", "--tk": "#ff7b72", "--ts": "#a5d6ff", "--tf": "#d2a8ff", "--tn": "#79c0ff", "--tc": "#8b949e", "--tb": "#ffa657" },
+  mocha: { "--bg": "#1e1e2e", "--bg2": "#181825", "--bg3": "#313244", "--border": "#3b3d52", "--text": "#cdd6f4", "--muted": "#a6adc8", "--header": "#cdd6f4", "--accent": "#cba6f7", "--codebg": "#181825", "--codehead": "#242437", "--tk": "#cba6f7", "--ts": "#a6e3a1", "--tf": "#89b4fa", "--tn": "#fab387", "--tc": "#7f849c", "--tb": "#f9e2af" },
+  latte: { "--bg": "#eff1f5", "--bg2": "#e6e9ef", "--bg3": "#dce0e8", "--border": "#ccd0da", "--text": "#4c4f69", "--muted": "#6c6f85", "--header": "#4c4f69", "--accent": "#8839ef", "--codebg": "#e6e9ef", "--codehead": "#dce0e8", "--tk": "#8839ef", "--ts": "#40a02b", "--tf": "#1e66f5", "--tn": "#fe640b", "--tc": "#8c8fa1", "--tb": "#df8e1d" },
+};
+const theme = (from, to, t, d) => A("#phone", [THEMES[from], THEMES[to]], t, d, INOUT);
+
+function chipOn(id, t) {
+  A(id, [{ background: "rgba(255,255,255,.06)", borderColor: "rgba(255,255,255,.1)", color: "#c9cce0" }, { background: "rgba(88,101,242,.22)", borderColor: "rgba(143,152,255,.75)", color: "#ffffff" }], t, .45, SOFT);
+  A(`${id} b`, [{ background: "#5d6070", transform: "scale(1)" }, { background: "#8f98ff", transform: "scale(1.6)", offset: .5 }, { background: "#8f98ff", transform: "scale(1)" }], t, .6, SOFT);
+}
+function capIn(id, t) {
+  [...$(id).children].forEach((el, i) => fadeUp(el, t + i * .08, .75, 26));
+}
+function capOut(id, t) {
+  [...$(id).children].forEach((el, i) => fadeOutUp(el, t + i * .04, .4));
+}
+function toast(id, t, hold = 1.1) {
+  A(id, [{ transform: "translate(-50%, -24px) scale(.94)", opacity: 0 }, { transform: "translate(-50%, 0) scale(1)", opacity: 1 }], t, .5, OUT);
+  A(id, [{ transform: "translate(-50%, 0) scale(1)", opacity: 1 }, { transform: "translate(-50%, -24px) scale(.94)", opacity: 0 }], t + .5 + hold, .4, "cubic-bezier(.5,0,.75,0)");
+}
+
+function build() {
+  // Background drift: back where it started at the end, so the loop is seamless. (Still for GIFs.)
+  if (!location.search.includes("static")) A("#g1", [{ transform: "translate(0,0)" }, { transform: "translate(-160px,120px)" }, { transform: "translate(40px,60px)" }, { transform: "translate(0,0)" }], 0, DURATION, "linear");
+  if (!location.search.includes("static")) A("#g2", [{ transform: "translate(0,0)" }, { transform: "translate(200px,-120px)" }, { transform: "translate(80px,-40px)" }, { transform: "translate(0,0)" }], 0, DURATION, "linear");
+  if (!location.search.includes("static")) A("#g3", [{ transform: "translate(0,0)" }, { transform: "translate(-120px,-80px)" }, { transform: "translate(0,0)" }], 0, DURATION, "linear");
+
+  // Intro
+  [...$("#wm").children].forEach((el, i) => A(el, [{ opacity: 0, transform: "translateY(46px) scale(.96)", filter: "blur(6px)" }, { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0px)" }], .15 + i * .06, .8));
+  fadeUp("#itag", .75, .7, 14);
+  A("#intro", [{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.92)" }], 1.55, .5, "cubic-bezier(.5,0,.75,0)");
+  A("#stage", [{ transform: "translateY(900px) rotate(6deg)" }, { transform: "translateY(0) rotate(0deg)" }], 1.8, 1.15);
+
+  // Scene 1: chat
+  capIn("#cap1", 2.4);
+  const items = ["#m1", "#m2", "#m3", "#rx"].map(s => $(s));
+  const heights = items.map(el => el.getBoundingClientRect().height / .76);
+  let offset = heights.reduce((a, b) => a + b, 0);
+  $("#msgs").style.transform = `translateY(${offset}px)`;
+  items.forEach(el => (el.style.opacity = 0));
+  const appear = [3.05, 3.85, 4.65, 5.55];
+  items.forEach((el, i) => {
+    const next = offset - heights[i];
+    A("#msgs", [{ transform: `translateY(${offset}px)` }, { transform: `translateY(${next}px)` }], appear[i], .6, OUT);
+    A(el, [{ opacity: 0, transform: "translateY(10px) scale(.985)" }, { opacity: 1, transform: "translateY(0) scale(1)" }], appear[i] + .05, .55, OUT);
+    offset = next;
+  });
+  chipOn("#t-code", 4.75);
+  A("#code", [{ boxShadow: "0 0 0 0 rgba(88,101,242,0)" }, { boxShadow: "0 0 0 3px rgba(88,101,242,.45)", offset: .4 }, { boxShadow: "0 0 0 0 rgba(88,101,242,0)" }], 5.0, 1.0, SOFT);
+  chipOn("#t-react", 5.75);
+  [["#st1", 3], ["#st2", 2], ["#st3", 1]].forEach(([s, n], i) => {
+    A(s, [{ maxWidth: "0px" }, { maxWidth: `${4 + 18 + (n - 1) * 13 + 2}px` }], 5.95 + i * .14, .55, OUT);
+    [...$(s).children].forEach((img, j) => A(img, [{ transform: "scale(.3)", opacity: 0 }, { transform: "scale(1)", opacity: 1 }], 6.0 + i * .14 + j * .07, .45, "cubic-bezier(.34,1.56,.64,1)"));
+  });
+  chipOn("#t-badge", 6.55);
+  document.querySelectorAll("#m1 .hb img, #m2 .hb img, #m3 .hb img").forEach((img, i) =>
+    A(img, [{ transform: "scale(1)" }, { transform: "scale(1.45)", offset: .45 }, { transform: "scale(1)" }], 6.6 + (i % 4) * .06, .55, SOFT));
+  chipOn("#t-type", 7.05);
+  A("#typing", [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "translateY(0)" }], 7.05, .45);
+  document.querySelectorAll(".tdots i").forEach((dot, i) =>
+    A(dot, [{ opacity: .35, transform: "translateY(0)" }, { opacity: 1, transform: "translateY(-3px)" }, { opacity: .35, transform: "translateY(0)" }], i * .15, .9, "ease-in-out", { fill: "both", iterations: Infinity }));
+  capOut("#cap1", 7.75);
+
+  // Scene 2: plugin library (iOS push)
+  A("#chat", [{ transform: "translateX(0)" }, { transform: "translateX(-110px)" }], 8.0, .62, "cubic-bezier(.32,.72,0,1)");
+  A("#dim", [{ opacity: 0 }, { opacity: .45 }], 8.0, .62, "cubic-bezier(.32,.72,0,1)");
+  A("#lib", [{ transform: "translateX(390px)", boxShadow: "-12px 0 30px rgba(0,0,0,0)" }, { transform: "translateX(0)", boxShadow: "-12px 0 30px rgba(0,0,0,.35)" }], 8.0, .62, "cubic-bezier(.32,.72,0,1)");
+  capIn("#cap2", 8.3);
+  const count = $("#count");
+  count.style.setProperty("--n", 120);
+  count.style.minWidth = `${count.getBoundingClientRect().width}px`;
+  count.style.removeProperty("--n");
+  A(count, [{ "--n": 0 }, { "--n": 120 }], 8.45, 1.6, "cubic-bezier(.2,.7,.2,1)");
+  chipOn("#t-own", 9.4);
+  chipOn("#t-comm", 10.9);
+  const list = $("#llist");
+  // A long fling through the alphabetical list, easing out like iOS scrolling.
+  A(list, [{ transform: "translateY(0)" }, { transform: "translateY(-2400px)" }], 8.95, 3.3, "cubic-bezier(.2,.75,.15,1)");
+  capOut("#cap2", 12.35);
+
+  // Scene 3: more features, in #lounge (pop back from the library)
+  A("#lib", [{ transform: "translateX(0)" }, { transform: "translateX(390px)" }], 12.55, .6, "cubic-bezier(.32,.72,0,1)");
+  A("#chat2", [{ opacity: 0 }, { opacity: 1 }], 12.5, .01, "linear");
+  A("#chat2", [{ transform: "translateX(-110px)" }, { transform: "translateX(0)" }], 12.55, .6, "cubic-bezier(.32,.72,0,1)");
+  A("#dim2", [{ opacity: .45 }, { opacity: 0 }], 12.55, .6, "cubic-bezier(.32,.72,0,1)");
+  capIn("#cap5", 12.85);
+  // Message Logger: a message is deleted and stays, in red
+  chipOn("#t-log", 13.4);
+  A("#rex .tint", [{ opacity: 0 }, { opacity: 1 }], 13.5, .5, SOFT);
+  A("#rex .gut", [{ opacity: 0, transform: "scaleY(.3)" }, { opacity: 1, transform: "scaleY(1)" }], 13.5, .45, OUT);
+  A("#rextext", [{ color: "var(--text)" }, { color: "#f23f43" }], 13.5, .5, SOFT);
+  A("#rextime", [{ opacity: 1 }, { opacity: 0 }], 13.5, .3, SOFT);
+  A("#rexdel", [{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "translateY(0)" }], 13.6, .4, OUT);
+  // ...and an edit keeps its old version above
+  A("#oldv", [{ maxHeight: "0px", opacity: 0 }, { maxHeight: "24px", opacity: 1 }], 14.35, .55, OUT);
+  A("#nv1", [{ opacity: 1 }, { opacity: 0 }], 14.4, .3, SOFT);
+  A("#nv2", [{ opacity: 0 }, { opacity: 1 }], 14.45, .35, SOFT);
+  A("#edtag", [{ opacity: 0 }, { opacity: 1 }], 14.6, .3, SOFT);
+  // Fake Nitro: an emoji link renders as the real emoji
+  const fn = $("#fn"), fnH = fn.getBoundingClientRect().height / .76;
+  $("#msgs2").style.transform = `translateY(${fnH}px)`;
+  fn.style.opacity = 0;
+  A("#msgs2", [{ transform: `translateY(${fnH}px)` }, { transform: "translateY(0px)" }], 15.15, .6, OUT);
+  A(fn, [{ opacity: 0, transform: "translateY(10px) scale(.985)" }, { opacity: 1, transform: "translateY(0) scale(1)" }], 15.2, .55, OUT);
+  chipOn("#t-nitro", 15.3);
+  A("#flink", [{ opacity: 1, filter: "blur(0px)" }, { opacity: 0, filter: "blur(4px)" }], 15.85, .35, SOFT);
+  A("#femoji", [{ opacity: 0, transform: "scale(.3) rotate(-12deg)" }, { opacity: 1, transform: "scale(1) rotate(0deg)" }], 15.95, .6, "cubic-bezier(.34,1.56,.64,1)");
+  // No Typing: tap the chat bar button, then type without anyone seeing
+  const kb = $("#kbtn"), c2 = $("#chat2");
+  const kr = kb.getBoundingClientRect(), cr = c2.getBoundingClientRect();
+  const tap2 = $("#tap2");
+  tap2.style.left = `${(kr.left - cr.left) / .76 + 11 - 22}px`;
+  tap2.style.top = `${(kr.top - cr.top) / .76 + 11 - 22}px`;
+  tap2.style.zIndex = 30;
+  A(tap2, [{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(.8)", offset: .3 }, { opacity: 0, transform: "scale(1.5)" }], 16.5, .6, "ease-out");
+  chipOn("#t-notype", 16.55);
+  A("#kic", [{ background: "var(--muted)" }, { background: "var(--accent)" }], 16.6, .3, SOFT);
+  A("#kslash", [{ transform: "rotate(-40deg) scaleX(0)" }, { transform: "rotate(-40deg) scaleX(1)" }], 16.65, .35, OUT);
+  toast("#toast4", 16.7, 1.0);
+  A("#ph2", [{ opacity: 1 }, { opacity: 0 }], 17.05, .12, "linear");
+  [...$("#typed").querySelectorAll("i")].forEach((ch, i) => A(ch, [{ opacity: 0 }, { opacity: 1 }], 17.1 + i * .065, .05, "linear"));
+  A("#caret", [{ opacity: 1 }, { opacity: 1, offset: .5 }, { opacity: 0, offset: .55 }, { opacity: 0 }], 17.1, .9, "linear", { iterations: Infinity });
+  // Server Drawer: every server, one swipe up
+  chipOn("#t-drawer", 18.0);
+  A("#drawer", [{ transform: "translateY(260px)" }, { transform: "translateY(0)" }], 18.0, .6, "cubic-bezier(.32,.72,0,1)");
+  [...$("#srow").children].forEach((el, i) => A(el, [{ opacity: 0, transform: "scale(.6)" }, { opacity: 1, transform: "scale(1)" }], 18.15 + i * .05, .45, "cubic-bezier(.34,1.56,.64,1)"));
+  A("#srow", [{ transform: "translateX(0)" }, { transform: "translateX(-64px)" }, { transform: "translateX(0)" }], 18.75, 1.0, INOUT);
+  A("#drawer", [{ transform: "translateY(0)" }, { transform: "translateY(260px)" }], 19.55, .45, "cubic-bezier(.5,0,.75,0)");
+  capOut("#cap5", 19.7);
+
+  // Scene 4: themes
+  capIn("#cap3", 20.0);
+  const ring = $("#ring");
+  const sws = [...document.querySelectorAll(".sw")];
+  const ringAt = i => `translate(${sws[i].offsetLeft}px, ${sws[i].offsetTop}px)`;
+  ring.style.height = `${sws[0].offsetHeight}px`;
+  A(ring, [{ opacity: 0, transform: ringAt(0) + " scale(1.08)" }, { opacity: 1, transform: ringAt(0) + " scale(1)" }], 20.35, .4);
+  A(ring, [{ transform: ringAt(0) }, { transform: ringAt(1) }], 20.75, .55, INOUT);
+  theme("dark", "mocha", 20.85, .8);
+  toast("#toast1", 21.0, .9);
+  A(ring, [{ transform: ringAt(1) }, { transform: ringAt(2) }], 22.0, .55, INOUT);
+  theme("mocha", "latte", 22.1, .8);
+  toast("#toast2", 22.25, .85);
+  capOut("#cap3", 23.3);
+
+  // Scene 5: profile
+  theme("latte", "dark", 23.45, .7);
+  A("#pdim", [{ opacity: 0 }, { opacity: .55 }], 23.55, .6, OUT);
+  A("#sheet", [{ transform: "translateY(720px)" }, { transform: "translateY(0)" }], 23.55, .75, "cubic-bezier(.32,.72,0,1)");
+  capIn("#cap4", 23.85);
+  chipOn("#t-exp", 24.3);
+  document.querySelectorAll(".bpill img").forEach((img, i) =>
+    A(img, [{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(1)" }], 24.25 + i * .05, .4, "cubic-bezier(.34,1.56,.64,1)"));
+  const pills = document.querySelectorAll(".bpill");
+  pills.forEach((pill, i) => { if (i > 0) A(pill, [{ opacity: 0, transform: "translateY(-6px)" }, { opacity: 1, transform: "translateY(0)" }], 24.25 + i * PER_PILL * .05 - .05, .35); });
+  chipOn("#t-rank", 25.15);
+  document.querySelectorAll(".bpill:last-child img").forEach((img, i) =>
+    A(img, [{ transform: "scale(1)" }, { transform: "scale(1.5)", offset: .45 }, { transform: "scale(1)" }], 25.2 + i * .08, .55, SOFT));
+  chipOn("#t-tz", 25.65);
+  A("#tz", [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "translateY(0)" }], 25.65, .5);
+  chipOn("#t-fake", 26.15);
+  const staff = $(".bpill img"), sheet = $("#sheet");
+  const sr = staff.getBoundingClientRect(), shr = sheet.getBoundingClientRect();
+  const tap = $("#tap");
+  tap.style.left = `${(sr.left - shr.left) / .76 + 10 - 22}px`;
+  tap.style.top = `${(sr.top - shr.top) / .76 + 10 - 22}px`;
+  A(tap, [{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(.8)", offset: .3 }, { opacity: 0, transform: "scale(1.5)" }], 26.15, .6, "ease-out");
+  toast("#toast3", 26.3, 1.0);
+  capOut("#cap4", 27.4);
+
+  // Outro
+  A("#stage", [{ transform: "translateY(0) rotate(0deg)", opacity: 1 }, { transform: "translateY(120px) rotate(-3deg)", opacity: 0 }], 27.4, .7, "cubic-bezier(.5,0,.75,0)");
+  const outro = [...$("#outro").children];
+  A(outro[0], [{ opacity: 0, transform: "scale(.86)", filter: "blur(8px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0px)" }], 27.9, .9);
+  fadeUp(outro[1], 28.2, .7, 16);
+  fadeUp(outro[2], 28.4, .7, 16);
+  fadeUp(outro[3], 28.6, .7, 16);
+  A("#fade", [{ opacity: 0 }, { opacity: 1 }], DURATION - .55, .55, "ease-in");
+}
+
+window.seek = t => { for (const a of document.getAnimations()) a.currentTime = t * 1000; };
+window.ready = (async () => {
+  $("#llist").innerHTML = libraryHTML(await (await fetch("plugins.json")).json());
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(img => img.complete ? null : new Promise(r => { img.onload = img.onerror = r; })));
+  $("#typed").innerHTML = [..."omw, 5 min 🏃"].map(c => `<i>${c}</i>`).join("") + '<span class="caret" id="caret"></span>';
+  build();
+  window.seek(0);
+  return DURATION;
+})();
+</script>
+</body>
+</html>

@@ -27,6 +27,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.1.0",
     "esbuild": "^0.25.0",
+    "playwright-core": "1.56.0",
     "react-native": "0.79.2",
     "typescript": "^5.9.0"
   },

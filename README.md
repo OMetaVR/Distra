@@ -11,6 +11,11 @@ A Discord client mod for iOS. Distra runs plugins written for **Vendetta**,
 **app icons**. It is managed from a
 Distra section in Discord's own settings.
 
+<p align="center">
+  <img src="docs/media/distra-ad.gif" alt="Distra on iOS: highlighted code blocks, reaction avatars, chat badges, the Plugin Library, Message Logger, Fake Nitro, No Typing, Server Drawer, themes and profile badges" width="100%">
+  <br><sub><a href="docs/media/distra-ad.mp4">Watch in 1080p</a></sub>
+</p>
+
 > Early development. Built and tested against Discord 348.0 (113691). See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 > [!WARNING]
