@@ -112,12 +112,26 @@ createServer(async (request, response) => {
         }
 
         // Files built-in plugins load from the repository (builtin-plugins/assets), for testing before they're pushed.
-        if (request.method === "GET" && url.pathname.startsWith("/assets/")) {
+        if ((request.method === "GET" || request.method === "HEAD") && url.pathname.startsWith("/assets/")) {
             const name = path.basename(url.pathname);
             const file = path.join(root, "builtin-plugins", "assets", name);
             if (!existsSync(file)) return json(response, 404, { error: "not found" });
-            response.writeHead(200, { "Content-Type": { ".mp3": "audio/mpeg", ".png": "image/png" }[path.extname(name)] ?? "application/octet-stream" });
-            return response.end(readFileSync(file));
+            const type = { ".mp3": "audio/mpeg", ".png": "image/png", ".ipa": "application/octet-stream" }[path.extname(name)] ?? "application/octet-stream";
+            const data = readFileSync(file);
+            // Range support: download managers (and resumed downloads) ask for parts of big files.
+            const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range ?? "");
+            if (range) {
+                const start = range[1] ? Number(range[1]) : Math.max(0, data.length - Number(range[2]));
+                const end = range[1] && range[2] ? Math.min(Number(range[2]), data.length - 1) : data.length - 1;
+                if (start >= data.length || start > end) {
+                    response.writeHead(416, { "Content-Range": `bytes */${data.length}` });
+                    return response.end();
+                }
+                response.writeHead(206, { "Content-Type": type, "Content-Length": end - start + 1, "Content-Range": `bytes ${start}-${end}/${data.length}`, "Accept-Ranges": "bytes" });
+                return response.end(data.subarray(start, end + 1));
+            }
+            response.writeHead(200, { "Content-Type": type, "Content-Length": data.length, "Accept-Ranges": "bytes", "Content-Disposition": `attachment; filename="${name}"` });
+            return response.end(request.method === "HEAD" ? undefined : data);
         }
 
         // Device endpoints

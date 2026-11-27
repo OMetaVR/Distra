@@ -162,3 +162,6 @@ NSDictionary *DSTReactionsInspect(void);
 NSDictionary *DSTHeaderBadgesEnable(void);
 /** Forgets every message's badges (the plugin stopped). */
 void DSTHeaderBadgesClear(void);
+
+/** Granted app groups and where Discord's resolves (Tweak.x), for diagnostics. */
+NSDictionary *DSTAppGroupInfo(void);

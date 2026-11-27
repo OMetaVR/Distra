@@ -94,6 +94,74 @@ def patch_info_plist(app: Path, alt_icons: list[str]) -> None:
     info_path.write_bytes(plistlib.dumps(info, fmt=plistlib.FMT_BINARY))
 
 
+# App extensions that need Distra loaded too: the screen-share extension reaches the app through the
+# shared app group container, which the tweak remaps when a signer renamed the group (tweak/Sources/Tweak.x).
+EXTENSIONS_WITH_DISTRA = ["BroadcastUpload.appex"]
+# cyan puts the tweak in the app's Frameworks; extensions live in PlugIns/<name>.appex.
+EXTENSION_DYLIB = "@executable_path/../../Frameworks/Distra.dylib"
+
+
+def find_cyan_tools(cyan: str) -> tuple[str, str, Path | None]:
+    """Find insert_dylib, ldid, and cyan's zero.requirements (needed to preserve entitlements)."""
+    insert_dylib = shutil.which("insert_dylib")
+    ldid = shutil.which("ldid")
+    zero_req: Path | None = None
+
+    script = Path(shutil.which(cyan) or cyan)
+    python = script.read_text(errors="ignore").splitlines()[0].removeprefix("#!").strip() if script.is_file() else sys.executable
+    result = subprocess.run(
+        [python, "-c", "import cyan.tbhutils as t; a, b = t.get_tools_dir(); print(a); print(b)"],
+        capture_output=True, text=True,
+    )
+    if result.returncode == 0:
+        lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        if len(lines) == 2:
+            install_dir, tools_dir = Path(lines[0]), Path(lines[1])
+            if not insert_dylib and (tools_dir / "insert_dylib").is_file():
+                insert_dylib = str(tools_dir / "insert_dylib")
+            if not ldid and (tools_dir / "ldid").is_file():
+                ldid = str(tools_dir / "ldid")
+            candidate_req = install_dir / "extras" / "zero.requirements"
+            if candidate_req.is_file():
+                zero_req = candidate_req
+
+    if not insert_dylib:
+        raise SystemExit("insert_dylib not found (it comes with cyan)")
+    if not ldid:
+        raise SystemExit("ldid not found (it comes with cyan)")
+    return insert_dylib, ldid, zero_req
+
+
+def load_distra_in_extensions(app: Path, work: Path, cyan: str) -> None:
+    insert_dylib, ldid, zero_req = find_cyan_tools(cyan)
+    for name in EXTENSIONS_WITH_DISTRA:
+        extension = app / "PlugIns" / name
+        info_path = extension / "Info.plist"
+        if not info_path.is_file():
+            print(f"no {name}, skipping")
+            continue
+        executable = extension / plistlib.loads(info_path.read_bytes())["CFBundleExecutable"]
+        # insert_dylib strips LC_CODE_SIGNATURE, which also drops the embedded entitlements plist.
+        # Signers (SideStore, AltStore, etc.) read those entitlements to decide which App Groups to grant,
+        # so extract them first and re-embed them ad-hoc afterwards (same as cyan does for the main binary).
+        entitlements = work / f"{name}.entitlements"
+        dumped = subprocess.run([ldid, "-e", str(executable)], capture_output=True)
+        has_entitlements = len(dumped.stdout) > 0
+        if has_entitlements:
+            entitlements.write_bytes(dumped.stdout)
+
+        # Weak, so the extension still starts if the dylib is missing.
+        subprocess.run([insert_dylib, "--weak", "--inplace", "--all-yes", EXTENSION_DYLIB, str(executable)], check=True, capture_output=True)
+
+        if has_entitlements:
+            sign_cmd = [ldid, f"-S{entitlements}", "-M", "-Cadhoc"]
+            if zero_req is not None:
+                sign_cmd.append(f"-Q{zero_req}")
+            sign_cmd.append(str(executable))
+            subprocess.run(sign_cmd, check=True)
+        print(f"loading Distra in {name}" + (" (entitlements preserved)" if has_entitlements else ""))
+
+
 def zip_payload(root: Path, output: Path) -> None:
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED, compresslevel=1) as archive:
         for path in sorted((root / "Payload").rglob("*")):
@@ -134,6 +202,8 @@ def main() -> int:
 
         add_icon_packs(app, args.icon_pack)
         patch_info_plist(app, args.alt_icon)
+        if not args.remove_extensions:
+            load_distra_in_extensions(app, work, args.cyan)
 
         staged = work / "staged.ipa"
         zip_payload(work, staged)

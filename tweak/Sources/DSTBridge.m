@@ -260,6 +260,9 @@ static NSDictionary<NSString *, DSTHandler> *DSTHandlers(void) {
             @"reactions.enable": ^(NSArray *args, DSTDone done) {
                 dispatch_async(dispatch_get_main_queue(), ^{ done(DSTReactionsEnable(), nil); });
             },
+            @"appGroups.info": ^(NSArray *args, DSTDone done) {
+                done(DSTAppGroupInfo(), nil);
+            },
             @"reactions.inspect": ^(NSArray *args, DSTDone done) {
                 dispatch_async(dispatch_get_main_queue(), ^{ done(DSTReactionsInspect(), nil); });
             },
