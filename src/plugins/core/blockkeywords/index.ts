@@ -76,11 +76,13 @@ const dropHandlerCache = () => void delete FluxDispatcher?._actionHandlers?._ord
 
 /**
  * Skips a store's MESSAGE_CREATE handler for matching messages. Handlers live per store in the
- * dispatcher's dependency graph (`nodes[id].actionHandler[type]`).
+ * dispatcher's handler graph (`nodes[id].actionHandler[type]`).
  */
 function skipNewMessages(storeName: string) {
-    const nodes = FluxDispatcher?._actionHandlers?._dependencyGraph?.nodes ?? {};
-    const handlers = (Object.values(nodes) as any[]).find(node => node?.name === storeName)?.actionHandler;
+    // `_dependencyGraph.nodes` (an object) on Discord 348, `_nodes` (a Map) from 354.
+    const nodes = FluxDispatcher?._actionHandlers?._nodes ?? FluxDispatcher?._actionHandlers?._dependencyGraph?.nodes ?? {};
+    const list: any[] = nodes instanceof Map ? [...nodes.values()] : Object.values(nodes);
+    const handlers = list.find(node => node?.name === storeName)?.actionHandler;
     if (typeof handlers?.MESSAGE_CREATE !== "function") return logger.warn(`${storeName}'s MESSAGE_CREATE handler not found`);
     patcher.addCleanup(dropHandlerCache);
     dropHandlerCache();

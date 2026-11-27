@@ -265,9 +265,10 @@ function wrapList(node: any, depth = 0): any {
 
 function patchList() {
     const list = findByFilePath("modules/main_tabs_v2/native/tabs/messages/MessagesFastestList.tsx")?.default;
-    const target = list?.type?.render ? list.type : list?.render ? list : undefined;
-    if (!target) return logger.warn("DM list not found; pinned DMs won't show in it");
-    patcher.after("render", target, (_, ret) => wrapList(ret));
+    // memo(forwardRef(render)) on Discord 348, memo(function) from 354.
+    const [target, method] = list?.type?.render ? [list.type, "render"] : list?.render ? [list, "render"] : typeof list?.type === "function" ? [list, "type"] : [];
+    if (!target || !method) return logger.warn("DM list not found; pinned DMs won't show in it");
+    patcher.after(method, target, (_, ret) => wrapList(ret));
 }
 
 /** "Pin DM" at the top of a DM's (or group DM's) long-press menu. */
