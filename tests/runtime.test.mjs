@@ -219,7 +219,10 @@ test("lists built-in plugins, disabled by default", async () => {
     await until(() => ready(ctx) && Object.keys(ctx.context.distra.plugins.builtins).length > 0);
     const { builtins } = ctx.context.distra.plugins;
     assert.ok(Object.keys(builtins).length > 80, "the vendored plugins are listed");
-    assert.ok(Object.values(builtins).every(record => record.enabled === false && record.builtin != null));
+    assert.ok(Object.values(builtins).every(record => record.builtin != null));
+    // Only Distra Helper is on by default (it does nothing unless a helper message asks).
+    const enabled = Object.values(builtins).filter(record => record.enabled).map(record => record.id);
+    assert.deepEqual(enabled, ["distra:distra-helper"]);
     assert.ok(Object.values(builtins).some(record => record.flavor === "enmity"));
 });
 

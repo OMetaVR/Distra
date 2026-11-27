@@ -9,7 +9,7 @@
 // commands registered through `api.commands` are undone automatically on stop.
 
 import { createFileBackend, createStorage } from "@/core/storage";
-import { registerCommand, type Command } from "@/lib/commands";
+import { inSection, registerCommand, type Command } from "@/lib/commands";
 import { Logger } from "@/lib/logger";
 import { createPatcher } from "@/lib/patcher";
 import * as metro from "@/metro";
@@ -42,7 +42,7 @@ async function createPluginApi(record: PluginRecord) {
         toasts: { showToast },
         commands: {
             register: (command: Command) => {
-                const unregister = registerCommand(command);
+                const unregister = registerCommand(inSection(command, record.manifest.name));
                 patcher.addCleanup(unregister);
                 return unregister;
             },

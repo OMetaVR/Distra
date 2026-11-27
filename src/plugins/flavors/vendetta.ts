@@ -4,6 +4,7 @@
 // See https://github.com/vendetta-mod/polymanifest
 
 import { createFileBackend, createStorage } from "@/core/storage";
+import { inSection } from "@/lib/commands";
 import { Logger } from "@/lib/logger";
 
 import { evaluate, fetchJSON, fetchText, resolveUrl } from "../fetch";
@@ -110,6 +111,11 @@ export const vendettaFlavor: FlavorAdapter = {
             patcher,
             metro: withMissLogging(vendetta.metro, TRACKED_LOOKUPS, logger, misses),
             ui: { ...vendetta.ui, assets: withMissLogging(vendetta.ui.assets, ["getAssetIDByName", "getAssetByName"], logger, misses) },
+            // Commands are listed under the plugin's name in the slash picker.
+            commands: {
+                ...vendetta.commands,
+                registerCommand: (command: any) => vendetta.commands.registerCommand(inSection(command, record.manifest.name)),
+            },
             plugin: {
                 id: record.id,
                 manifest: record.manifest,

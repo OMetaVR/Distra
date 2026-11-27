@@ -46,7 +46,7 @@ export const CUSTOM_PAGE_ROUTE = "DISTRA_CUSTOM_PAGE";
 // Routes other mods used; plugins navigate to these directly.
 const COMPAT_ROUTES = ["VendettaCustomPage", "BUNNY_CUSTOM_PAGE", "PUPU_CUSTOM_PAGE"];
 
-const CustomPage = memo(() => {
+export const CustomPage = memo(() => {
     const navigation = NavigationNative.useNavigation();
     const route = NavigationNative.useRoute();
     const { render: Page, ...options } = route.params ?? {};

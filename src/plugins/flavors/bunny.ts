@@ -9,6 +9,7 @@ import { createFileBackend, createStorage } from "@/core/storage";
 import { Logger } from "@/lib/logger";
 
 import { createBunnyObject } from "@/compat/bunny";
+import { inSection } from "@/lib/commands";
 
 import { evaluate, fetchJSON, fetchText, resolveUrl } from "../fetch";
 import { pluginDataPath } from "../paths";
@@ -38,8 +39,17 @@ export const bunnyFlavor: FlavorAdapter = {
 
     async start(record, code) {
         const logger = new Logger(record.manifest.name);
+        const base = createBunnyObject();
         const bunny = {
-            ...createBunnyObject(),
+            ...base,
+            // Commands are listed under the plugin's name in the slash picker.
+            api: {
+                ...base.api,
+                commands: {
+                    ...base.api.commands,
+                    registerCommand: (command: any) => base.api.commands.registerCommand(inSection(command, record.manifest.name)),
+                },
+            },
             plugin: {
                 manifest: record.manifest,
                 logger,

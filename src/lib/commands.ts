@@ -1,9 +1,18 @@
 // Slash commands, injected as Discord "built-in" commands.
+//
+// Commands with a `sectionName` get their own header in the slash picker instead of "Built-In".
+// Plugins' commands are named after their plugin automatically (see the flavors). Sections are
+// ordered by `sectionOrder` (lowest first; Remote Commands backends use 0-999, plugins default to
+// 1000), then by name.
+// Discord files every built-in command under BUILT_IN_SECTIONS["-1"] whatever its applicationId,
+// so ApplicationCommandIndexStore.query's result is regrouped afterwards: those commands move out of
+// the Built-In group into one group per name, placed just before it, each with its own descriptor
+// (the header). Commands in other groups (Frequently Used) are left where they are.
 
 import { logger } from "@/lib/logger";
 import { corePatcher } from "@/lib/patcher";
 import { isLocalOnly, sendLocalMessage } from "@/lib/localMessage";
-import { byMethods, waitFor } from "@/metro";
+import { byFilePath, byMethods, waitFor } from "@/metro";
 import { commands as commandsModule, messageUtil } from "@/metro/common";
 
 export const ApplicationCommandType = { CHAT: 1, USER: 2, MESSAGE: 3 } as const;
@@ -20,6 +29,12 @@ export interface Command {
     options?: Array<{ name: string; description: string; type: number; required?: boolean; [k: string]: unknown }>;
     execute(args: any[], ctx: { channel: any; guild: any }): unknown;
     shouldHide?: () => boolean;
+    /** Called each time Discord lists the command (the slash picker opening or filtering). */
+    onListed?: () => void;
+    /** Header to list the command under in the slash picker (default: Discord's "Built-In"). */
+    sectionName?: string;
+    /** Where the section goes among the others (lower first); default 1000. */
+    sectionOrder?: number;
     [key: string]: unknown;
 }
 
@@ -29,11 +44,86 @@ export function patchCommands() {
     corePatcher.addCleanup(waitFor(byMethods("getBuiltInCommands"), module => {
         corePatcher.after("getBuiltInCommands", module, ([type], result: any[]) => {
             const types = Array.isArray(type) ? type : [type];
-            return result.concat(registered.filter(command =>
-                types.includes(command.type) && !command.shouldHide?.()));
+            const listed = registered.filter(command => types.includes(command.type) && !command.shouldHide?.());
+            for (const command of listed) {
+                try {
+                    command.onListed?.();
+                } catch (e) {
+                    logger.error(`onListed for /${command.name} failed`, e);
+                }
+            }
+            return result.concat(listed);
         });
         logger.info("Patched getBuiltInCommands");
     }));
+
+    corePatcher.addCleanup(waitFor(byFilePath("modules/application_commands/ApplicationCommandIndexStore.tsx"), module => {
+        const store = module?.default;
+        const owner = store && (Object.prototype.hasOwnProperty.call(store, "query") ? store : Object.getPrototypeOf(store));
+        if (typeof owner?.query !== "function") return logger.warn("ApplicationCommandIndexStore.query not found; command sections are off");
+        corePatcher.after("query", owner, (_args, result: any) => {
+            try {
+                return withSections(result);
+            } catch (e) {
+                logger.error("Grouping commands into sections failed", e);
+                return result;
+            }
+        });
+        logger.info("Patched ApplicationCommandIndexStore.query");
+    }, { raw: true }));
+}
+
+const BUILT_IN_SECTION_ID = "-1";
+const DEFAULT_SECTION_ORDER = 1000;
+const sectionIds = new Map<string, string>();
+
+/** A stable id per section name, out of the way of Discord's ("-1", "-2") and real application ids. */
+const sectionIdFor = (name: string) => {
+    let id = sectionIds.get(name);
+    if (!id) sectionIds.set(name, id = `-distra-${sectionIds.size + 1}`);
+    return id;
+};
+
+function withSections(result: any) {
+    const groups: any[] | undefined = result?.sectionedCommands;
+    const builtInIndex = groups?.findIndex(group => group?.section?.id === BUILT_IN_SECTION_ID) ?? -1;
+    if (builtInIndex === -1) return result;
+    const builtIn = groups![builtInIndex];
+    const named = new Map<string, any>();
+    const rest: any[] = [];
+    for (const command of builtIn.data ?? []) {
+        const name = typeof command?.sectionName === "string" ? command.sectionName : undefined;
+        if (!name) {
+            rest.push(command);
+            continue;
+        }
+        let group = named.get(name);
+        if (!group) named.set(name, group = { ...builtIn, section: { id: sectionIdFor(name), type: builtIn.section.type, name }, data: [], order: Infinity });
+        group.order = Math.min(group.order, typeof command.sectionOrder === "number" ? command.sectionOrder : DEFAULT_SECTION_ORDER);
+        command.section = group.section;
+        group.data.push(command);
+    }
+    if (!named.size) return result;
+
+    const added = [...named.values()]
+        .sort((a, b) => a.order - b.order || a.section.name.localeCompare(b.section.name))
+        .map(({ order: _, ...group }) => group);
+    const sectionedCommands = [...groups!.slice(0, builtInIndex), ...added, ...(rest.length ? [{ ...builtIn, data: rest }] : []), ...groups!.slice(builtInIndex + 1)];
+    const descriptors: any[] = result.descriptors ?? [];
+    const descriptorIndex = descriptors.findIndex(descriptor => descriptor?.id === BUILT_IN_SECTION_ID);
+    const keptDescriptors = rest.length ? descriptors : descriptors.filter(descriptor => descriptor?.id !== BUILT_IN_SECTION_ID);
+    const at = descriptorIndex === -1 ? keptDescriptors.length : descriptorIndex;
+    return {
+        ...result,
+        sectionedCommands,
+        descriptors: [...keptDescriptors.slice(0, at), ...added.map(group => group.section), ...keptDescriptors.slice(at)],
+    };
+}
+
+/** Files commands under `sectionName` (their plugin, usually) unless they chose a section themselves. */
+export function inSection<T extends Command>(command: T, sectionName: string | undefined): T {
+    if (sectionName && typeof command.sectionName !== "string") command.sectionName = sectionName;
+    return command;
 }
 
 export function registerCommand(command: Command): () => void {

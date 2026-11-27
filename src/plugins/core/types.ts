@@ -7,6 +7,8 @@ export interface CorePlugin {
     start(): void | Promise<void>;
     stop(): void | Promise<void>;
     SettingsComponent?: React.ComponentType<any>;
+    /** On until the user turns it off (only for plugins that do nothing unless something asks for them). */
+    enabledByDefault?: boolean;
     /** Functions other plugins (and devtools) can use, via `distra.plugins.getInstance(id).api`. */
     api?: Record<string, unknown>;
 }

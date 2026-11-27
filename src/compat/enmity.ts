@@ -9,7 +9,7 @@
 import { readJSON, writeJSON } from "@/core/fs";
 import { reloadApp } from "@/core/native";
 import { findAssetId, getAssetById } from "@/lib/assets";
-import { type Command, registerCommand } from "@/lib/commands";
+import { type Command, inSection, registerCommand } from "@/lib/commands";
 import { sendLocalMessage } from "@/lib/localMessage";
 import { proxyLazy, unwrapLazy } from "@/lib/lazy";
 import { Logger } from "@/lib/logger";
@@ -326,7 +326,7 @@ const commandUnregisters = new Map<string, Array<() => void>>();
 
 const commands = {
     registerCommands(caller: string, list: Command[]) {
-        commandUnregisters.set(caller, list.map(registerCommand));
+        commandUnregisters.set(caller, list.map(command => registerCommand(inSection(command, caller))));
     },
     unregisterCommands(caller: string) {
         commandUnregisters.get(caller)?.forEach(unregister => unregister());

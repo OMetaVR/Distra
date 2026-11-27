@@ -26,8 +26,11 @@ import betterCodeBlocks from "./codeblocks";
 import fontLoader from "./fontloader";
 import fakeBadges from "./fakebadges";
 import expandableBadges from "./expandablebadges";
+import disableCallIdle from "./disablecallidle";
+import distraHelper from "./distrahelper";
+import remoteCommands from "./remotecommands";
 import type { CorePlugin } from "./types";
 
-export const corePlugins: CorePlugin[] = [messageLogger, platformIndicators, radialStatus, hideChatButtons, fakeNitro, pinDms, friendshipRanks, whosTyping, customTimestamps, timezones, lastActive, hideMessages, blockKeywords, downloadAttachments, whoReacted, clickableRoles, customFolderIcons, messageColors, roleColorEverywhere, showBadgesInChat, volumeBooster, voiceStats, betterCodeBlocks, fontLoader, fakeBadges, expandableBadges];
+export const corePlugins: CorePlugin[] = [messageLogger, platformIndicators, radialStatus, hideChatButtons, fakeNitro, pinDms, friendshipRanks, whosTyping, customTimestamps, timezones, lastActive, hideMessages, blockKeywords, downloadAttachments, whoReacted, clickableRoles, customFolderIcons, messageColors, roleColorEverywhere, showBadgesInChat, volumeBooster, voiceStats, betterCodeBlocks, fontLoader, fakeBadges, expandableBadges, disableCallIdle, distraHelper, remoteCommands];
 
 export const getCorePlugin = (id: string) => corePlugins.find(plugin => plugin.id === id);

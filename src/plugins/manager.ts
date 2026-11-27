@@ -250,7 +250,7 @@ async function loadBuiltins() {
             id: core.id,
             flavor: "distra",
             manifest: core.manifest,
-            enabled: builtinState[core.id]?.enabled ?? false,
+            enabled: builtinState[core.id]?.enabled ?? core.enabledByDefault ?? false,
             autoUpdate: false,
             builtin: {
                 status: "working",
