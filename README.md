@@ -16,7 +16,7 @@ Distra section in Discord's own settings.
   <br><sub><a href="docs/media/distra-ad.mp4">Watch in 1080p</a></sub>
 </p>
 
-> Early development. Built and tested against Discord 348.0 (113691). See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Early development. Built and tested against Discord 354.0 (123054). See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 > [!WARNING]
 > Distra is an unofficial modification, not affiliated with or endorsed by Discord. Client mods
@@ -32,6 +32,11 @@ Distra section in Discord's own settings.
   Sideloadly, TrollStore…). IPAs are only published with full releases.
 - **`Distra.dylib`**: inject into Discord yourself with LiveContainer or an IPA patcher (no Substrate needed).
 - **`*_iphoneos-arm.deb`** / **`*_iphoneos-arm64.deb`**: rootful / rootless jailbreak packages.
+
+**Screen sharing** needs the IPA installed as its own app. Sideloading renames Discord's shared App
+Group, and the IPA loads Distra into Discord's screen-share extension so both sides find the renamed
+one. Injecting the dylib yourself only reaches the main app, and LiveContainer can't run Discord's
+screen-share extension, so screen sharing doesn't work in those setups.
 
 The [**beta** prerelease](../../releases/tag/beta) is rebuilt from every push to `main` and has
 the dylib and .debs only.
@@ -55,10 +60,10 @@ file whether it's installed with a jailbreak or injected into an IPA.
 
 ## Built-in plugins
 
-Distra ships **120 plugins**, all disabled until turned on in
+Distra ships **123 plugins**, all disabled until turned on in
 **Settings > Distra > Plugin Library**:
 
-- **26 of its own**, rebuilt for current Discord from the most popular plugins of other mods
+- **29 of its own**, rebuilt for current Discord from the most popular plugins of other mods
   (mostly Vencord/Equicord), merging their features:
   - Messages: **Message Logger** (deleted messages stay in red, edits keep their history,
     deleted images are greyed out; stored in an on-device SQLite database), **Hide Messages**,
@@ -72,7 +77,11 @@ Distra ships **120 plugins**, all disabled until turned on in
   - Lists and chat: **Pin DMs** (pin DMs into collapsible, coloured categories at the top of the
     DM list), **Custom Folder Icons**, **Hide Chat Buttons** (chat bar and call buttons, swipe to
     collapse), **Fake Nitro** (fake emoji and sticker links shown as the real thing).
-  - Voice and look: **Volume Booster**, **Voice Stats**, **Font Loader** (needs tweak 0.1.2+).
+  - Voice and look: **Volume Booster**, **Voice Stats**, **Disable Call Idle** (DM calls don't hang up
+    when you're alone), **Font Loader** (needs tweak 0.1.2+).
+  - Commands and help: **Remote Commands** (slash commands defined and run by your own backend; see
+    [docs/REMOTE_COMMANDS.md](docs/REMOTE_COMMANDS.md)), **Distra Helper** (plugin cards and quick
+    actions under Distra help messages).
 - **94 community plugins** (87 Vendetta/Bunny/Revenge, 7 Enmity), vendored in
   `builtin-plugins/sources/` at pinned upstream commits under their authors' licenses and built
   with the rest of Distra. Fixes for current Discord live in `builtin-plugins/patches/`.

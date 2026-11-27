@@ -10,7 +10,7 @@ Done and verified on a host machine:
   lifecycles, safe mode, failure fallbacks, and icon pack resolution.
 - Tweak compiles with Theos (no warnings) into rootful and rootless .debs with
   no Substrate dependency.
-- `scripts/build-ipa.py` produces an IPA from the Discord 348.0 (113691)
+- `scripts/build-ipa.py` produces an IPA from the Discord 354.0 (123054)
   decrypted IPA with the dylib load command, bundled icon packs, extra alternate
   icons, and Files app access.
 
